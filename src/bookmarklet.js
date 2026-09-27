@@ -15,8 +15,8 @@
   if (!/bniconnectglobal\.com/.test(location.host)) { note('BNI Connectのページで押してください', 1); return; }
   let raw = window.__bni1to1data || '';
   if (!raw) { try { raw = await navigator.clipboard.readText(); } catch (e) { } }
-  if (!/^BNI1to1:/.test(raw || '')) raw = prompt('1to1メンバー帳の「BNI自動入力用にコピー」でコピーした内容を貼り付けてください（Ctrl+V）') || '';
-  if (!/^BNI1to1:/.test(raw)) { note('1to1メンバー帳で「BNI自動入力用にコピー」を押してから、もう一度このボタンを押してください', 1); return; }
+  if (!/^BNI1to1:/.test(raw || '')) raw = prompt('1to1 Naviの「BNI自動入力用にコピー」でコピーした内容を貼り付けてください（Ctrl+V）') || '';
+  if (!/^BNI1to1:/.test(raw)) { note('1to1 Naviで「BNI自動入力用にコピー」を押してから、もう一度このボタンを押してください', 1); return; }
   let d; try { d = JSON.parse(raw.slice(8)); } catch (e) { note('コピーした内容を読み取れませんでした', 1); return; }
   const dialogs = () => [...document.querySelectorAll('[role="dialog"]')];
   const formDlg = () => dialogs().find(x => x.querySelector('input[name="location"]'));

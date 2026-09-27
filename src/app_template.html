@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>1to1 メンバー帳</title>
+<title>1to1 Navi</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="description" content="BNIメンバーの1to1シートを取り込んで管理するツール。データは各自のブラウザ内だけに保存されます。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23cf2030%22/%3E%3Ctext x=%2232%22 y=%2242%22 font-size=%2224%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22bold%22%3E1to1%3C/text%3E%3C/svg%3E">
@@ -172,7 +172,7 @@ mark{background:#ffe58a;padding:0 1px}
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo"><b>BNI</b>1to1 メンバー帳<span class="ver">v1.0.0</span></div>
+  <div class="logo"><b>BNI</b>1to1 Navi<span class="ver">v1.0.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -423,13 +423,13 @@ const AutoSave = (() => {
     async resume() { try { if (await handle.requestPermission({ mode: 'readwrite' }) === 'granted') { await activate(); toast('自動保存を再開しました'); } } catch (e) { toast('許可されませんでした'); } render(); },
     async create() {
       try {
-        const h = await window.showSaveFilePicker({ suggestedName: '1to1メンバー帳_データ.json', types: [{ description: '1to1メンバー帳データ', accept: { 'application/json': ['.json'] } }] });
+        const h = await window.showSaveFilePicker({ suggestedName: '1to1Navi_データ.json', types: [{ description: '1to1 Naviデータ', accept: { 'application/json': ['.json'] } }] });
         handle = h; await Store.set('fileHandle', h); state = 'ok'; await write(); render(); toast('自動保存を開始しました');
       } catch (e) { if (e.name !== 'AbortError') alert('保存先を設定できませんでした：' + e.message); }
     },
     async open() {
       try {
-        const [h] = await window.showOpenFilePicker({ types: [{ description: '1to1メンバー帳データ', accept: { 'application/json': ['.json'] } }] });
+        const [h] = await window.showOpenFilePicker({ types: [{ description: '1to1 Naviデータ', accept: { 'application/json': ['.json'] } }] });
         if (await h.requestPermission({ mode: 'readwrite' }) !== 'granted') { toast('書き込みが許可されませんでした'); return; }
         handle = h; await Store.set('fileHandle', h); await activate(); toast(`「${h.name}」を読み込み、自動保存を開始しました`);
       } catch (e) { if (e.name !== 'AbortError') alert('ファイルを開けませんでした：' + e.message); }
@@ -979,7 +979,7 @@ function eventDetails(m) {
     m.collaborators && `\n■協業しやすい方\n${cut(m.collaborators, 200)}`,
     m.hobbies && `\n■趣味\n${cut(m.hobbies, 120)}`,
     m.sheetUrl && `\n1to1シート：${m.sheetUrl}`,
-    '\n（1to1メンバー帳より）',
+    '\n（1to1 Naviより）',
   ].filter(Boolean);
   return lines.join('\n');
 }
@@ -1129,14 +1129,14 @@ function download(name, content, type) {
 const today = () => new Date().toISOString().slice(0, 10);
 $('exportJson').onclick = async () => {
   if (!members.length) return toast('データがありません');
-  download(`1to1メンバー帳_${today()}.json`, JSON.stringify({ app: 'bni-1to1-book', version: 2, exportedAt: new Date().toISOString(), members, tombstones }, null, 2), 'application/json');
+  download(`1to1Navi_${today()}.json`, JSON.stringify({ app: 'bni-1to1-book', version: 2, exportedAt: new Date().toISOString(), members, tombstones }, null, 2), 'application/json');
   await Store.set('lastBackupAt', Date.now()); updateSaveState();
 };
 $('exportCsv').onclick = () => {
   if (!members.length) return toast('データがありません');
   const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const rows = [ALL_FIELDS.map(f => q(f[1])).join(','), ...members.map(m => ALL_FIELDS.map(([k]) => q(m[k])).join(','))];
-  download(`1to1メンバー帳_${today()}.csv`, '﻿' + rows.join('\r\n'), 'text/csv');
+  download(`1to1Navi_${today()}.csv`, '﻿' + rows.join('\r\n'), 'text/csv');
 };
 $('importJsonBtn').onclick = () => $('importJson').click();
 $('importJson').onchange = async e => {

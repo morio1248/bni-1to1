@@ -1,4 +1,4 @@
-# 1to1 メンバー帳
+# 1to1 Navi
 
 BNIメンバーの1to1シート（PDF・Word・PowerPoint・Canva）を取り込み、検索・管理できるツールです。
 
