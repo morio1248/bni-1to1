@@ -83,6 +83,10 @@ mark{background:#ffe58a;padding:0 1px}
 .queue{margin-top:20px;display:flex;flex-direction:column;gap:16px}
 .review{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
 .review h3{margin:0 0 4px;font-size:16px}
+.target-box{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;background:#fafafb;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:6px 0 4px}
+.target-box label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--sub)}
+.target-box select{padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;min-width:240px;font-size:14px;color:var(--ink)}
+.target-box .tnote{flex-basis:100%;margin:0}
 .review .src{color:var(--sub);font-size:12px;margin-bottom:6px}
 /* フォーム */
 .sec{margin-top:16px}
@@ -1170,6 +1174,7 @@ function hl(text, terms) {
 const firstLine = s => (s || '').split('\n').map(x => x.trim()).find(x => x && !/^【.*】$/.test(x)) || '';
 function renderList() {
   renderTsMembers();
+  refreshQueueTargets();
   renderUpcoming();
   updateBniBar();
   const terms = $('q').value.normalize('NFKC').toLowerCase().split(/\s+/).filter(Boolean);
@@ -1254,7 +1259,7 @@ function openDetail(id) {
       ${(m.meetings || []).some(x => x.text) ? '<p class="howto">AIで要約：①「AI用にコピー」→ ② ClaudeやChatGPTに貼り付けて送信 → ③ 返答をコピーして「AIの返答を貼る」に貼り付け<br>※AIに送る前に：録音・文字起こしは相手の了承を得ていること、AIの学習への利用をオフにしていることを確認してください。</p>' : ''}
     </div>
     <div class="actions">
-      <span style="margin-right:auto;color:var(--sub);font-size:12px">${m.source ? '取り込み元：' + esc(m.source) + '　' : ''}更新：${new Date(m.updatedAt).toLocaleDateString('ja-JP')}</span>
+      <span style="margin-right:auto;color:var(--sub);font-size:12px">${(m.sources && m.sources.length) ? '取り込んだシート：' + esc(m.sources.map(s => s.name).join('、')) + '　' : m.source ? '取り込み元：' + esc(m.source) + '　' : ''}更新：${new Date(m.updatedAt).toLocaleDateString('ja-JP')}</span>
       <button class="btn danger" id="dDel">削除</button>
       <button class="btn" onclick="window.print()">印刷</button>
       <button class="btn primary" id="dEdit">編集</button>
@@ -1332,42 +1337,96 @@ function openEdit(m, opts = {}) {
 }
 
 // ===== 取り込みキュー =====
+// 直前に登録・更新したメンバー（名前のないシート＝GAINSだけ等を、同じ人に続けて取り込むため）
+let lastImportTarget = null;
+function targetOptions(sel) {
+  const list = [...members].sort((a, b) => (a.kana || a.name || '').localeCompare(b.kana || b.name || '', 'ja'));
+  return `<option value="">新しいメンバーとして登録</option>` + list.map(m => `<option value="${m.id}" ${m.id === sel ? 'selected' : ''}>既存の「${esc(m.name || '(名前なし)')}」さんに追加${m.business ? '（' + esc(m.business) + '）' : ''}</option>`).join('');
+}
+// 取り込み待ちのカードの「登録先」を最新のメンバー一覧に合わせる
+function refreshQueueTargets() {
+  document.querySelectorAll('#queue .review').forEach(card => card._refresh && card._refresh());
+}
+function mergeInto(base, f, mode, source) {
+  const areaKeys = new Set(ALL_FIELDS.filter(x => (x[2] || '').includes('area')).map(x => x[0]));
+  const stat = { added: 0, appended: 0, replaced: 0, kept: 0 };
+  for (const [k] of ALL_FIELDS) {
+    const v = f[k]; if (!v) continue;
+    const cur = base[k];
+    if (!cur) { base[k] = v; stat.added++; }
+    else if (nameKey(cur).includes(nameKey(v))) continue;
+    else if (nameKey(v).includes(nameKey(cur))) { base[k] = v; stat.replaced++; } // 新しい方が今の内容を含む（詳しくなった）
+    else if (mode === 'replace') { base[k] = v; stat.replaced++; }
+    else if (areaKeys.has(k)) { base[k] = cur + `\n【${source}より】\n` + v; stat.appended++; }
+    else stat.kept++;
+  }
+  return stat;
+}
 function addReview(data, source) {
   const manual = source === '手入力';
   const card = document.createElement('div');
   card.className = 'review';
   const filled = ALL_FIELDS.filter(([k]) => !USER_ONLY.has(k) && data[k]).length;
-  const dupOf = () => { const n = readForm(card).name; return n ? members.find(x => nameKey(x.name) === nameKey(n)) : undefined; };
-  card.innerHTML = `<h3>${esc(data.name || (manual ? '新規メンバー' : '名前を入力してください'))}</h3>
+  const byName = n => n ? members.find(x => nameKey(x.name) === nameKey(n)) : undefined;
+  let userPicked = false;
+  card.innerHTML = `<h3>${esc(data.name || (manual ? '新規メンバー' : '名前が読み取れませんでした'))}</h3>
     <div class="src">${esc(source)}${manual ? '' : `　／　${filled} 項目を読み取りました。内容を確認・修正してから登録してください。`}</div>
+    <div class="target-box">
+      <label><b>登録先</b><select data-a="target"></select></label>
+      <label class="mode hidden"><b>同じ項目に内容があるとき</b><select data-a="mode">
+        <option value="merge">まとめる（空欄を埋め、複数行の項目は追記）</option>
+        <option value="replace">このシートの内容で置き換える</option></select></label>
+      <div class="howto tnote"></div>
+    </div>
     <div class="rf">${formHtml(data, !manual)}</div>
     <div class="plan-box"><b style="font-size:13px">📅 1to1の予定（決まっていれば）</b>
       <div class="plan-grid" style="margin-top:6px">${planFields({ duration: 60 })}</div>
       <div class="howto">日時を入れて登録すると、Googleカレンダーの予定作成画面が開きます（「保存」を押せば登録完了）。</div></div>
     <div class="actions"><span class="dup"></span><button class="btn" data-a="skip">破棄</button><button class="btn primary" data-a="save">登録する</button></div>`;
-  const updateDup = () => {
-    const d = dupOf();
-    card.querySelector('.dup').textContent = d ? `「${d.name}」は登録済みです。登録すると上書き更新します（空欄の項目は今の内容を残します）。` : '';
-    card.querySelector('[data-a=save]').textContent = d ? '上書き更新する' : '登録する';
+  const sel = card.querySelector('[data-a=target]'), modeSel = card.querySelector('[data-a=mode]');
+  const guess = () => {
+    const n = readForm(card.querySelector('.rf')).name;
+    const m = byName(n);
+    if (m) return m.id;
+    if (!n && lastImportTarget && members.some(x => x.id === lastImportTarget)) return lastImportTarget; // 名前のないシート
+    return '';
   };
-  card.querySelector('[data-k=name]').addEventListener('input', updateDup);
-  updateDup();
+  const update = () => {
+    const t = members.find(x => x.id === sel.value);
+    card.querySelector('.mode').classList.toggle('hidden', !t);
+    const note = card.querySelector('.tnote');
+    if (t) {
+      const src = (t.sources || []).map(s => s.name).filter(Boolean);
+      const n = readForm(card.querySelector('.rf')).name;
+      note.textContent = (!n && !userPicked ? '名前がないシートのため、直前に登録した方に追加する設定にしています。違う場合は登録先を変えてください。' : '')
+        + (src.length ? `　取り込み済みのシート：${src.join('、')}` : '');
+    } else note.textContent = '';
+    card.querySelector('[data-a=save]').textContent = t ? `「${t.name}」さんに追加する` : '新しいメンバーとして登録する';
+  };
+  card._refresh = () => { const cur = userPicked ? sel.value : guess(); sel.innerHTML = targetOptions(cur); update(); };
+  card._refresh();
+  sel.addEventListener('change', () => { userPicked = true; update(); });
+  card.querySelector('[data-k=name]').addEventListener('input', () => { if (!userPicked) { sel.value = guess(); update(); } });
   card.querySelector('[data-a=skip]').onclick = () => card.remove();
   card.querySelector('[data-a=save]').onclick = async () => {
-    const f = readForm(card);
-    if (!f.name) { alert('名前を入力してください'); return; }
-    const d = dupOf();
-    const base = d ? { ...d } : { id: uid(), createdAt: Date.now() };
-    for (const [k] of ALL_FIELDS) if (f[k]) base[k] = f[k];
+    const f = readForm(card.querySelector('.rf'));
+    const t = members.find(x => x.id === sel.value);
+    if (!t && !f.name) { alert('名前を入力するか、登録先で既存のメンバーを選んでください'); return; }
+    const base = t ? { ...t } : { id: uid(), createdAt: Date.now() };
+    const stat = mergeInto(base, f, t ? modeSel.value : 'replace', source);
+    base.sources = [...(base.sources || []).filter(s => s.name !== source), { name: source, at: today() }];
     base.source = source; base.updatedAt = Date.now();
     await saveMember(base);
+    lastImportTarget = base.id;
     const plan = readPlan(card.querySelector('.plan-box'));
     if (plan.date) {
       const rec = { id: uid(), createdAt: Date.now(), title: '1to1', source: '予定', text: '', ...plan };
       await addMeeting(base.id, rec);
       openGcal(members.find(x => x.id === base.id), rec);
     }
-    card.remove(); toast(`${f.name} さんを${d ? '更新' : '登録'}しました`);
+    card.remove();
+    toast(t ? `${base.name} さんに追加しました（新規${stat.added}・追記${stat.appended}${stat.replaced ? '・置換' + stat.replaced : ''}項目）${stat.kept ? `／既に入力済みの1行項目${stat.kept}件はそのまま` : ''}` : `${base.name} さんを登録しました`);
+    refreshQueueTargets();
     if (!$('queue').children.length) show('list');
   };
   $('queue').prepend(card);
