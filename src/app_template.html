@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1to1 メンバー帳</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="BNIメンバーの1to1シートを取り込んで管理するツール。データは各自のブラウザ内だけに保存されます。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23cf2030%22/%3E%3Ctext x=%2232%22 y=%2242%22 font-size=%2224%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22bold%22%3E1to1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --red:#cf2030; --red-dark:#a8111f; --red-soft:#fdecee;
+  --ink:#1f2328; --sub:#5b6168; --line:#e3e5e8; --bg:#f6f6f7; --card:#fff;
+  --warn:#fff6db; --warn-line:#f0d48a; --ok:#1f7a45; --ok-soft:#e6f4ec;
+  --font:"BIZ UDPGothic","BIZ UDPゴシック","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+header{background:#fff;border-bottom:3px solid var(--red);position:sticky;top:0;z-index:10}
+.bar{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{font-weight:700;font-size:18px;display:flex;align-items:center;gap:8px}
+.ver{font-size:11px;font-weight:400;color:var(--sub);margin-left:2px}
+.privacy{background:#fff;border:2px solid var(--red);border-radius:12px;padding:14px 18px;margin-bottom:16px;font-size:14px}
+.privacy h3{margin:0 0 6px;font-size:15px;color:var(--red)}
+.privacy ul{margin:4px 0 8px;padding-left:20px}
+.privacy li{margin:3px 0}
+.caution{font-size:12px;background:var(--warn);border:1px solid var(--warn-line);border-radius:8px;padding:6px 10px;margin-top:8px;line-height:1.7}
+.logo b{background:var(--red);color:#fff;border-radius:6px;padding:1px 8px;font-size:14px}
+.save-state{font-size:12px;font-weight:700;border-radius:99px;padding:3px 10px;cursor:pointer;border:1px solid transparent;background:none}
+.save-state.ok{background:var(--ok-soft);color:var(--ok)}
+.save-state.warn{background:var(--warn);color:#8a6200;border-color:var(--warn-line)}
+nav{display:flex;gap:4px;margin-left:auto}
+nav button{border:0;background:none;padding:8px 14px;border-radius:8px;cursor:pointer;color:var(--sub);font-weight:700}
+nav button.on{background:var(--red-soft);color:var(--red)}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+.hidden{display:none!important}
+h2{font-size:18px;margin:0 0 12px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:700}
+.btn:hover{border-color:#c9ccd1}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn.primary:hover{background:var(--red-dark)}
+.btn.danger{color:var(--red);border-color:#f2c3c8}
+.btn.small{padding:4px 10px;font-size:13px}
+.notice{background:var(--warn);border:1px solid var(--warn-line);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.notice .btn{margin-left:auto}
+/* 一覧 */
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tools input[type=search]{flex:1;min-width:200px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.tools select{padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.count{color:var(--sub);font-size:13px;margin:-4px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.card:hover{border-color:#f0a8af;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.card .nm{font-size:17px;font-weight:700}
+.card .biz{color:var(--red);font-weight:700;font-size:14px}
+.card .meta{color:var(--sub);font-size:13px;margin-top:4px}
+.card .want{margin-top:8px;font-size:13px;background:var(--red-soft);border-radius:8px;padding:6px 9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .want b{color:var(--red)}
+mark{background:#ffe58a;padding:0 1px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.chip{background:#f1f2f4;border-radius:99px;padding:1px 9px;font-size:12px;color:var(--sub)}
+.empty{text-align:center;padding:50px 20px;color:var(--sub);background:#fff;border:1px dashed var(--line);border-radius:12px}
+/* 取り込み */
+.drop{border:2px dashed #e7a3aa;background:#fff;border-radius:14px;padding:34px 20px;text-align:center;cursor:pointer;transition:background .15s}
+.drop.over{background:var(--red-soft)}
+.drop .big{font-size:17px;font-weight:700}
+.drop small{color:var(--sub)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.web{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+.web-t{font-weight:700;margin-bottom:8px}
+.web input[type=url]{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--line);border-radius:8px}
+.web .steps{margin:10px 0;padding-left:20px;font-size:14px;color:var(--sub)}
+.web .steps li{margin:2px 0}
+.web kbd{background:#f1f2f4;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;font-family:inherit;font-size:12px;color:var(--ink)}
+.web .mac{font-size:12px;margin-left:6px}
+.web textarea{width:100%;min-height:90px;border:2px dashed #e7a3aa;border-radius:10px;padding:10px;resize:vertical;background:#fffafa}
+.web .note{font-size:12px;color:var(--sub);margin-top:6px}
+.queue{margin-top:20px;display:flex;flex-direction:column;gap:16px}
+.review{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+.review h3{margin:0 0 4px;font-size:16px}
+.review .src{color:var(--sub);font-size:12px;margin-bottom:6px}
+/* フォーム */
+.sec{margin-top:16px}
+.sec-t{background:var(--red);color:#fff;font-weight:700;font-size:13px;padding:3px 10px;border-radius:6px;display:inline-block;margin-bottom:8px}
+.sec-t.accent{background:#1f2328}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px 12px}
+.f{display:flex;flex-direction:column}
+.f.wide{grid-column:1/-1}
+.f label{font-size:12px;color:var(--sub);font-weight:700}
+.f input,.f textarea{border:1px solid var(--line);border-radius:7px;padding:6px 9px;background:#fff}
+.f textarea{resize:vertical}
+.f .blank{background:var(--warn);border-color:var(--warn-line)}
+.f .changed{background:var(--ok-soft);border-color:#9fd3b3}
+.drop.small{padding:18px 14px;margin:8px 0}
+.web select,.web input[type=date],.web input[type=text]{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.mtg{border:1px solid var(--line);border-radius:10px;margin-top:8px;overflow:hidden}
+.mtg-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;background:#fafafb}
+.mtg-h .ttl{font-weight:700;margin-right:auto}
+.mtg-h .len{font-size:12px;color:var(--sub)}
+.mtg-body{padding:10px 12px;white-space:pre-wrap;font-size:13px;max-height:360px;overflow:auto;border-top:1px solid var(--line)}
+.mtg-ai{padding:10px 12px;border-top:1px solid var(--line);background:#fffafa}
+.mtg-ai textarea{width:100%;min-height:80px;border:2px dashed #e7a3aa;border-radius:8px;padding:8px}
+.howto{font-size:12px;color:var(--sub);margin:6px 0 0}
+.badge{font-size:11px;font-weight:700;border-radius:99px;padding:1px 8px}
+.badge.todo{background:var(--red-soft);color:var(--red)}
+.badge.done{background:var(--ok-soft);color:var(--ok)}
+.badge.plan{background:#e8f0fe;color:#1a5fd0}
+.mtg-plan{padding:12px;border-top:1px solid var(--line);background:#f5f9ff}
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.plan-grid label{font-size:12px;font-weight:700;color:var(--sub);display:flex;flex-direction:column;gap:2px}
+.plan-grid input,.plan-grid select{border:1px solid var(--line);border-radius:7px;padding:6px 9px;background:#fff}
+.upcoming{background:#fff;border:1px solid #c9dafb;border-radius:12px;padding:10px 14px;margin-bottom:14px}
+.upcoming b{color:#1a5fd0;font-size:13px}
+.up-item{display:flex;gap:10px;align-items:center;padding:5px 0;border-top:1px solid #eef2fb;cursor:pointer;font-size:14px}
+.up-item:first-of-type{border-top:0}
+.up-item .when{font-weight:700;min-width:120px;color:#1a5fd0}
+.review .plan-box{margin-top:14px;background:#f5f9ff;border:1px solid #c9dafb;border-radius:10px;padding:12px}
+.mtg-bni{padding:12px;border-top:1px solid var(--line);background:#f8fbff}
+.bni-row{display:grid;grid-template-columns:130px 1fr auto;gap:8px;align-items:start;margin-bottom:6px}
+.bni-row label{font-size:12px;font-weight:700;color:var(--sub);padding-top:7px}
+.bni-row input,.bni-row select,.bni-row textarea{border:1px solid var(--line);border-radius:7px;padding:6px 9px;background:#fff;width:100%}
+.bni-row .val{padding:6px 0;font-weight:700}
+.hint{font-size:12px;background:var(--warn);border-radius:6px;padding:4px 8px;margin:0 0 8px}
+.bmk{display:inline-block;background:var(--red);color:#fff!important;font-weight:700;text-decoration:none;border-radius:8px;padding:6px 14px;margin:4px 0;cursor:grab}
+.bmk-setup{background:#fff;border:1px dashed var(--line);border-radius:8px;padding:4px 12px;margin-bottom:8px}
+@media (max-width:640px){.bni-row{grid-template-columns:1fr auto}.bni-row label{grid-column:1/-1;padding:0}}
+.banner{background:var(--ok-soft);color:var(--ok);border-radius:8px;padding:8px 12px;font-size:13px;margin-top:10px}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap;align-items:center}
+.dup{font-size:13px;color:var(--red);margin-right:auto}
+/* 詳細 */
+.overlay{position:fixed;inset:0;background:rgba(20,20,25,.45);z-index:20;display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:30px 12px}
+.detail{background:#fff;border-radius:14px;max-width:860px;width:100%;padding:22px 24px;position:relative}
+.detail .head{display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.detail .head .nm{font-size:22px;font-weight:700}
+.detail .head .biz{color:var(--red);font-weight:700}
+.detail .close{margin-left:auto}
+.dl{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:14px}
+.dl dt{color:var(--sub);font-weight:700}
+.dl dd{margin:0;white-space:pre-wrap}
+.boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.gbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.gbox.hot{border-color:#f0a8af;background:#fffafa}
+.gbox b{color:var(--red);display:block;font-size:13px}
+.gbox div{white-space:pre-wrap;font-size:14px}
+/* バックアップ */
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
+.panel p{margin:4px 0 12px;color:var(--sub);font-size:14px}
+.panel.main{border:2px solid var(--red)}
+.status{padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:14px;font-weight:700}
+.status.ok{background:var(--ok-soft);color:var(--ok)}
+.status.warn{background:var(--warn);color:#8a6200}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:99px;font-size:14px;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (max-width:640px){
+  nav{margin-left:0;width:100%}
+  nav button{flex:1;padding:8px 4px}
+  .dl{grid-template-columns:1fr}
+  .dl dt{margin-top:6px}
+  .detail{padding:18px 16px}
+}
+@media print{header,.actions,.close{display:none}.overlay{position:static;background:none;padding:0}}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="logo"><b>BNI</b>1to1 メンバー帳<span class="ver">v1.0.0</span></div>
+  <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
+  <nav>
+    <button data-view="list" class="on">メンバー一覧</button>
+    <button data-view="import">取り込み</button>
+    <button data-view="backup">保存・バックアップ</button>
+  </nav>
+</div></header>
+
+<main>
+  <div class="privacy hidden" id="privacyFirst"><h3>個人情報の取り扱いについて（必ずお読みください）</h3>
+      <ul>
+        <li><b>データの保存場所：</b>取り込んだメンバー情報は、お使いのパソコンのこのブラウザの中（と、ご自身で設定した保存ファイル）だけに保存され、外部のサーバーには送信されません。</li>
+        <li><b>書き出したファイルを他人に渡さない：</b>「JSON／CSVで書き出し」したファイルや自動保存の保存ファイルには、メンバーの個人情報（家族構成・生年月日など）が含まれます。他の人に渡したり、共有フォルダ・グループのドライブに置いたりしないでください。</li>
+        <li><b>録音・文字起こしは相手の了承を得てから：</b>1to1を録音・文字起こしする場合は、必ず事前に相手の了承を得てください。</li>
+        <li><b>AIを使う場合の設定：</b>「AI用にコピー」でChatGPTやClaudeに貼り付けると、会話の内容が外部のAIサービスに送られます。ChatGPTは「設定 → データコントロール → すべての人のためにモデルを改善する」をオフにしてから使ってください。Claudeなど他のAIも、設定のプライバシー項目で学習への利用をオフにしてください。</li>
+      </ul><div style="text-align:right"><button class="btn primary" id="privacyOk">確認しました</button></div></div>
+  <div id="storageWarn" class="notice hidden">このブラウザではデータを保存できない設定になっています（プライベートモード等）。「保存・バックアップ」で保存先ファイルを設定してください。</div>
+  <div id="resumeBar" class="notice hidden"><span id="resumeText"></span><button class="btn primary small" id="resumeBtn">自動保存を再開</button></div>
+  <div id="bniBar" class="notice hidden"><span id="bniText"></span><button class="btn primary small" id="bniBtn">確認する</button></div>
+  <div id="remindBar" class="notice hidden"><span id="remindText"></span><button class="btn small" id="remindBtn">バックアップを設定</button></div>
+
+  <!-- 一覧 -->
+  <section id="view-list">
+    <div class="tools">
+      <input type="search" id="q" placeholder="名前・業種・紹介してほしい方・趣味など何でも検索（スペース区切りでAND）">
+      <select id="fBiz"><option value="">すべての事業</option></select>
+      <select id="sort">
+        <option value="updated">更新が新しい順</option>
+        <option value="name">名前順</option>
+        <option value="date1to1">1to1実施日が新しい順</option>
+      </select>
+    </div>
+    <div class="upcoming hidden" id="upcoming"></div>
+    <div class="count" id="count"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- 取り込み -->
+  <section id="view-import" class="hidden">
+    <h2>1to1シートを取り込む</h2>
+    <div class="drop" id="drop">
+      <div class="big">PDF・Word・PowerPointをここにドラッグ＆ドロップ</div>
+      <small>またはクリックしてファイルを選択（複数まとめてOK）<br>「メンバー略歴シート／G.A.I.N.S.ワークシート」「Power 1to1 SHEET」のほか、自作の資料も見出しから読み取ります</small>
+    </div>
+    <input type="file" id="file" accept=".pdf,.docx,.pptx" multiple hidden>
+    <div class="web">
+      <div class="web-t">Webページ（Canvaなど）で届いた場合</div>
+      <div class="row">
+        <input type="url" id="webUrl" placeholder="https://〇〇.my.canva.site/…　のURLを貼り付け">
+        <button class="btn primary" id="webOpen">ページを開く</button>
+      </div>
+      <ol class="steps">
+        <li>「ページを開く」で別タブにページが開きます</li>
+        <li>開いたページで <kbd>Ctrl</kbd>＋<kbd>A</kbd>（全選択）→ <kbd>Ctrl</kbd>＋<kbd>C</kbd>（コピー）<span class="mac">Macは ⌘</span></li>
+        <li>このタブに戻り、下の枠をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd>（貼り付け）→ 自動で読み取ります</li>
+      </ol>
+      <textarea id="webPaste" placeholder="ここをクリックして Ctrl＋V で貼り付け"></textarea>
+      <div class="note">※ブラウザの安全上の制限により、URLだけで直接読み込むことはできないため、この手順になります。</div>
+    </div>
+    <div class="row" style="margin-top:10px;justify-content:flex-end">
+      <button class="btn" id="manualBtn">白紙から手入力する</button>
+    </div>
+    <div class="web" id="tsPanel">
+      <div class="web-t">1to1ミーティングの文字起こしを取り込む</div>
+      <div class="row">
+        <select id="tsMember"></select>
+        <input type="date" id="tsDate" title="1to1の日付">
+        <input type="text" id="tsTitle" placeholder="タイトル（任意）" style="flex:1;min-width:160px">
+      </div>
+      <div class="drop small" id="tsDrop"><b>文字起こしファイルをドラッグ</b>　またはクリックして選択<br><small>.txt .vtt .srt .docx .pdf .csv .json .md（Zoom・Google Meet・Teams・Notion・tl;dv・Otter・スマホアプリ等の書き出し）</small></div>
+      <input type="file" id="tsFile" accept=".txt,.md,.vtt,.srt,.docx,.pdf,.csv,.tsv,.json" multiple hidden>
+      <textarea id="tsPaste" placeholder="またはここに文字起こしを貼り付けて「保存」" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px"></textarea>
+      <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn primary" id="tsSave">貼り付けた内容を保存</button></div>
+      <div class="note">取り込んだ文字起こしは、そのメンバーの「1to1の記録」に保存され、検索の対象になります。記録の「AI用にコピー」から、ClaudeやChatGPTで要約して各項目に反映できます。</div>
+      <div class="caution"><b>録音・文字起こしは、必ず事前に相手の了承を得てください。</b><br>AIに貼り付けると会話の内容が外部サービスに送られます。ChatGPTは「設定 → データコントロール → すべての人のためにモデルを改善する」をオフに、Claudeなど他のAIも設定のプライバシー項目で学習への利用をオフにしてから使ってください。</div>
+    </div>
+    <div class="queue" id="queue"></div>
+  </section>
+
+  <!-- 保存・バックアップ -->
+  <section id="view-backup" class="hidden">
+    <h2>保存・バックアップ</h2>
+    <div class="panel main">
+      <b>自動保存（おすすめ）</b>
+      <div class="caution">保存ファイルにはメンバーの個人情報が含まれます。<b>自分専用のフォルダ</b>に作り、共有フォルダやグループのドライブには置かないでください。</div>
+      <p>パソコンの中に保存用ファイルを1つ作り、登録・編集するたびに自動で書き込みます。<br>
+      <b>OneDrive・Googleドライブ・Dropbox などの同期フォルダ</b>に作ると、クラウドにも自動でバックアップされ、別のパソコンでも同じファイルを開けば続きから使えます。</p>
+      <div class="status warn" id="fsStatus">保存先ファイルは未設定です</div>
+      <div class="row" id="fsButtons">
+        <button class="btn primary" id="fsCreate">保存先ファイルを作る</button>
+        <button class="btn" id="fsOpen">作成済みの保存ファイルを開く</button>
+        <button class="btn danger hidden" id="fsForget">自動保存を解除</button>
+      </div>
+      <p id="fsUnsupported" class="hidden" style="margin-top:10px;color:#8a6200">このブラウザは自動保存に対応していません。Google Chrome か Microsoft Edge で開くと使えます。それまでは下の「書き出し」で定期的に保存してください。</p>
+    </div>
+    <div class="privacy"><h3>個人情報の取り扱いについて（必ずお読みください）</h3>
+      <ul>
+        <li><b>データの保存場所：</b>取り込んだメンバー情報は、お使いのパソコンのこのブラウザの中（と、ご自身で設定した保存ファイル）だけに保存され、外部のサーバーには送信されません。</li>
+        <li><b>書き出したファイルを他人に渡さない：</b>「JSON／CSVで書き出し」したファイルや自動保存の保存ファイルには、メンバーの個人情報（家族構成・生年月日など）が含まれます。他の人に渡したり、共有フォルダ・グループのドライブに置いたりしないでください。</li>
+        <li><b>録音・文字起こしは相手の了承を得てから：</b>1to1を録音・文字起こしする場合は、必ず事前に相手の了承を得てください。</li>
+        <li><b>AIを使う場合の設定：</b>「AI用にコピー」でChatGPTやClaudeに貼り付けると、会話の内容が外部のAIサービスに送られます。ChatGPTは「設定 → データコントロール → すべての人のためにモデルを改善する」をオフにしてから使ってください。Claudeなど他のAIも、設定のプライバシー項目で学習への利用をオフにしてください。</li>
+      </ul></div>
+    <div class="panel">
+      <b>BNIサイトへの1to1登録（自動入力ボタン）</b>
+      <div id="bmkSetupTab"></div>
+    </div>
+    <div class="panel">
+      <b>自分のチャプター</b>
+      <p>BNIサイトに1to1を登録するとき、相手が他チャプターの方なら探し方を案内します。</p>
+      <div class="row"><input type="text" id="myChapter" placeholder="例：F×R" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;min-width:200px"><button class="btn" id="myChapterSave">保存</button></div>
+    </div>
+    <div class="panel">
+      <b>手動で書き出し</b>
+      <div class="caution">書き出したJSON・CSVにはメンバーの個人情報が含まれます。<b>他の人に渡したり、共有フォルダに置いたりしないでください。</b></div>
+      <p>JSONは別のPC・ブラウザへの移行用、CSVはExcelで開く用です。</p>
+      <div class="row">
+        <button class="btn" id="exportJson">JSONで書き出し</button>
+        <button class="btn" id="exportCsv">CSV（Excel用）で書き出し</button>
+      </div>
+    </div>
+    <div class="panel">
+      <b>JSONを読み込む</b>
+      <p>書き出したJSONを読み込みます。同じメンバーは新しい方で上書きされ、それ以外は追加されます。</p>
+      <button class="btn" id="importJsonBtn">JSONを読み込む</button>
+      <input type="file" id="importJson" accept="application/json,.json" hidden>
+    </div>
+    <div class="panel">
+      <b>全データ削除</b>
+      <p>このブラウザに保存したメンバー情報をすべて消去します（自動保存中なら保存ファイルも空になります）。元に戻せません。</p>
+      <button class="btn danger" id="wipe">すべて削除する</button>
+    </div>
+  </section>
+</main>
+
+<div id="overlay" class="overlay hidden"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/*PARSER*/
+
+// ===== 項目定義 =====
+const SECTIONS = [
+  { title: '基本', fields: [['name','名前'],['kana','よみがな'],['birthday','生年月日','date'],['birthdayNote','生年月日の補足（干支・血液型など）'],['chapter','チャプター'],['region','リージョン'],['bniCareer','BNI歴'],['bniRoles','BNIでの役職経験'],['whyBni','BNIに入った理由'],['date1to1','1to1実施日','date'],['contact','連絡先'],['sheetUrl','1to1シートのURL']] },
+  { title: 'ビジネスについて', fields: [['business','事業名・カテゴリー'],['companyName','会社名'],['specialty','専門分野'],['location','所在地・住所'],['experience','経験年数'],['education','学歴'],['businessContents','事業内容','area'],['pastJobs','経歴・過去の職業','area'],['recentCustomers','直近の顧客','area wide']] },
+  { title: '紹介・協業', accent: true, fields: [['wantReferrals','紹介してほしい方','area wide'],['collaborators','協業しやすい方','area'],['mismatch','ミスマッチな紹介（紹介しないでほしい方）','area'],['usp','強み（USP）','area'],['story','起業の経緯・思い','area'],['closing','紹介の仕方・声のかけ方','area'],['introTemplate','紹介するときのテンプレート','area wide']] },
+  { title: '個人的な情報', fields: [['spouse','配偶者'],['family','家族'],['pets','ペット'],['hobbies','趣味','area'],['specialSkill','特技'],['otherInterests','その他の関心事'],['hometown','出身地'],['residence','居住地'],['residenceYears','居住年数']] },
+  { title: '人柄・想い', fields: [['personality','性格・こだわり','area'],['values','大切にしていること','area'],['motto','座右の銘','area'],['lifework','ライフワーク','area'],['wish','強い願望','area'],['secret','誰も知らない私','area'],['successKey','成功の鍵','area']] },
+  { title: 'G.A.I.N.S.', fields: [['goals','Goals（目標）','area'],['accomplishments','Accomplishments（実績）','area'],['interests','Interests（興味）','area'],['networks','Networks（人脈）','area'],['skills','Skills（スキル・資格）','area']] },
+  { title: 'その他の情報', fields: [['otherInfo','シート内のその他の項目','area wide']] },
+  { title: '自分用メモ', fields: [['memo','メモ（紹介できそうな人、話したこと等）','area wide']] },
+];
+const ALL_FIELDS = SECTIONS.flatMap(s => s.fields);
+const LABEL = Object.fromEntries(ALL_FIELDS.map(f => [f[0], f[1]]));
+const USER_ONLY = new Set(['chapter','date1to1','contact','memo','sheetUrl']);
+const MUST = new Set(['name','business']);
+
+// ===== 保存（IndexedDB、使えなければメモリ） =====
+const Store = (() => {
+  let db = null; const mem = { members: new Map(), settings: new Map() };
+  const open = () => new Promise(res => {
+    try {
+      const r = indexedDB.open('bni-1to1-book', 2);
+      r.onupgradeneeded = () => {
+        const d = r.result;
+        if (!d.objectStoreNames.contains('members')) d.createObjectStore('members', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('settings')) d.createObjectStore('settings', { keyPath: 'key' });
+      };
+      r.onsuccess = () => { db = r.result; res(true); };
+      r.onerror = () => res(false);
+    } catch (e) { res(false); }
+  });
+  const tx = (store, mode, fn) => new Promise((res, rej) => {
+    const t = db.transaction(store, mode); const s = t.objectStore(store);
+    const out = fn(s); t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error);
+  });
+  return {
+    async init() { const ok = await open(); if (!ok) $('storageWarn').classList.remove('hidden'); return ok; },
+    async all() { return db ? tx('members', 'readonly', s => s.getAll()) : [...mem.members.values()]; },
+    async put(m) { return db ? tx('members', 'readwrite', s => s.put(m)) : mem.members.set(m.id, m); },
+    async del(id) { return db ? tx('members', 'readwrite', s => s.delete(id)) : mem.members.delete(id); },
+    async clear() { return db ? tx('members', 'readwrite', s => s.clear()) : mem.members.clear(); },
+    async get(key) { if (!db) return mem.settings.get(key); const r = await tx('settings', 'readonly', s => s.get(key)); return r ? r.value : undefined; },
+    async set(key, value) { if (!db) return mem.settings.set(key, value); try { return await tx('settings', 'readwrite', s => s.put({ key, value })); } catch (e) { mem.settings.set(key, value); } },
+  };
+})();
+
+let members = [];
+let tombstones = {}; // 削除記録（別PCとの同期で復活しないように）
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const nameKey = s => (s || '').normalize('NFKC').replace(/\s/g, '');
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2400); }
+async function reload() { members = await Store.all(); renderList(); }
+
+// 変更のたびに呼ぶ
+async function saveMember(m) { await Store.put(m); delete tombstones[m.id]; await Store.set('tombstones', tombstones); await changed(); }
+async function deleteMember(id) { await Store.del(id); tombstones[id] = Date.now(); await Store.set('tombstones', tombstones); await changed(); }
+async function changed() { await reload(); await Store.set('lastChangeAt', Date.now()); AutoSave.schedule(); updateSaveState(); }
+
+// ===== 自動保存（File System Access API：Chrome / Edge） =====
+const AutoSave = (() => {
+  const supported = 'showSaveFilePicker' in window;
+  let handle = null, state = 'none', timer = null; // none | ok | needPermission | error
+  const payload = () => JSON.stringify({ app: 'bni-1to1-book', version: 2, savedAt: new Date().toISOString(), members, tombstones }, null, 2);
+  async function write() {
+    if (!handle || state !== 'ok') return;
+    try { const w = await handle.createWritable(); await w.write(payload()); await w.close(); await Store.set('lastBackupAt', Date.now()); }
+    catch (e) { console.error(e); state = 'error'; toast('保存ファイルに書き込めませんでした'); }
+    render();
+  }
+  async function readAndMerge() {
+    try {
+      const text = await (await handle.getFile()).text();
+      if (text.trim()) await mergeData(JSON.parse(text));
+    } catch (e) { console.error(e); }
+  }
+  async function activate() { state = 'ok'; await readAndMerge(); await write(); render(); }
+  function render() {
+    const st = $('fsStatus');
+    $('fsUnsupported').classList.toggle('hidden', supported);
+    $('fsButtons').classList.toggle('hidden', !supported);
+    $('fsForget').classList.toggle('hidden', !handle);
+    $('fsCreate').classList.toggle('hidden', !!handle);
+    $('fsOpen').textContent = handle ? '別の保存ファイルに切り替える' : '作成済みの保存ファイルを開く';
+    $('resumeBar').classList.toggle('hidden', state !== 'needPermission');
+    if (state === 'needPermission') $('resumeText').textContent = `保存ファイル「${handle.name}」への自動保存が一時停止中です。ボタンを押して許可すると再開します。`;
+    if (!supported) { st.className = 'status warn'; st.textContent = 'このブラウザでは自動保存を使えません'; }
+    else if (state === 'ok') { st.className = 'status ok'; st.textContent = `✓ 「${handle.name}」に自動保存しています`; }
+    else if (state === 'needPermission') { st.className = 'status warn'; st.textContent = `「${handle.name}」への自動保存は一時停止中（許可待ち）`; }
+    else if (state === 'error') { st.className = 'status warn'; st.textContent = '保存ファイルに書き込めませんでした。ファイルを開き直してください'; }
+    else { st.className = 'status warn'; st.textContent = '保存先ファイルは未設定です'; }
+    updateSaveState();
+  }
+  return {
+    supported, get state() { return state; }, get name() { return handle && handle.name; }, render,
+    async init() {
+      if (!supported) { render(); return; }
+      handle = await Store.get('fileHandle') || null;
+      if (handle) {
+        try {
+          const p = await handle.queryPermission({ mode: 'readwrite' });
+          if (p === 'granted') await activate(); else state = 'needPermission';
+        } catch (e) { state = 'needPermission'; }
+      }
+      render();
+    },
+    async resume() { try { if (await handle.requestPermission({ mode: 'readwrite' }) === 'granted') { await activate(); toast('自動保存を再開しました'); } } catch (e) { toast('許可されませんでした'); } render(); },
+    async create() {
+      try {
+        const h = await window.showSaveFilePicker({ suggestedName: '1to1メンバー帳_データ.json', types: [{ description: '1to1メンバー帳データ', accept: { 'application/json': ['.json'] } }] });
+        handle = h; await Store.set('fileHandle', h); state = 'ok'; await write(); render(); toast('自動保存を開始しました');
+      } catch (e) { if (e.name !== 'AbortError') alert('保存先を設定できませんでした：' + e.message); }
+    },
+    async open() {
+      try {
+        const [h] = await window.showOpenFilePicker({ types: [{ description: '1to1メンバー帳データ', accept: { 'application/json': ['.json'] } }] });
+        if (await h.requestPermission({ mode: 'readwrite' }) !== 'granted') { toast('書き込みが許可されませんでした'); return; }
+        handle = h; await Store.set('fileHandle', h); await activate(); toast(`「${h.name}」を読み込み、自動保存を開始しました`);
+      } catch (e) { if (e.name !== 'AbortError') alert('ファイルを開けませんでした：' + e.message); }
+    },
+    async forget() { if (!confirm('自動保存を解除しますか？（保存ファイル自体は消えません）')) return; handle = null; state = 'none'; await Store.set('fileHandle', null); render(); },
+    schedule() { if (state !== 'ok') return; clearTimeout(timer); timer = setTimeout(write, 600); },
+  };
+})();
+
+// 他の保存データ（JSON）と合流：新しい方を採用、削除記録も反映
+async function mergeData(obj) {
+  const list = Array.isArray(obj) ? obj : obj.members;
+  if (!Array.isArray(list)) throw new Error('形式が違います');
+  const ts = (obj && obj.tombstones) || {};
+  let add = 0, upd = 0, del = 0;
+  for (const [id, t] of Object.entries(ts)) {
+    if (!tombstones[id] || tombstones[id] < t) tombstones[id] = t;
+    const cur = members.find(x => x.id === id);
+    if (cur && (cur.updatedAt || 0) < t) { await Store.del(id); del++; }
+  }
+  for (const m of list) {
+    if (!m || !m.id) continue;
+    if (tombstones[m.id] && tombstones[m.id] >= (m.updatedAt || 0)) continue;
+    const cur = members.find(x => x.id === m.id);
+    if (cur && (cur.updatedAt || 0) >= (m.updatedAt || 0)) continue;
+    await Store.put(m); cur ? upd++ : add++;
+  }
+  await Store.set('tombstones', tombstones);
+  await reload();
+  return { add, upd, del };
+}
+
+async function updateSaveState() {
+  const b = $('saveState');
+  const last = await Store.get('lastBackupAt'), change = await Store.get('lastChangeAt');
+  const unsaved = members.length && (!last || (change && change > last));
+  if (AutoSave.state === 'ok') { b.className = 'save-state ok'; b.textContent = '✓ 自動保存中'; }
+  else if (AutoSave.state === 'needPermission') { b.className = 'save-state warn'; b.textContent = '自動保存 一時停止中'; }
+  else { b.className = 'save-state warn'; b.textContent = unsaved ? '⚠ 未バックアップ' : 'バックアップ未設定'; }
+  // 自動保存なしで、未バックアップの変更があれば促す
+  const showRemind = AutoSave.state !== 'ok' && AutoSave.state !== 'needPermission' && unsaved;
+  $('remindBar').classList.toggle('hidden', !showRemind);
+  if (showRemind) $('remindText').textContent = AutoSave.supported
+    ? 'まだバックアップされていない変更があります。保存先ファイルを設定すると、以後は自動で保存されます。'
+    : 'まだバックアップされていない変更があります。「保存・バックアップ」からJSONを書き出してください。';
+}
+$('saveState').onclick = () => show('backup');
+$('remindBtn').onclick = () => show('backup');
+$('resumeBtn').onclick = () => AutoSave.resume();
+$('fsCreate').onclick = () => AutoSave.create();
+$('fsOpen').onclick = () => AutoSave.open();
+$('fsForget').onclick = () => AutoSave.forget();
+
+// ===== 画面切り替え =====
+function show(view) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
+  ['list','import','backup'].forEach(v => $('view-' + v).classList.toggle('hidden', v !== view));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.view));
+
+// ===== 一覧 =====
+function hl(text, terms) {
+  let s = esc(text);
+  terms.forEach(t => { if (!t) return; const re = new RegExp(esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'); s = s.replace(re, m => `<mark>${m}</mark>`); });
+  return s;
+}
+const firstLine = s => (s || '').split('\n').map(x => x.trim()).find(x => x && !/^【.*】$/.test(x)) || '';
+function renderList() {
+  renderTsMembers();
+  renderUpcoming();
+  updateBniBar();
+  const terms = $('q').value.normalize('NFKC').toLowerCase().split(/\s+/).filter(Boolean);
+  const biz = $('fBiz').value;
+  const bizList = [...new Set(members.map(m => m.business).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja'));
+  $('fBiz').innerHTML = '<option value="">すべての事業</option>' + bizList.map(b => `<option ${b === biz ? 'selected' : ''}>${esc(b)}</option>`).join('');
+  let list = members.filter(m => {
+    if (biz && m.business !== biz) return false;
+    if (!terms.length) return true;
+    const hay = (ALL_FIELDS.map(([k]) => m[k] || '').join(' ') + ' ' + (m.meetings || []).map(x => x.text).join(' ')).normalize('NFKC').toLowerCase();
+    return terms.every(t => hay.includes(t));
+  });
+  const sort = $('sort').value;
+  list.sort((a, b) => sort === 'name' ? (a.kana || a.name || '').localeCompare(b.kana || b.name || '', 'ja')
+    : sort === 'date1to1' ? (b.date1to1 || '').localeCompare(a.date1to1 || '')
+    : (b.updatedAt || 0) - (a.updatedAt || 0));
+  $('count').textContent = members.length ? `${list.length} 人表示 ／ 登録 ${members.length} 人` : '';
+  if (!members.length) {
+    $('grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><div style="font-size:17px;font-weight:700;color:var(--ink)">まだメンバーが登録されていません</div><p>1to1シート（PDF・Word・PowerPoint）を取り込むと、ここに一覧で表示されます。</p><button class="btn primary" onclick="show('import')">取り込みへ進む</button></div>`;
+    return;
+  }
+  if (!list.length) { $('grid').innerHTML = `<div class="empty" style="grid-column:1/-1">条件に合うメンバーがいません</div>`; return; }
+  $('grid').innerHTML = list.map(m => {
+    const chips = (m.hobbies || '').split(/[、,，・\/。\n]/).map(s => s.replace(/\(.*?\)|（.*?）/g, '').trim()).filter(s => s && s.length <= 12).slice(0, 5);
+    let hit = '';
+    if (terms.length) {
+      const f = ALL_FIELDS.find(([k]) => !['name','business','specialty','wantReferrals'].includes(k) && terms.some(t => (m[k] || '').normalize('NFKC').toLowerCase().includes(t)));
+      if (f) { const v = m[f[0]]; const i = Math.max(0, v.normalize('NFKC').toLowerCase().indexOf(terms[0]) - 15); hit = `<div class="meta">${esc(f[1])}：${hl((i ? '…' : '') + v.slice(i, i + 60), terms)}</div>`; }
+      else { const mt = (m.meetings || []).find(x => terms.some(t => x.text.normalize('NFKC').toLowerCase().includes(t))); if (mt) { const i = Math.max(0, mt.text.normalize('NFKC').toLowerCase().indexOf(terms[0]) - 15); hit = `<div class="meta">1to1の記録（${esc(mt.date || '')}）：${hl((i ? '…' : '') + mt.text.slice(i, i + 60), terms)}</div>`; } }
+    }
+    const want = firstLine(m.wantReferrals).replace(/^\d位\s*/, '');
+    return `<div class="card" data-id="${m.id}">
+      <div class="biz">${hl(m.business || '事業名未入力', terms)}</div>
+      <div class="nm">${hl(m.name || '(名前未入力)', terms)}</div>
+      <div class="meta">${hl([m.companyName, m.specialty].filter(Boolean).join('／'), terms)}</div>
+      ${m.chapter ? `<div class="meta">${hl(m.chapter, terms)}チャプター</div>` : ''}
+      ${want ? `<div class="want"><b>紹介してほしい：</b>${hl(want, terms)}</div>` : ''}
+      ${hit}
+      ${(m.meetings || []).length ? `<div class="meta">📝 1to1の記録 ${m.meetings.length}件</div>` : ''}
+      ${chips.length ? `<div class="chips">${chips.map(c => `<span class="chip">${esc(c)}</span>`).join('')}</div>` : ''}
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.card').forEach(c => c.onclick = () => openDetail(c.dataset.id));
+}
+['q','fBiz','sort'].forEach(id => $(id).addEventListener('input', renderList));
+
+// ===== 詳細 =====
+function ageOf(d) { const b = new Date(d), n = new Date(); if (isNaN(b)) return ''; let a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return `（${a}歳）`; }
+function openDetail(id) {
+  const m = members.find(x => x.id === id); if (!m) return;
+  const terms = $('q').value.normalize('NFKC').split(/\s+/).filter(Boolean);
+  const val = k => k === 'birthday' ? esc(m.birthday) + ' ' + ageOf(m.birthday) : (k === 'sheetUrl' && /^https?:\/\//i.test(m[k])) ? `<a href="${esc(m[k])}" target="_blank" rel="noopener">${esc(m[k])}</a>` : hl(m[k], terms);
+  const body = SECTIONS.map(s => {
+    const fs = s.fields.filter(([k]) => m[k] && !['name','kana','memo'].includes(k));
+    if (!fs.length) return '';
+    if (s.accent || s.title === 'G.A.I.N.S.') {
+      return `<div class="sec"><span class="sec-t ${s.accent ? 'accent' : ''}">${s.title}</span><div class="boxes">${fs.map(([k, l]) =>
+        `<div class="gbox ${k === 'wantReferrals' || k === 'collaborators' ? 'hot' : ''}" ${k === 'wantReferrals' || k === 'introTemplate' ? 'style="grid-column:1/-1"' : ''}><b>${esc(l)}</b><div>${val(k)}</div></div>`).join('')}</div></div>`;
+    }
+    return `<div class="sec"><span class="sec-t">${s.title}</span><dl class="dl">${fs.map(([k, l]) => `<dt>${esc(l)}</dt><dd>${val(k)}</dd>`).join('')}</dl></div>`;
+  }).join('');
+  $('overlay').innerHTML = `<div class="detail">
+    <div class="head"><div><div class="biz">${esc(m.business || '')}</div><div class="nm">${esc(m.name || '(名前未入力)')}</div>${m.kana ? `<div style="color:var(--sub);font-size:13px">${esc(m.kana)}</div>` : ''}</div>
+      <button class="btn small close" id="dClose">✕ 閉じる</button></div>
+    ${body}
+    ${m.memo ? `<div class="sec"><span class="sec-t">自分用メモ</span><div style="white-space:pre-wrap">${hl(m.memo, terms)}</div></div>` : ''}
+    <div class="sec"><span class="sec-t accent">1to1の記録</span>
+      ${(m.meetings || []).map(x => `<div class="mtg" data-mid="${x.id}">
+        <div class="mtg-h"><span class="ttl">${esc(x.date || '日付なし')}　${esc(x.title || '')}</span>
+          ${isPlanned(x) ? `<span class="badge plan">予定${x.time ? ' ' + esc(x.time) : ''}</span>` : `<span class="badge ${x.bniDone ? 'done' : 'todo'}">${x.bniDone ? 'BNI登録済み' : 'BNI未登録'}</span>`}
+          ${x.text ? `<span class="len">${x.text.length.toLocaleString()}文字</span>` : ''}
+          <button class="btn small ${isPlanned(x) ? 'primary' : ''}" data-a="plan">予定・カレンダー</button>
+          ${isPlanned(x) ? '' : `<button class="btn small ${x.bniDone ? '' : 'primary'}" data-a="bni">BNIに登録</button>`}
+          ${x.text ? '<button class="btn small" data-a="toggle">全文</button><button class="btn small" data-a="copy">AI用にコピー</button><button class="btn small" data-a="ai">AIの返答を貼る</button>' : ''}
+          <button class="btn small danger" data-a="del">削除</button></div>
+        <div class="mtg-plan hidden">${planPanel(m, x)}</div>
+        <div class="mtg-bni hidden">${bniPanel(m, x)}</div>
+        <div class="mtg-body hidden">${hl(x.text || '', terms)}</div>
+        <div class="mtg-ai hidden"><textarea placeholder="AIの返答をここに貼り付け（Ctrl＋V）→ 自動で反映画面が開きます"></textarea></div>
+      </div>`).join('') || '<div class="howto">まだ記録はありません。</div>'}
+      <div class="row" style="margin-top:8px"><button class="btn small primary" id="dAddPlan">＋ 1to1を予定する</button><button class="btn small" id="dAddMtg">＋ 1to1を記録（BNI登録用）</button><button class="btn small" id="dAddTs">＋ 文字起こしを追加</button></div>
+      ${(m.meetings || []).some(x => x.text) ? '<p class="howto">AIで要約：①「AI用にコピー」→ ② ClaudeやChatGPTに貼り付けて送信 → ③ 返答をコピーして「AIの返答を貼る」に貼り付け<br>※AIに送る前に：録音・文字起こしは相手の了承を得ていること、AIの学習への利用をオフにしていることを確認してください。</p>' : ''}
+    </div>
+    <div class="actions">
+      <span style="margin-right:auto;color:var(--sub);font-size:12px">${m.source ? '取り込み元：' + esc(m.source) + '　' : ''}更新：${new Date(m.updatedAt).toLocaleDateString('ja-JP')}</span>
+      <button class="btn danger" id="dDel">削除</button>
+      <button class="btn" onclick="window.print()">印刷</button>
+      <button class="btn primary" id="dEdit">編集</button>
+    </div></div>`;
+  $('overlay').classList.remove('hidden');
+  $('dClose').onclick = closeOverlay;
+  $('dDel').onclick = async () => { if (!confirm(`${m.name || 'このメンバー'} を削除しますか？`)) return; await deleteMember(m.id); closeOverlay(); toast('削除しました'); };
+  $('dEdit').onclick = () => openEdit(m);
+  $('dAddMtg').onclick = async () => {
+    const rec = { id: uid(), createdAt: Date.now(), date: today(), title: '1to1', source: '手入力', text: '' };
+    await saveMember({ ...m, meetings: [rec, ...(m.meetings || [])], date1to1: (!m.date1to1 || today() > m.date1to1) ? today() : m.date1to1, updatedAt: Date.now() });
+    openDetail(m.id);
+    const box = $('overlay').querySelector(`[data-mid="${rec.id}"]`); if (box) { box.querySelector('.mtg-bni').classList.remove('hidden'); box.scrollIntoView({ block: 'center' }); }
+  };
+  $('dAddPlan').onclick = async () => {
+    const rec = { id: uid(), createdAt: Date.now(), date: '', time: '', duration: 60, title: '1to1', source: '予定', text: '' };
+    await saveMember({ ...m, meetings: [rec, ...(m.meetings || [])], updatedAt: Date.now() });
+    openDetail(m.id);
+    const box = $('overlay').querySelector(`[data-mid="${rec.id}"]`); if (box) { box.querySelector('.mtg-plan').classList.remove('hidden'); box.scrollIntoView({ block: 'center' }); box.querySelector('[data-p=date]').focus(); }
+  };
+  $('dAddTs').onclick = () => { closeOverlay(); show('import'); $('tsMember').value = m.id; $('tsPanel').scrollIntoView({ behavior: 'smooth' }); };
+  $('overlay').querySelectorAll('.mtg').forEach(box => {
+    const rec = (m.meetings || []).find(x => x.id === box.dataset.mid);
+    const on = (a, fn) => { const b = box.querySelector(`[data-a=${a}]`); if (b) b.onclick = fn; };
+    on('toggle', () => box.querySelector('.mtg-body').classList.toggle('hidden'));
+    on('copy', async () => {
+      if (!(await Store.get('aiAck'))) {
+        if (!confirm('AIに送る前に確認してください。\n\n・この1to1の録音・文字起こしについて、相手の了承を得ていますか？\n・ChatGPTやClaudeの設定で、学習への利用をオフにしていますか？\n\n両方OKなら「OK」を押してください（次回からは表示しません）。')) return;
+        await Store.set('aiAck', true);
+      }
+      await copyText(buildAiPrompt(m.name, rec.text)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信してください'); });
+    on('ai', () => { const a = box.querySelector('.mtg-ai'); a.classList.toggle('hidden'); a.querySelector('textarea').focus(); });
+    on('bni', () => box.querySelector('.mtg-bni').classList.toggle('hidden'));
+    on('plan', () => box.querySelector('.mtg-plan').classList.toggle('hidden'));
+    bindPlanPanel(box, m, rec);
+    box.querySelector('.mtg-ai textarea').addEventListener('paste', e => setTimeout(() => applyAi(m, e.target.value, rec), 0));
+    bindBniPanel(box, m, rec);
+    box.querySelector('[data-a=del]').onclick = async () => {
+      if (!confirm(`${rec.date || ''} の記録を削除しますか？`)) return;
+      await saveMember({ ...m, meetings: m.meetings.filter(x => x.id !== rec.id), updatedAt: Date.now() }); openDetail(m.id); toast('記録を削除しました');
+    };
+  });
+}
+function closeOverlay() { $('overlay').classList.add('hidden'); $('overlay').innerHTML = ''; }
+$('overlay').addEventListener('click', e => { if (e.target === $('overlay')) closeOverlay(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('overlay').classList.contains('hidden')) closeOverlay(); });
+
+// ===== 入力フォーム（確認・編集共通） =====
+function formHtml(data, highlightBlank, changed) {
+  return SECTIONS.map(s => `<div class="sec"><span class="sec-t ${s.accent ? 'accent' : ''}">${s.title}</span><div class="fields">${s.fields.map(([k, l, t = '']) => {
+    const blank = highlightBlank && MUST.has(k) && !data[k];
+    const area = t.includes('area');
+    const wide = area && (t.includes('wide') || (data[k] || '').length > 60 || (data[k] || '').includes('\n')) ? 'wide' : '';
+    const rows = Math.min(10, Math.max(2, (data[k] || '').split('\n').length + Math.floor((data[k] || '').length / 70)));
+    const input = area
+      ? `<textarea data-k="${k}" class="${blank ? 'blank' : ''} ${changed && changed.has(k) ? 'changed' : ''}" rows="${rows}">${esc(data[k] || '')}</textarea>`
+      : `<input data-k="${k}" type="${t === 'date' ? 'date' : 'text'}" class="${blank ? 'blank' : ''} ${changed && changed.has(k) ? 'changed' : ''}" value="${esc(data[k] || '')}">`;
+    return `<div class="f ${wide}"><label>${esc(l)}${blank ? '　<span style="color:#b07b00">読み取れず・要入力</span>' : ''}</label>${input}</div>`;
+  }).join('')}</div></div>`).join('');
+}
+function readForm(root) { const o = {}; root.querySelectorAll('[data-k]').forEach(el => { const v = el.value.trim(); if (v) o[el.dataset.k] = v; }); return o; }
+
+function openEdit(m, opts = {}) {
+  $('overlay').innerHTML = `<div class="detail"><div class="head"><div class="nm" style="font-size:18px">編集：${esc(m.name || '')}</div><button class="btn small close" id="eClose">✕</button></div>
+    ${opts.banner ? `<div class="banner">${opts.banner}</div>` : ''}
+    <div id="eForm">${formHtml(m, false, opts.changed)}</div>
+    <div class="actions"><button class="btn" id="eCancel">キャンセル</button><button class="btn primary" id="eSave">保存</button></div></div>`;
+  $('eClose').onclick = $('eCancel').onclick = () => openDetail(m.id);
+  $('eSave').onclick = async () => {
+    const data = readForm($('eForm'));
+    if (!data.name) { alert('名前を入力してください'); return; }
+    await saveMember({ id: m.id, createdAt: m.createdAt, source: m.source, meetings: m.meetings, ...data, updatedAt: Date.now() });
+    openDetail(m.id); toast('保存しました');
+  };
+}
+
+// ===== 取り込みキュー =====
+function addReview(data, source) {
+  const manual = source === '手入力';
+  const card = document.createElement('div');
+  card.className = 'review';
+  const filled = ALL_FIELDS.filter(([k]) => !USER_ONLY.has(k) && data[k]).length;
+  const dupOf = () => { const n = readForm(card).name; return n ? members.find(x => nameKey(x.name) === nameKey(n)) : undefined; };
+  card.innerHTML = `<h3>${esc(data.name || (manual ? '新規メンバー' : '名前を入力してください'))}</h3>
+    <div class="src">${esc(source)}${manual ? '' : `　／　${filled} 項目を読み取りました。内容を確認・修正してから登録してください。`}</div>
+    <div class="rf">${formHtml(data, !manual)}</div>
+    <div class="plan-box"><b style="font-size:13px">📅 1to1の予定（決まっていれば）</b>
+      <div class="plan-grid" style="margin-top:6px">${planFields({ duration: 60 })}</div>
+      <div class="howto">日時を入れて登録すると、Googleカレンダーの予定作成画面が開きます（「保存」を押せば登録完了）。</div></div>
+    <div class="actions"><span class="dup"></span><button class="btn" data-a="skip">破棄</button><button class="btn primary" data-a="save">登録する</button></div>`;
+  const updateDup = () => {
+    const d = dupOf();
+    card.querySelector('.dup').textContent = d ? `「${d.name}」は登録済みです。登録すると上書き更新します（空欄の項目は今の内容を残します）。` : '';
+    card.querySelector('[data-a=save]').textContent = d ? '上書き更新する' : '登録する';
+  };
+  card.querySelector('[data-k=name]').addEventListener('input', updateDup);
+  updateDup();
+  card.querySelector('[data-a=skip]').onclick = () => card.remove();
+  card.querySelector('[data-a=save]').onclick = async () => {
+    const f = readForm(card);
+    if (!f.name) { alert('名前を入力してください'); return; }
+    const d = dupOf();
+    const base = d ? { ...d } : { id: uid(), createdAt: Date.now() };
+    for (const [k] of ALL_FIELDS) if (f[k]) base[k] = f[k];
+    base.source = source; base.updatedAt = Date.now();
+    await saveMember(base);
+    const plan = readPlan(card.querySelector('.plan-box'));
+    if (plan.date) {
+      const rec = { id: uid(), createdAt: Date.now(), title: '1to1', source: '予定', text: '', ...plan };
+      await addMeeting(base.id, rec);
+      openGcal(members.find(x => x.id === base.id), rec);
+    }
+    card.remove(); toast(`${f.name} さんを${d ? '更新' : '登録'}しました`);
+    if (!$('queue').children.length) show('list');
+  };
+  $('queue').prepend(card);
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function readPdf(file) {
+  if (!window.pdfjsLib) throw new Error('PDF読み取り部品を読み込めませんでした。インターネットに接続してから開き直してください。');
+  const base = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js';
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer(), cMapUrl: base + 'cmaps/', cMapPacked: true, standardFontDataUrl: base + 'standard_fonts/' }).promise;
+  const pages = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const vp = page.getViewport({ scale: 1 });
+    const tc = await page.getTextContent();
+    pages.push({ w: vp.width, items: tc.items.filter(it => 'str' in it).map(it => ({ str: it.str, x: it.transform[4], y: it.transform[5], w: it.width, h: it.height || Math.abs(it.transform[3]) })) });
+  }
+  if (!pages.some(p => p.items.some(i => i.str.trim()))) throw new Error('文字情報のないPDF（スキャン画像など）のため読み取れませんでした。「白紙から手入力する」をご利用ください。');
+  return parsePdfPages(pages);
+}
+
+// Word（.docx）・PowerPoint（.pptx）：中のXMLを直接読む
+async function openZip(file) {
+  if (!window.JSZip) throw new Error('Word/PowerPoint読み取り部品を読み込めませんでした。インターネットに接続してから開き直してください。');
+  return JSZip.loadAsync(await file.arrayBuffer());
+}
+async function readDocx(file) {
+  const zip = await openZip(file);
+  const doc = zip.file('word/document.xml');
+  if (!doc) throw new Error('Wordファイルの中身を読み取れませんでした。');
+  const text = docxXmlToText(await doc.async('string'));
+  if (!text.trim()) throw new Error('Wordファイルから文字を読み取れませんでした。');
+  return parseSheetText(text, { hard: true });
+}
+async function readPptx(file) {
+  const zip = await openZip(file);
+  const names = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+    .sort((a, b) => parseInt(a.match(/(\d+)\.xml$/)[1]) - parseInt(b.match(/(\d+)\.xml$/)[1]));
+  if (!names.length) throw new Error('スライドが見つかりませんでした。');
+  const pres = zip.file('ppt/presentation.xml') ? await zip.file('ppt/presentation.xml').async('string') : '';
+  const w = +((pres.match(/<p:sldSz[^>]*\bcx="(\d+)"/) || [])[1] || 12192000);
+  const slides = await Promise.all(names.map(n => zip.file(n).async('string')));
+  const text = pptxToText(slides, w);
+  if (!text.replace(/\u0001|\s/g, '')) throw new Error('スライドから文字を読み取れませんでした（画像だけのスライドは読み取れません）。');
+  return parseSheetText(text, { hard: true });
+}
+
+async function handleFiles(files) {
+  for (const f of files) {
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    try {
+      if (ext === 'pdf' || f.type === 'application/pdf') { toast(`${f.name} を読み取り中…`); addReview(await readPdf(f), f.name); }
+      else if (ext === 'docx') { toast(`${f.name} を読み取り中…`); addReview(await readDocx(f), f.name); }
+      else if (ext === 'pptx') { toast(`${f.name} を読み取り中…`); addReview(await readPptx(f), f.name); }
+      else if (ext === 'doc' || ext === 'ppt') alert(`${f.name}\n古い形式のファイル（.${ext}）は読み取れません。${ext === 'doc' ? 'Word' : 'PowerPoint'}で開いて「名前を付けて保存」から .${ext}x 形式かPDFで保存し直してから取り込んでください。`);
+      else if (TS_EXT.has(ext)) { show('import'); await handleTranscripts([f]); }
+      else toast(`${f.name} はPDF・Word・PowerPointではありません`);
+    } catch (e) { console.error(e); alert(`${f.name}\n${e.message || e}`); }
+  }
+}
+const drop = $('drop');
+drop.onclick = () => $('file').click();
+$('file').onchange = e => { handleFiles([...e.target.files]); e.target.value = ''; };
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => handleFiles([...e.dataTransfer.files]));
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length && !drop.contains(e.target)) { show('import'); handleFiles([...e.dataTransfer.files]); } });
+$('manualBtn').onclick = () => addReview({}, '手入力');
+// Webページ：URLを開く → コピー → 貼り付けで自動読み取り
+$('webOpen').onclick = () => {
+  const u = $('webUrl').value.trim();
+  if (!/^https?:\/\/\S+$/i.test(u)) { toast('https:// から始まるURLを入れてください'); return; }
+  window.open(u, '_blank', 'noopener');
+  setTimeout(() => $('webPaste').focus(), 300);
+};
+$('webPaste').addEventListener('paste', () => setTimeout(() => {
+  const text = $('webPaste').value.trim(); if (!text) return;
+  const u = $('webUrl').value.trim();
+  const data = parseWebText(text);
+  if (/^https?:\/\//i.test(u)) data.sheetUrl = u;
+  addReview(data, u ? 'Webページ（' + u.replace(/^https?:\/\//, '').slice(0, 50) + '）' : 'Webページ');
+  $('webPaste').value = ''; $('webUrl').value = '';
+}, 0));
+
+// ===== 1to1の文字起こし =====
+const TS_EXT = new Set(['txt','md','vtt','srt','csv','tsv','json']);
+async function readTextFile(file) {
+  const buf = await file.arrayBuffer();
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+  catch (e) { return new TextDecoder('shift_jis').decode(buf); } // Windowsのメモ帳などShift_JIS
+}
+async function pdfToText(file) {
+  if (!window.pdfjsLib) throw new Error('PDF読み取り部品を読み込めませんでした。インターネットに接続してから開き直してください。');
+  const base = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js';
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer(), cMapUrl: base + 'cmaps/', cMapPacked: true }).promise;
+  const out = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const tc = await (await pdf.getPage(i)).getTextContent();
+    const items = tc.items.filter(it => 'str' in it).map(it => ({ str: it.str, x: it.transform[4], y: it.transform[5], w: it.width, h: it.height || Math.abs(it.transform[3]) }));
+    out.push(...buildLines(clean(items), 3).map(l => l.text));
+  }
+  return out.join('\n');
+}
+async function readTranscript(file) {
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  let raw;
+  if (ext === 'docx') { const zip = await openZip(file); const d = zip.file('word/document.xml'); if (!d) throw new Error('Wordファイルを読めませんでした'); raw = docxXmlToText(await d.async('string')); }
+  else if (ext === 'pdf') raw = await pdfToText(file);
+  else if (TS_EXT.has(ext)) raw = await readTextFile(file);
+  else if (/^(m4a|mp3|wav|mp4|mov|aac|webm)$/.test(ext)) throw new Error('音声・動画ファイルは読み取れません。録音アプリやZoom等で文字起こしを書き出してから取り込んでください。');
+  else throw new Error('対応していない形式です（.txt .vtt .srt .docx .pdf .csv .json .md）');
+  const text = cleanTranscript(raw, ext);
+  if (!text) throw new Error('文字が見つかりませんでした');
+  return { text, date: guessDate(file.name, raw.slice(0, 300)) || new Date(file.lastModified || Date.now()).toISOString().slice(0, 10) };
+}
+async function addMeeting(memberId, rec) {
+  const m = members.find(x => x.id === memberId); if (!m) return;
+  const meetings = [...(m.meetings || []), { id: uid(), createdAt: Date.now(), ...rec }].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const next = { ...m, meetings, updatedAt: Date.now() };
+  if (rec.date && (!m.date1to1 || rec.date > m.date1to1)) next.date1to1 = rec.date;
+  await saveMember(next);
+}
+function tsTarget() {
+  const id = $('tsMember').value;
+  if (!id) { toast('先に「誰との1to1か」を選んでください'); $('tsMember').focus(); $('tsPanel').scrollIntoView({ behavior: 'smooth' }); return null; }
+  return id;
+}
+async function handleTranscripts(files) {
+  const id = tsTarget(); if (!id) return;
+  for (const f of files) {
+    try {
+      const r = await readTranscript(f);
+      await addMeeting(id, { date: $('tsDate').value || r.date, title: $('tsTitle').value.trim() || f.name.replace(/\.[^.]+$/, ''), source: f.name, text: r.text });
+      toast(`${f.name} を記録しました`);
+    } catch (e) { console.error(e); alert(`${f.name}\n${e.message || e}`); }
+  }
+  $('tsTitle').value = ''; $('tsDate').value = '';
+  openDetail(id);
+}
+$('tsDrop').onclick = () => $('tsFile').click();
+$('tsFile').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; handleTranscripts(fs); };
+['dragenter','dragover'].forEach(ev => $('tsDrop').addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); $('tsDrop').classList.add('over'); }));
+['dragleave','drop'].forEach(ev => $('tsDrop').addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); $('tsDrop').classList.remove('over'); }));
+$('tsDrop').addEventListener('drop', e => handleTranscripts([...e.dataTransfer.files]));
+$('tsSave').onclick = async () => {
+  const id = tsTarget(); if (!id) return;
+  const raw = $('tsPaste').value.trim(); if (!raw) { toast('文字起こしを貼り付けてください'); return; }
+  await addMeeting(id, { date: $('tsDate').value || guessDate(raw.slice(0, 300)) || today(), title: $('tsTitle').value.trim() || '1to1', source: '貼り付け', text: cleanTranscript(raw, 'txt') });
+  $('tsPaste').value = ''; $('tsTitle').value = ''; $('tsDate').value = '';
+  toast('記録しました'); openDetail(id);
+};
+function renderTsMembers() {
+  const cur = $('tsMember').value;
+  const list = [...members].sort((a, b) => (a.kana || a.name || '').localeCompare(b.kana || b.name || '', 'ja'));
+  $('tsMember').innerHTML = `<option value="">${members.length ? '誰との1to1ですか？（メンバーを選択）' : '先にメンバーを登録してください'}</option>` + list.map(m => `<option value="${m.id}" ${m.id === cur ? 'selected' : ''}>${esc(m.name || '(名前なし)')}${m.business ? '（' + esc(m.business) + '）' : ''}</option>`).join('');
+}
+async function copyText(s) {
+  try { await navigator.clipboard.writeText(s); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = s; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+}
+// AIの返答を項目に反映（空欄は埋める／複数行の項目は追記／1行項目で既に値があるものは変えない）
+function applyAi(m, text, rec) {
+  const date = rec && rec.date;
+  const r = parseAiAnswer(text);
+  delete r.name;
+  let topicSaved = false;
+  if (r.bniTopic && rec) { m = { ...m, meetings: (m.meetings || []).map(x => x.id === rec.id ? { ...x, bniTopic: r.bniTopic } : x) }; topicSaved = true; }
+  delete r.bniTopic;
+  const keys = Object.keys(r);
+  if (!keys.length && !topicSaved) { alert('AIの返答から項目を読み取れませんでした。指示文ごとコピーしてAIに送ったか確認してください。'); return; }
+  const next = { ...m }, changed = new Set(), kept = [];
+  const areaKeys = new Set(ALL_FIELDS.filter(f => (f[2] || '').includes('area')).map(f => f[0]));
+  for (const k of keys) {
+    if (!LABEL[k]) continue;
+    if (!next[k]) { next[k] = r[k]; changed.add(k); }
+    else if (next[k].includes(r[k])) continue;
+    else if (areaKeys.has(k)) { next[k] += `\n【${date || ''} 1to1より】\n` + r[k]; changed.add(k); }
+    else kept.push(`${LABEL[k]}（AI：${r[k]}）`);
+  }
+  openEdit(next, { changed, banner: `AIの要約から <b>${changed.size}項目</b> を反映しました（緑色の欄）。内容を確認して「保存」を押してください。` + (topicSaved ? '<br>BNI登録用の「会話のトピック」も記録に入れました。' : '') + (kept.length ? `<br>既に入力済みのため変えなかった項目：${esc(kept.join('、'))}` : '') });
+}
+
+// ===== 1to1の予定とカレンダー連携 =====
+const isPlanned = x => !x.text && !x.bniDone && (!x.date || x.date > today() || (x.date === today() && x.time && x.time > new Date().toTimeString().slice(0, 5)));
+function planFields(x) {
+  const places = [...new Set(members.flatMap(y => (y.meetings || []).map(z => z.place)).filter(Boolean))];
+  const lid = 'pl' + Math.random().toString(36).slice(2, 7);
+  return `<label>日付<input type="date" data-p="date" value="${esc(x.date || '')}"></label>
+    <label>開始時刻<input type="time" data-p="time" value="${esc(x.time || '')}" step="300"></label>
+    <label>所要時間<select data-p="duration">${[30, 45, 60, 90, 120].map(n => `<option value="${n}" ${+(x.duration || 60) === n ? 'selected' : ''}>${n}分</option>`).join('')}</select></label>
+    <label style="grid-column:span 2">場所<input data-p="place" list="${lid}" value="${esc(x.place || '')}" placeholder="例：オンライン（Zoom）、〇〇駅のカフェ"><datalist id="${lid}">${['オンライン（Zoom）', 'オンライン（Google Meet）', ...places].map(p => `<option value="${esc(p)}">`).join('')}</datalist></label>`;
+}
+function readPlan(root) {
+  const o = {}; root.querySelectorAll('[data-p]').forEach(el => o[el.dataset.p] = el.value.trim());
+  o.duration = +o.duration || 60; return o;
+}
+function planPanel(m, x) {
+  return `<div class="plan-grid">${planFields(x)}</div>
+    <div class="actions" style="margin-top:8px">
+      <span style="margin-right:auto;font-size:12px;color:var(--sub)">Googleカレンダーは予定作成画面が開くので「保存」を押してください。Outlook・iPhoneは予定ファイルを開いて追加できます。</span>
+      <button class="btn small" data-pb="save">保存</button>
+      <button class="btn small" data-pb="ics">予定ファイル（.ics）</button>
+      <button class="btn small primary" data-pb="gcal">Googleカレンダーに追加</button>
+    </div>`;
+}
+const pad = n => String(n).padStart(2, '0');
+function eventTimes(rec) {
+  const [y, mo, d] = rec.date.split('-').map(Number);
+  if (!rec.time) { const e = new Date(y, mo - 1, d + 1); return { allDay: true, start: rec.date.replace(/-/g, ''), end: `${e.getFullYear()}${pad(e.getMonth() + 1)}${pad(e.getDate())}` }; }
+  const [hh, mm] = rec.time.split(':').map(Number);
+  const s = new Date(y, mo - 1, d, hh, mm), e = new Date(s.getTime() + (rec.duration || 60) * 60000);
+  const f = t => `${t.getFullYear()}${pad(t.getMonth() + 1)}${pad(t.getDate())}T${pad(t.getHours())}${pad(t.getMinutes())}00`;
+  return { allDay: false, start: f(s), end: f(e) };
+}
+function eventTitle(m) { return `1to1：${m.name || ''}さん${m.business ? '（' + m.business + '）' : ''}`; }
+function eventDetails(m) {
+  const cut = (s, n) => (s || '').length > n ? s.slice(0, n) + '…' : (s || '');
+  const lines = [
+    m.companyName && `会社：${m.companyName}`, m.chapter && `チャプター：${m.chapter}`, m.specialty && `専門分野：${m.specialty}`,
+    m.wantReferrals && `\n■紹介してほしい方\n${cut(m.wantReferrals, 300)}`,
+    m.collaborators && `\n■協業しやすい方\n${cut(m.collaborators, 200)}`,
+    m.hobbies && `\n■趣味\n${cut(m.hobbies, 120)}`,
+    m.sheetUrl && `\n1to1シート：${m.sheetUrl}`,
+    '\n（1to1メンバー帳より）',
+  ].filter(Boolean);
+  return lines.join('\n');
+}
+function gcalUrl(m, rec) {
+  const t = eventTimes(rec);
+  const p = new URLSearchParams({ action: 'TEMPLATE', text: eventTitle(m), dates: `${t.start}/${t.end}`, details: eventDetails(m), location: rec.place || '' });
+  if (!t.allDay) p.set('ctz', Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tokyo');
+  return 'https://calendar.google.com/calendar/render?' + p.toString();
+}
+function openGcal(m, rec) {
+  if (!rec.date) { toast('日付を入れてください'); return; }
+  const w = window.open(gcalUrl(m, rec), '_blank', 'noopener');
+  toast(w === null ? 'ポップアップがブロックされました。記録の「Googleカレンダーに追加」から開いてください' : 'Googleカレンダーの画面で「保存」を押してください');
+}
+function downloadIcs(m, rec) {
+  if (!rec.date) { toast('日付を入れてください'); return; }
+  const t = eventTimes(rec), esc2 = s => (s || '').replace(/\\/g, '\\\\').replace(/[,;]/g, c => '\\' + c).replace(/\n/g, '\\n');
+  const dt = (k, v) => t.allDay ? `${k};VALUE=DATE:${v}` : `${k};TZID=${Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tokyo'}:${v}`;
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//BNI 1to1 member book//JA', 'BEGIN:VEVENT', `UID:${rec.id}@bni-1to1-book`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '')}`, dt('DTSTART', t.start), dt('DTEND', t.end),
+    `SUMMARY:${esc2(eventTitle(m))}`, `DESCRIPTION:${esc2(eventDetails(m))}`, `LOCATION:${esc2(rec.place || '')}`,
+    'BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', 'DESCRIPTION:1to1', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  download(`1to1_${(m.name || '').replace(/\s/g, '')}_${rec.date}.ics`, ics, 'text/calendar');
+}
+function bindPlanPanel(box, m, rec) {
+  const p = box.querySelector('.mtg-plan'); if (!p) return;
+  const persist = async () => {
+    const cur = members.find(y => y.id === m.id), plan = readPlan(p);
+    const meetings = (cur.meetings || []).map(y => y.id === rec.id ? { ...y, ...plan } : y).sort((a, b) => (b.date || '9').localeCompare(a.date || '9'));
+    await saveMember({ ...cur, meetings, updatedAt: Date.now() });
+    return { ...rec, ...plan };
+  };
+  p.querySelector('[data-pb=save]').onclick = async () => { await persist(); toast('予定を保存しました'); openDetail(m.id); };
+  p.querySelector('[data-pb=gcal]').onclick = async () => { const r = readPlan(p); if (!r.date) { toast('日付を入れてください'); return; } openGcal(m, { ...rec, ...r }); await persist(); };
+  p.querySelector('[data-pb=ics]').onclick = async () => { const r = await persist(); downloadIcs(m, r); };
+}
+// 今後の予定（一覧の上）
+function renderUpcoming() {
+  const now = today();
+  const list = members.flatMap(m => (m.meetings || []).filter(x => x.date && x.date >= now && !x.text && !x.bniDone).map(x => ({ m, x })))
+    .sort((a, b) => (a.x.date + (a.x.time || '')).localeCompare(b.x.date + (b.x.time || ''))).slice(0, 6);
+  const el = $('upcoming');
+  el.classList.toggle('hidden', !list.length);
+  const wd = d => '日月火水木金土'[new Date(d + 'T00:00').getDay()];
+  el.innerHTML = list.length ? `<b>📅 今後の1to1予定</b>` + list.map(({ m, x }) =>
+    `<div class="up-item" data-id="${m.id}"><span class="when">${esc(x.date.slice(5).replace('-', '/'))}（${wd(x.date)}）${esc(x.time || '')}</span><span>${esc(m.name || '')}${m.business ? '<span style="color:var(--sub)">（' + esc(m.business) + '）</span>' : ''}</span><span style="margin-left:auto;color:var(--sub);font-size:12px">${esc(x.place || '')}</span></div>`).join('') : '';
+  el.querySelectorAll('.up-item').forEach(r => r.onclick = () => openDetail(r.dataset.id));
+}
+
+// ===== BNIサイトへの1to1登録を手助け =====
+const BNI_URL = 'https://www.bniconnectglobal.com/';
+const INITIATORS = [['me', '自分から提案'], ['them', '相手から提案']];
+let myChapter = '';
+const BNI_TOPIC = 'お互いのビジネスについて';
+function defaultTopic() { return BNI_TOPIC; }
+const BOOKMARKLET = "javascript:%28async%20%28%29%20%3D%3E%20%7B%20const%20sleep%20%3D%20ms%20%3D%3E%20new%20Promise%28r%20%3D%3E%20setTimeout%28r%2C%20ms%29%29%3B%20const%20nk%20%3D%20s%20%3D%3E%20%28s%20%7C%7C%20%27%27%29.normalize%28%27NFKC%27%29.replace%28%2F%5Cs%2Fg%2C%20%27%27%29%3B%20const%20note%20%3D%20%28msg%2C%20err%29%20%3D%3E%20%7B%20let%20n%20%3D%20document.getElementById%28%27bni1to1note%27%29%3B%20if%20%28%21n%29%20%7B%20n%20%3D%20document.createElement%28%27div%27%29%3B%20n.id%20%3D%20%27bni1to1note%27%3B%20document.body.appendChild%28n%29%3B%20%7D%20n.style.cssText%20%3D%20%27position%3Afixed%3Bleft%3A50%25%3Bbottom%3A24px%3Btransform%3AtranslateX%28-50%25%29%3Bz-index%3A2147483647%3Bpadding%3A12px%2018px%3Bborder-radius%3A10px%3Bfont%3Abold%2014px%20sans-serif%3Bbox-shadow%3A0%204px%2016px%20rgba%280%2C0%2C0%2C.25%29%3Bmax-width%3A90vw%3Bwhite-space%3Apre-wrap%3Bbackground%3A%27%20%2B%20%28err%20%3F%20%27%23fff6db%3Bcolor%3A%238a6200%27%20%3A%20%27%231f7a45%3Bcolor%3A%23fff%27%29%3B%20n.textContent%20%3D%20msg%3B%20clearTimeout%28n._t%29%3B%20n._t%20%3D%20setTimeout%28%28%29%20%3D%3E%20n.remove%28%29%2C%20err%20%3F%2015000%20%3A%208000%29%3B%20%7D%3B%20const%20waitFor%20%3D%20async%20%28fn%2C%20ms%29%20%3D%3E%20%7B%20for%20%28let%20t%20%3D%200%3B%20t%20%3C%20ms%3B%20t%20%2B%3D%20200%29%20%7B%20const%20v%20%3D%20fn%28%29%3B%20if%20%28v%29%20return%20v%3B%20await%20sleep%28200%29%3B%20%7D%20return%20null%3B%20%7D%3B%20if%20%28%21%2Fbniconnectglobal%5C.com%2F.test%28location.host%29%29%20%7B%20note%28%27BNI%20Connect%E3%81%AE%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%A7%E6%8A%BC%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%27%2C%201%29%3B%20return%3B%20%7D%20let%20raw%20%3D%20window.__bni1to1data%20%7C%7C%20%27%27%3B%20if%20%28%21raw%29%20%7B%20try%20%7B%20raw%20%3D%20await%20navigator.clipboard.readText%28%29%3B%20%7D%20catch%20%28e%29%20%7B%20%7D%20%7D%20if%20%28%21%2F%5EBNI1to1%3A%2F.test%28raw%20%7C%7C%20%27%27%29%29%20raw%20%3D%20prompt%28%271to1%E3%83%A1%E3%83%B3%E3%83%90%E3%83%BC%E5%B8%B3%E3%81%AE%E3%80%8CBNI%E8%87%AA%E5%8B%95%E5%85%A5%E5%8A%9B%E7%94%A8%E3%81%AB%E3%82%B3%E3%83%94%E3%83%BC%E3%80%8D%E3%81%A7%E3%82%B3%E3%83%94%E3%83%BC%E3%81%97%E3%81%9F%E5%86%85%E5%AE%B9%E3%82%92%E8%B2%BC%E3%82%8A%E4%BB%98%E3%81%91%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%EF%BC%88Ctrl%2BV%EF%BC%89%27%29%20%7C%7C%20%27%27%3B%20if%20%28%21%2F%5EBNI1to1%3A%2F.test%28raw%29%29%20%7B%20note%28%271to1%E3%83%A1%E3%83%B3%E3%83%90%E3%83%BC%E5%B8%B3%E3%81%A7%E3%80%8CBNI%E8%87%AA%E5%8B%95%E5%85%A5%E5%8A%9B%E7%94%A8%E3%81%AB%E3%82%B3%E3%83%94%E3%83%BC%E3%80%8D%E3%82%92%E6%8A%BC%E3%81%97%E3%81%A6%E3%81%8B%E3%82%89%E3%80%81%E3%82%82%E3%81%86%E4%B8%80%E5%BA%A6%E3%81%93%E3%81%AE%E3%83%9C%E3%82%BF%E3%83%B3%E3%82%92%E6%8A%BC%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%27%2C%201%29%3B%20return%3B%20%7D%20let%20d%3B%20try%20%7B%20d%20%3D%20JSON.parse%28raw.slice%288%29%29%3B%20%7D%20catch%20%28e%29%20%7B%20note%28%27%E3%82%B3%E3%83%94%E3%83%BC%E3%81%97%E3%81%9F%E5%86%85%E5%AE%B9%E3%82%92%E8%AA%AD%E3%81%BF%E5%8F%96%E3%82%8C%E3%81%BE%E3%81%9B%E3%82%93%E3%81%A7%E3%81%97%E3%81%9F%27%2C%201%29%3B%20return%3B%20%7D%20const%20dialogs%20%3D%20%28%29%20%3D%3E%20%5B...document.querySelectorAll%28%27%5Brole%3D%22dialog%22%5D%27%29%5D%3B%20const%20formDlg%20%3D%20%28%29%20%3D%3E%20dialogs%28%29.find%28x%20%3D%3E%20x.querySelector%28%27input%5Bname%3D%22location%22%5D%27%29%29%3B%20let%20dlg%20%3D%20formDlg%28%29%3B%20if%20%28%21dlg%29%20%7B%20const%20btn%20%3D%20%5B...document.querySelectorAll%28%27button%2C%20a%2C%20%5Brole%3D%22button%22%5D%27%29%5D.find%28b%20%3D%3E%20%2F%5E%28%E5%85%A5%E5%8A%9B%7CEnter%7CAdd%7CSubmit%7C%E6%8F%90%E5%87%BA%7C%E8%A8%98%E9%8C%B2%29%24%2Fi.test%28%28b.innerText%20%7C%7C%20%27%27%29.trim%28%29%29%20%26%26%20%2F1%5Cs%2Ato%5Cs%2A1%7C1%E5%AF%BE1%7C1-2-1%7Cone%5Cs%2Ato%5Cs%2Aone%2Fi.test%28%28b.parentElement%20%26%26%20b.parentElement.parentElement%20%26%26%20b.parentElement.parentElement.parentElement%20%7C%7C%20%7B%7D%29.innerText%20%7C%7C%20%27%27%29%29%3B%20if%20%28btn%29%20%7B%20btn.click%28%29%3B%20dlg%20%3D%20await%20waitFor%28formDlg%2C%205000%29%3B%20%7D%20%7D%20if%20%28%21dlg%29%20%7B%20note%28%271to1%E3%81%AE%E5%85%A5%E5%8A%9B%E7%94%BB%E9%9D%A2%E3%82%92%E9%96%8B%E3%81%84%E3%81%A6%E3%81%8B%E3%82%89%E3%80%81%E3%82%82%E3%81%86%E4%B8%80%E5%BA%A6%E3%81%93%E3%81%AE%E3%83%9C%E3%82%BF%E3%83%B3%E3%82%92%E6%8A%BC%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%27%2C%201%29%3B%20return%3B%20%7D%20const%20setVal%20%3D%20async%20%28el%2C%20v%29%20%3D%3E%20%7B%20if%20%28%21el%20%7C%7C%20v%20%3D%3D%20null%29%20return%3B%20el.focus%28%29%3B%20if%20%28el.select%29%20el.select%28%29%3B%20let%20ok%20%3D%20false%3B%20try%20%7B%20ok%20%3D%20document.execCommand%28%27insertText%27%2C%20false%2C%20v%29%3B%20%7D%20catch%20%28e%29%20%7B%20%7D%20if%20%28%21ok%20%7C%7C%20el.value%20%21%3D%3D%20v%29%20%7B%20const%20p%20%3D%20el.tagName%20%3D%3D%3D%20%27TEXTAREA%27%20%3F%20HTMLTextAreaElement.prototype%20%3A%20HTMLInputElement.prototype%3B%20Object.getOwnPropertyDescriptor%28p%2C%20%27value%27%29.set.call%28el%2C%20v%29%3B%20el.dispatchEvent%28new%20Event%28%27input%27%2C%20%7B%20bubbles%3A%20true%20%7D%29%29%3B%20el.dispatchEvent%28new%20Event%28%27change%27%2C%20%7B%20bubbles%3A%20true%20%7D%29%29%3B%20%7D%20await%20sleep%2880%29%3B%20el.blur%28%29%3B%20%7D%3B%20const%20combos%20%3D%20%28%29%20%3D%3E%20%5B...dlg.querySelectorAll%28%27%5Brole%3D%22combobox%22%5D%27%29%5D%3B%20const%20pick%20%3D%20async%20%28combo%2C%20match%29%20%3D%3E%20%7B%20combo.dispatchEvent%28new%20MouseEvent%28%27mousedown%27%2C%20%7B%20bubbles%3A%20true%20%7D%29%29%3B%20await%20sleep%28500%29%3B%20const%20o%20%3D%20%5B...document.querySelectorAll%28%27%5Brole%3D%22listbox%22%5D%20%5Brole%3D%22option%22%5D%27%29%5D.find%28o%20%3D%3E%20match%28o.innerText.trim%28%29%29%29%3B%20if%20%28o%29%20%7B%20o.click%28%29%3B%20await%20sleep%28400%29%3B%20return%20true%3B%20%7D%20const%20lb%20%3D%20document.querySelector%28%27%5Brole%3D%22listbox%22%5D%27%29%3B%20if%20%28lb%29%20lb.dispatchEvent%28new%20KeyboardEvent%28%27keydown%27%2C%20%7B%20key%3A%20%27Escape%27%2C%20bubbles%3A%20true%20%7D%29%29%3B%20await%20sleep%28300%29%3B%20return%20false%3B%20%7D%3B%20const%20msgs%20%3D%20%5B%5D%3B%20await%20setVal%28dlg.querySelector%28%27input%5Bname%3D%22location%22%5D%27%29%2C%20d.place%20%7C%7C%20%27%27%29%3B%20await%20setVal%28dlg.querySelector%28%27textarea%5Bname%3D%22comments%22%5D%27%29%2C%20d.topic%20%7C%7C%20%27%27%29%3B%20if%20%28d.date%29%20%7B%20const%20%5By%2C%20m%2C%20dd%5D%20%3D%20d.date.split%28%27-%27%29%3B%20const%20di%20%3D%20%5B...dlg.querySelectorAll%28%27input%27%29%5D.find%28i%20%3D%3E%20%2FYYYY%7CMM%7CDD%2F.test%28i.placeholder%20%7C%7C%20%27%27%29%20%7C%7C%20%2F%5Cd%7B4%7D%5CD%5Cd%7B2%7D%5CD%5Cd%7B2%7D%2F.test%28i.value%29%29%3B%20if%20%28di%29%20%7B%20const%20f%20%3D%20%2F%E5%B9%B4%2F.test%28di.placeholder%20%7C%7C%20di.value%29%20%3F%20%60%24%7By%7D%E5%B9%B4%24%7Bm%7D%E6%9C%88%24%7Bdd%7D%E6%97%A5%60%20%3A%20%28di.placeholder%20%7C%7C%20%27%27%29.startsWith%28%27MM%27%29%20%3F%20%60%24%7Bm%7D%2F%24%7Bdd%7D%2F%24%7By%7D%60%20%3A%20%60%24%7By%7D%2F%24%7Bm%7D%2F%24%7Bdd%7D%60%3B%20await%20setVal%28di%2C%20f%29%3B%20%7D%20else%20msgs.push%28%27%E6%97%A5%E4%BB%98%E3%81%AF%E6%89%8B%E3%81%A7%E9%81%B8%E3%82%93%E3%81%A7%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%27%29%3B%20%7D%20const%20partnerSelected%20%3D%20%28%29%20%3D%3E%20%7B%20const%20top%20%3D%20%28dlg.innerText%20%7C%7C%20%27%27%29.split%28%2F%5Cn%2F%29.slice%280%2C%2012%29.join%28%27%27%29%3B%20return%20nk%28top%29.includes%28nk%28d.name%29%29%20%7C%7C%20nk%28combos%28%29%5B0%5D%20%26%26%20combos%28%29%5B0%5D.innerText%29%20%3D%3D%3D%20nk%28d.name%29%3B%20%7D%3B%20if%20%28%21partnerSelected%28%29%29%20%7B%20const%20btns%20%3D%20%5B...dlg.querySelectorAll%28%27button%27%29%5D%3B%20const%20sBtn%20%3D%20btns.find%28b%20%3D%3E%20%2F%E4%BB%96%E3%83%81%E3%83%A3%E3%83%97%E3%82%BF%E3%83%BC%7CCross%5Cs%2AChapter%7CSearch%2Fi.test%28b.innerText%20%7C%7C%20%27%27%29%29%20%7C%7C%20btns.find%28b%20%3D%3E%20%28b.innerText%20%7C%7C%20%27%27%29.trim%28%29%29%3B%20const%20searchDlg%20%3D%20%28%29%20%3D%3E%20dialogs%28%29.find%28x%20%3D%3E%20%21x.querySelector%28%27input%5Bname%3D%22location%22%5D%27%29%20%26%26%20x.querySelectorAll%28%27input%5Btype%3D%22text%22%5D%2C%20input%3Anot%28%5Btype%5D%29%27%29.length%20%3E%3D%202%29%3B%20if%20%28sBtn%29%20sBtn.click%28%29%3B%20const%20sd%20%3D%20await%20waitFor%28searchDlg%2C%205000%29%3B%20if%20%28%21sd%29%20msgs.push%28%60%E7%9B%B8%E6%89%8B%EF%BC%88%24%7Bd.name%7D%EF%BC%89%E3%82%92%E6%89%8B%E3%81%A7%E9%81%B8%E3%82%93%E3%81%A7%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%60%29%3B%20else%20%7B%20const%20parts%20%3D%20%28d.name%20%7C%7C%20%27%27%29.trim%28%29.split%28%2F%5Cs%2B%2F%29%3B%20const%20sei%20%3D%20parts.length%20%3E%201%20%3F%20parts%5B0%5D%20%3A%20%28d.name%20%7C%7C%20%27%27%29.slice%280%2C%202%29%2C%20mei%20%3D%20parts.length%20%3E%201%20%3F%20parts.slice%281%29.join%28%27%27%29%20%3A%20%27%27%3B%20const%20ins%20%3D%20%5B...sd.querySelectorAll%28%27input%27%29%5D.filter%28i%20%3D%3E%20i.type%20%21%3D%3D%20%27checkbox%27%20%26%26%20i.type%20%21%3D%3D%20%27hidden%27%20%26%26%20%21%2F%E6%A4%9C%E7%B4%A2%7Csearch%2Fi.test%28i.placeholder%20%7C%7C%20%27%27%29%29%3B%20await%20setVal%28ins%5B0%5D%2C%20sei%29%3B%20if%20%28ins%5B1%5D%29%20await%20setVal%28ins%5B1%5D%2C%20mei%29%3B%20const%20go%20%3D%20%5B...sd.querySelectorAll%28%27button%27%29%5D.find%28b%20%3D%3E%20%2F%5E%28%E6%A4%9C%E7%B4%A2%7CSearch%29%24%2Fi.test%28%28b.innerText%20%7C%7C%20%27%27%29.trim%28%29%29%29%20%7C%7C%20%5B...sd.querySelectorAll%28%27button%27%29%5D.find%28b%20%3D%3E%20%28b.innerText%20%7C%7C%20%27%27%29.trim%28%29%29%3B%20go.click%28%29%3B%20const%20rows%20%3D%20await%20waitFor%28%28%29%20%3D%3E%20%7B%20const%20r%20%3D%20%5B...sd.querySelectorAll%28%27.MuiDataGrid-row%2C%20%5Brole%3D%22row%22%5D%27%29%5D.filter%28r%20%3D%3E%20r.querySelector%28%27input%5Btype%3D%22checkbox%22%5D%27%29%20%26%26%20%21r.querySelector%28%27%5Brole%3D%22columnheader%22%5D%27%29%29%3B%20return%20r.length%20%3F%20r%20%3A%20null%3B%20%7D%2C%208000%29%3B%20const%20hits%20%3D%20%28rows%20%7C%7C%20%5B%5D%29.filter%28r%20%3D%3E%20nk%28%28r.querySelector%28%27%5Brole%3D%22cell%22%5D%2C%20%5Brole%3D%22gridcell%22%5D%27%29%20%7C%7C%20r%29.innerText.split%28%27%5Cn%27%29%5B0%5D%29%20%3D%3D%3D%20nk%28d.name%29%20%7C%7C%20nk%28r.innerText%29.startsWith%28nk%28d.name%29%29%29%3B%20if%20%28hits.length%20%3D%3D%3D%201%20%26%26%20%21d.dry%29%20%7B%20note%28%27%E3%80%8C%E3%82%88%E3%82%8D%E3%81%97%E3%81%84%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F%E3%80%8D%E3%81%A8%E5%87%BA%E3%81%9F%E3%82%89%E3%80%8COK%E3%80%8D%E3%82%92%E6%8A%BC%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%27%2C%200%29%3B%20hits%5B0%5D.querySelector%28%27input%5Btype%3D%22checkbox%22%5D%27%29.click%28%29%3B%20await%20waitFor%28%28%29%20%3D%3E%20%21searchDlg%28%29%2C%2060000%29%3B%20await%20sleep%28600%29%3B%20%7D%20else%20if%20%28d.dry%29%20%7B%20msgs.push%28%27dry%3A%27%20%2B%20hits.length%29%3B%20%7D%20else%20msgs.push%28hits.length%20%3F%20%60%E3%80%8C%24%7Bd.name%7D%E3%80%8D%E3%81%95%E3%82%93%E3%81%8C%24%7Bhits.length%7D%E4%BA%BA%E8%A6%8B%E3%81%A4%E3%81%8B%E3%82%8A%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82%E4%B8%80%E8%A6%A7%E3%81%8B%E3%82%89%E9%81%B8%E3%82%93%E3%81%A7%EF%BC%88%E3%80%8C%E3%82%88%E3%82%8D%E3%81%97%E3%81%84%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F%E3%80%8D%E3%81%AFOK%EF%BC%89%E3%80%81%E3%82%82%E3%81%86%E4%B8%80%E5%BA%A6%E3%81%93%E3%81%AE%E3%83%9C%E3%82%BF%E3%83%B3%E3%82%92%E6%8A%BC%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%60%20%3A%20%60%E3%80%8C%24%7Bd.name%7D%E3%80%8D%E3%81%95%E3%82%93%E3%81%8C%E6%A4%9C%E7%B4%A2%E3%81%A7%E8%A6%8B%E3%81%A4%E3%81%8B%E3%82%8A%E3%81%BE%E3%81%9B%E3%82%93%E3%81%A7%E3%81%97%E3%81%9F%E3%80%82%E5%A7%93%E3%83%BB%E5%90%8D%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%97%E3%81%A6%E6%89%8B%E3%81%A7%E6%A4%9C%E7%B4%A2%E3%83%BB%E9%81%B8%E6%8A%9E%E3%81%97%E3%80%81%E3%82%82%E3%81%86%E4%B8%80%E5%BA%A6%E3%81%93%E3%81%AE%E3%83%9C%E3%82%BF%E3%83%B3%E3%82%92%E6%8A%BC%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%60%29%3B%20%7D%20%7D%20if%20%28partnerSelected%28%29%20%26%26%20d.initiator%20%26%26%20combos%28%29%5B1%5D%29%20%7B%20const%20cur%20%3D%20nk%28combos%28%29%5B1%5D.innerText%29%3B%20const%20want%20%3D%20t%20%3D%3E%20%21%2F%E9%81%B8%E6%8A%9E%7Cselect%2Fi.test%28t%29%20%26%26%20%28d.initiator%20%3D%3D%3D%20%27them%27%20%3F%20nk%28t%29%20%3D%3D%3D%20nk%28d.name%29%20%3A%20nk%28t%29%20%21%3D%3D%20nk%28d.name%29%29%3B%20if%20%28%21%28cur%20%26%26%20want%28combos%28%29%5B1%5D.innerText.trim%28%29%29%29%29%20%7B%20if%20%28%21await%20pick%28combos%28%29%5B1%5D%2C%20want%29%29%20msgs.push%28%27%E3%80%8C1to1%E3%82%92%E6%8F%90%E6%A1%88%E3%81%97%E3%81%9F%E3%83%A1%E3%83%B3%E3%83%90%E3%83%BC%E3%80%8D%E3%82%92%E6%89%8B%E3%81%A7%E9%81%B8%E3%82%93%E3%81%A7%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%27%29%3B%20%7D%20%7D%20note%28msgs.length%20%3F%20%27%E5%85%A5%E5%8A%9B%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%EF%BC%88%E8%A6%81%E7%A2%BA%E8%AA%8D%EF%BC%89%5Cn%27%20%2B%20msgs.join%28%27%5Cn%27%29%20%3A%20%60%24%7Bd.name%7D%E3%81%95%E3%82%93%E3%81%A8%E3%81%AE1to1%E3%82%92%E5%85%A5%E5%8A%9B%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82%5Cn%E5%86%85%E5%AE%B9%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%97%E3%81%A6%E3%80%8COK%EF%BC%88%E3%82%8F%E3%81%8B%E3%82%8A%E3%81%BE%E3%81%97%E3%81%9F%EF%BC%89%E3%80%8D%E3%82%92%E6%8A%BC%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%60%2C%20msgs.length%20%3E%200%29%3B%20%7D%29%28%29%3B";
+const fmtDate = d => (d || '').replace(/-/g, '/');
+function bniPanel(m, x) {
+  const cross = myChapter && m.chapter && nameKey(m.chapter).replace(/チャプター$/, '') !== nameKey(myChapter).replace(/チャプター$/, '');
+  const places = [...new Set(members.flatMap(y => (y.meetings || []).map(z => z.place)).filter(Boolean))];
+  return `<div class="hint"><b>自動入力：</b>①「BNI自動入力用にコピー」→ ② BNI Connectを開く → ③ ブックマークの「BNI 1to1自動入力」を押す → ④ 内容を確認して「わかりました」→ ⑤ ここで「BNIに登録済みにする」<br>
+      <span style="font-weight:400">ブックマークをまだ作っていない方は <a href="#" data-b="setup">こちら（最初の1回だけ）</a>。手で入力する場合は、各項目の「コピー」を使ってください。</span></div>
+    <div class="bmk-setup hidden">${bookmarkletSetup()}</div>
+
+    <div class="bni-row"><label>会った相手</label><div class="val">${esc(m.name || '')}${m.chapter ? `<span style="font-weight:400;color:var(--sub)">（${esc(m.chapter)}）</span>` : ''}</div><button class="btn small" data-c="name">コピー</button></div>
+    <div class="bni-row"><label>1to1を提案したメンバー</label><select data-f="initiator"><option value="">選択してください</option>${INITIATORS.map(([v, l]) => `<option value="${v}" ${x.initiator === v ? 'selected' : ''}>${l}</option>`).join('')}</select><span></span></div>
+    <div class="bni-row"><label>場所</label><input data-f="place" list="placeList-${x.id}" value="${esc(x.place || '')}" placeholder="例：オンライン（Zoom）、〇〇駅のカフェ"><datalist id="placeList-${x.id}">${['オンライン（Zoom）', 'オンライン（Google Meet）', ...places].map(p => `<option value="${esc(p)}">`).join('')}</datalist><button class="btn small" data-c="place">コピー</button></div>
+    <div class="bni-row"><label>日付</label><input type="date" data-f="date" value="${esc(x.date || '')}"><button class="btn small" data-c="date">コピー</button></div>
+    <div class="bni-row"><label>会話のトピック</label><input data-f="bniTopic" value="${esc(x.bniTopic || defaultTopic())}"><button class="btn small" data-c="bniTopic">コピー</button></div>
+    <div class="actions" style="margin-top:6px">
+      <span style="margin-right:auto;font-size:12px;color:var(--sub)">${x.bniDone ? '登録日：' + esc(fmtDate(x.bniDoneAt)) : '1to1はどちらか1人が登録すれば、2人ともに記録されます'}</span>
+      <button class="btn small primary" data-b="auto">BNI自動入力用にコピー</button>
+      <a class="btn small" href="${BNI_URL}" target="_blank" rel="noopener">BNI Connectを開く</a>
+      <button class="btn small" data-b="save">入力内容を保存</button>
+      <button class="btn small ${x.bniDone ? '' : 'primary'}" data-b="done">${x.bniDone ? '未登録に戻す' : 'BNIに登録済みにする'}</button>
+    </div>`;
+}
+function bindBniPanel(box, m, rec) {
+  const p = box.querySelector('.mtg-bni'); if (!p) return;
+  const read = () => { const o = {}; p.querySelectorAll('[data-f]').forEach(el => o[el.dataset.f] = el.value.trim()); return o; };
+  p.querySelectorAll('[data-c]').forEach(b => b.onclick = async () => {
+    const f = read(), k = b.dataset.c;
+    const v = k === 'name' ? (m.name || '') : k === 'date' ? fmtDate(f.date) : f[k];
+    if (!v) { toast('空欄です'); return; }
+    await copyText(v); toast(`「${v.slice(0, 20)}${v.length > 20 ? '…' : ''}」をコピーしました`);
+  });
+  const persist = async extra => {
+    const cur = members.find(y => y.id === m.id);
+    const meetings = (cur.meetings || []).map(y => y.id === rec.id ? { ...y, ...read(), ...extra } : y).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    await saveMember({ ...cur, meetings, updatedAt: Date.now() });
+  };
+  p.querySelector('[data-b=save]').onclick = async () => { await persist({}); toast('保存しました'); openDetail(m.id); };
+  p.querySelector('[data-b=setup]').onclick = e => { e.preventDefault(); p.querySelector('.bmk-setup').classList.toggle('hidden'); };
+  p.querySelector('[data-b=auto]').onclick = async () => {
+    const f = read();
+    if (!f.initiator) { toast('「1to1を提案したメンバー」を選んでください'); return; }
+    if (!f.place) { toast('「場所」を入力してください'); return; }
+    await copyText('BNI1to1:' + JSON.stringify({ v: 1, name: m.name || '', initiator: f.initiator === 'them' ? 'them' : 'me', place: f.place, date: f.date, topic: f.bniTopic || BNI_TOPIC }));
+    await persist({});
+    toast('コピーしました。BNI Connectで1to1画面を開き、ブックマーク「BNI 1to1自動入力」を押してください');
+  };
+  p.querySelector('[data-b=done]').onclick = async () => {
+    if (rec.bniDone) await persist({ bniDone: false, bniDoneAt: null });
+    else {
+      const f = read();
+      if (!f.initiator || !f.place || !f.date) { if (!confirm('「提案したメンバー」「場所」「日付」に空欄があります。登録済みにしますか？')) return; }
+      await persist({ bniDone: true, bniDoneAt: today() });
+    }
+    toast(rec.bniDone ? '未登録に戻しました' : 'BNI登録済みにしました'); openDetail(m.id);
+  };
+}
+function bookmarkletSetup() {
+  return `<div style="font-size:13px;line-height:1.8;padding:8px 0">
+    <b>BNI自動入力ボタンの作り方（Chrome / Edge、最初の1回だけ）</b><br>
+    1. <kbd>Ctrl</kbd>＋<kbd>Shift</kbd>＋<kbd>B</kbd>（Macは <kbd>⌘</kbd>＋<kbd>Shift</kbd>＋<kbd>B</kbd>）でブックマークバーを表示<br>
+    2. 下の赤いボタンを、ブックマークバーまでドラッグ＆ドロップ<br>
+    <a class="bmk" href="${BOOKMARKLET}" onclick="event.preventDefault();alert('このボタンはクリックではなく、ブックマークバーへドラッグしてください');">BNI 1to1自動入力</a><br>
+    3. 使うときは、BNI Connectのページでこのブックマークを押します（1to1の入力画面は自動で開きます）<br>
+    <span style="color:var(--sub)">※相手は「他チャプターを検索」から自動で探します（自チャプターの人も見つかります）。途中で「よろしいですか？」と出たら「OK」を押してください。<br>※初回はBNI Connect側で「クリップボードの読み取り」の許可を求められるので「許可」を押してください。<br>※送信（OK／わかりました）は押しません。内容を確認してご自身で押してください。</span></div>`;
+}
+
+// 未登録の1to1の一覧
+function pendingBni() { return members.flatMap(m => (m.meetings || []).filter(x => !x.bniDone && !isPlanned(x)).map(x => ({ m, x }))).sort((a, b) => (b.x.date || '').localeCompare(a.x.date || '')); }
+function updateBniBar() {
+  const n = pendingBni().length;
+  $('bniBar').classList.toggle('hidden', !n);
+  if (n) $('bniText').textContent = `BNIサイトに未登録の1to1が ${n}件 あります。`;
+}
+$('bniBtn').onclick = () => {
+  const list = pendingBni();
+  $('overlay').innerHTML = `<div class="detail"><div class="head"><div class="nm" style="font-size:18px">BNIに未登録の1to1（${list.length}件）</div><button class="btn small close" id="pClose">✕ 閉じる</button></div>
+    ${list.map(({ m, x }) => `<div class="mtg"><div class="mtg-h"><span class="ttl">${esc(x.date || '日付なし')}　${esc(m.name || '')}${m.business ? '（' + esc(m.business) + '）' : ''}</span><button class="btn small primary" data-open="${m.id}" data-mid="${x.id}">登録を進める</button></div></div>`).join('')}</div>`;
+  $('overlay').classList.remove('hidden');
+  $('pClose').onclick = closeOverlay;
+  $('overlay').querySelectorAll('[data-open]').forEach(b => b.onclick = () => {
+    openDetail(b.dataset.open);
+    const box = $('overlay').querySelector(`.mtg[data-mid="${b.dataset.mid}"]`);
+    if (box) { box.querySelector('.mtg-bni').classList.remove('hidden'); box.scrollIntoView({ block: 'center' }); }
+  });
+};
+
+// ===== 書き出し・読み込み =====
+function download(name, content, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const today = () => new Date().toISOString().slice(0, 10);
+$('exportJson').onclick = async () => {
+  if (!members.length) return toast('データがありません');
+  download(`1to1メンバー帳_${today()}.json`, JSON.stringify({ app: 'bni-1to1-book', version: 2, exportedAt: new Date().toISOString(), members, tombstones }, null, 2), 'application/json');
+  await Store.set('lastBackupAt', Date.now()); updateSaveState();
+};
+$('exportCsv').onclick = () => {
+  if (!members.length) return toast('データがありません');
+  const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const rows = [ALL_FIELDS.map(f => q(f[1])).join(','), ...members.map(m => ALL_FIELDS.map(([k]) => q(m[k])).join(','))];
+  download(`1to1メンバー帳_${today()}.csv`, '﻿' + rows.join('\r\n'), 'text/csv');
+};
+$('importJsonBtn').onclick = () => $('importJson').click();
+$('importJson').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { const r = await mergeData(JSON.parse(await f.text())); await changed(); toast(`追加 ${r.add} 件・更新 ${r.upd} 件`); }
+  catch (err) { alert('読み込めませんでした：' + err.message); }
+};
+$('wipe').onclick = async () => {
+  if (!confirm('すべてのメンバー情報を削除します。よろしいですか？')) return;
+  const now = Date.now(); members.forEach(m => tombstones[m.id] = now);
+  await Store.clear(); await Store.set('tombstones', tombstones); await changed(); toast('削除しました');
+};
+
+$('bmkSetupTab').innerHTML = bookmarkletSetup();
+$('myChapterSave').onclick = async () => { myChapter = $('myChapter').value.trim(); await Store.set('myChapter', myChapter); toast('保存しました'); };
+$('privacyOk').onclick = async () => { await Store.set('privacyAck', '1.0.0'); $('privacyFirst').classList.add('hidden'); };
+(async () => {
+  await Store.init();
+  if (!(await Store.get('privacyAck'))) $('privacyFirst').classList.remove('hidden');
+  myChapter = (await Store.get('myChapter')) || ''; $('myChapter').value = myChapter;
+  tombstones = (await Store.get('tombstones')) || {};
+  await reload();
+  await AutoSave.init();
+  updateSaveState();
+})();
+</script>
+</body>
+</html>
