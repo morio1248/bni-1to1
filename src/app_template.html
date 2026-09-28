@@ -199,6 +199,7 @@ mark{background:#ffe58a;padding:0 1px}
   <section id="view-list">
     <div class="tools">
       <input type="search" id="q" placeholder="名前・業種・紹介してほしい方・趣味など何でも検索（スペース区切りでAND）">
+      <select id="fCat"><option value="">BNI・BNI以外すべて</option><option value="BNI">BNIのみ</option><option value="BNI以外">BNI以外のみ</option></select>
       <select id="fBiz"><option value="">すべての事業</option></select>
       <select id="sort">
         <option value="updated">更新が新しい順</option>
@@ -327,7 +328,7 @@ mark{background:#ffe58a;padding:0 1px}
 
 // ===== 項目定義 =====
 const SECTIONS = [
-  { title: '基本', fields: [['name','名前'],['kana','よみがな'],['birthday','生年月日','date'],['chapter','チャプター'],['region','リージョン'],['bniCareer','BNI歴'],['date1to1','1to1実施日','date'],['contact','連絡先'],['sheetUrl','1to1シートのURL']] },
+  { title: '基本', fields: [['name','名前'],['kana','よみがな'],['category','区分','select:BNI|BNI以外'],['birthday','生年月日','date'],['chapter','チャプター'],['region','リージョン'],['bniCareer','BNI歴'],['date1to1','1to1実施日','date'],['contact','連絡先'],['sheetUrl','1to1シートのURL']] },
   { title: 'ビジネスについて', fields: [['business','事業名・カテゴリー'],['companyName','会社名'],['specialty','専門分野'],['location','所在地・住所'],['experience','経験年数'],['education','学歴'],['businessContents','事業内容','area'],['pastJobs','経歴・過去の職業','area'],['recentCustomers','直近の顧客','area wide']] },
   { title: '紹介・協業', accent: true, fields: [['wantReferrals','紹介してほしい方','area wide'],['collaborators','協業しやすい方','area'],['mismatch','ミスマッチな紹介（紹介しないでほしい方）','area'],['usp','強み（USP）','area'],['story','起業の経緯・思い','area'],['closing','紹介の仕方・声のかけ方','area'],['introTemplate','紹介するときのテンプレート','area wide']] },
   { title: '個人的な情報', fields: [['spouse','配偶者'],['family','家族'],['pets','ペット'],['hobbies','趣味','area'],['specialSkill','特技'],['otherInterests','その他の関心事'],['hometown','出身地'],['residence','居住地'],['residenceYears','居住年数']] },
@@ -466,7 +467,8 @@ const Inbox = (() => {
       for await (const [name, h] of dir.entries()) {
         if (h.kind !== 'file' || !/\.json$/i.test(name) || done.has(name)) continue;
         try {
-          const r = await mergeData(JSON.parse(await (await h.getFile()).text()));
+          const obj = JSON.parse(await (await h.getFile()).text());
+          const r = obj && obj.kind === 'patch' ? await applyPatch(obj) : await mergeData(obj);
           add += r.add; upd += r.upd; files++;
           try { await dir.removeEntry(name); } catch (e) { done.add(name); }
         } catch (e) { console.error('受け取りフォルダ', name, e); }
@@ -513,6 +515,44 @@ document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible') return;
   await AutoSave.refresh(); await Inbox.scan(true);
 });
+
+const catOf = m => m.category || 'BNI';
+
+// 追記型の取り込み（受け取りフォルダ用）
+// {app:'bni-1to1-book', kind:'patch', items:[{ name, fields:{...}, overwrite:false, meeting:{ id, date, title, text } }]}
+// 名前で照合し、いなければ新規登録。いれば空欄だけ埋める（overwrite:true ならfieldsの値で上書き）。meetingは同じidがなければ追加。
+async function applyPatch(obj) {
+  let add = 0, upd = 0;
+  for (const it of obj.items || []) {
+    const f = { ...(it.fields || {}) }; const name = (it.name || f.name || '').trim(); if (!name) continue;
+    f.name = f.name || name;
+    const cur = members.find(x => nameKey(x.name) === nameKey(name));
+    const m = cur ? { ...cur } : { id: uid(), createdAt: Date.now() };
+    let touched = !cur;
+    for (const [k, v] of Object.entries(f)) {
+      if (typeof v !== 'string' || !v.trim() || k === 'id') continue;
+      if (!m[k] || (it.overwrite && m[k] !== v)) { m[k] = v; touched = true; }
+    }
+    const mt = it.meeting;
+    if (mt && (mt.text || mt.date)) {
+      const list = m.meetings || [];
+      if (!mt.id || !list.some(x => x.id === mt.id)) {
+        m.meetings = [{ id: mt.id || uid(), createdAt: Date.now(), date: mt.date || '', title: mt.title || '1to1', source: mt.source || '自動取り込み', text: mt.text || '' }, ...list]
+          .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        if (mt.date && catOf(m) === 'BNI' && (!m.date1to1 || mt.date > m.date1to1) && /1to1|1対1|ワンツーワン/i.test(mt.title || '')) m.date1to1 = mt.date;
+        touched = true;
+      }
+    }
+    if (!touched) continue;
+    if (it.source) m.sources = [...(m.sources || []).filter(s => s.name !== it.source), { name: it.source, at: today() }];
+    m.updatedAt = Date.now(); delete tombstones[m.id];
+    await Store.put(m); cur ? upd++ : add++;
+    if (!cur) members.push(m); else members[members.indexOf(cur)] = m;
+  }
+  await Store.set('tombstones', tombstones);
+  await reload();
+  return { add, upd };
+}
 
 // 他の保存データ（JSON）と合流：新しい方を採用、削除記録も反映
 async function mergeData(obj) {
@@ -586,7 +626,9 @@ function renderList() {
   const biz = $('fBiz').value;
   const bizList = [...new Set(members.map(m => m.business).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja'));
   $('fBiz').innerHTML = '<option value="">すべての事業</option>' + bizList.map(b => `<option ${b === biz ? 'selected' : ''}>${esc(b)}</option>`).join('');
+  const cat = $('fCat').value;
   let list = members.filter(m => {
+    if (cat && catOf(m) !== cat) return false;
     if (biz && m.business !== biz) return false;
     if (!terms.length) return true;
     const hay = (ALL_FIELDS.map(([k]) => m[k] || '').join(' ') + ' ' + (m.meetings || []).map(x => x.text).join(' ')).normalize('NFKC').toLowerCase();
@@ -615,7 +657,7 @@ function renderList() {
       <div class="biz">${hl(m.business || '事業名未入力', terms)}</div>
       <div class="nm">${hl(m.name || '(名前未入力)', terms)}</div>
       <div class="meta">${hl([m.companyName, m.specialty].filter(Boolean).join('／'), terms)}</div>
-      ${m.chapter ? `<div class="meta">${hl(m.chapter, terms)}チャプター</div>` : ''}
+      ${catOf(m) === 'BNI以外' ? '<div class="meta"><span class="badge plan">BNI以外</span></div>' : m.chapter ? `<div class="meta">${hl(m.chapter, terms)}チャプター</div>` : ''}
       ${want ? `<div class="want"><b>紹介してほしい：</b>${hl(want, terms)}</div>` : ''}
       ${hit}
       ${(m.meetings || []).length ? `<div class="meta">📝 1to1の記録 ${m.meetings.length}件</div>` : ''}
@@ -624,7 +666,7 @@ function renderList() {
   }).join('');
   document.querySelectorAll('.card').forEach(c => c.onclick = () => openDetail(c.dataset.id));
 }
-['q','fBiz','sort'].forEach(id => $(id).addEventListener('input', renderList));
+['q','fCat','fBiz','sort'].forEach(id => $(id).addEventListener('input', renderList));
 
 // ===== 詳細 =====
 function ageOf(d) { const b = new Date(d), n = new Date(); if (isNaN(b)) return ''; let a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return `（${a}歳）`; }
@@ -649,10 +691,10 @@ function openDetail(id) {
     <div class="sec"><span class="sec-t accent">1to1の記録</span>
       ${(m.meetings || []).map(x => `<div class="mtg" data-mid="${x.id}">
         <div class="mtg-h"><span class="ttl">${esc(x.date || '日付なし')}　${esc(x.title || '')}</span>
-          ${isPlanned(x) ? `<span class="badge plan">予定${x.time ? ' ' + esc(x.time) : ''}</span>` : `<span class="badge ${x.bniDone ? 'done' : 'todo'}">${x.bniDone ? 'BNI登録済み' : 'BNI未登録'}</span>`}
+          ${isPlanned(x) ? `<span class="badge plan">予定${x.time ? ' ' + esc(x.time) : ''}</span>` : catOf(m) === 'BNI以外' ? '' : `<span class="badge ${x.bniDone ? 'done' : 'todo'}">${x.bniDone ? 'BNIコネクト登録済み' : 'BNIコネクト未登録'}</span>`}
           ${x.text ? `<span class="len">${x.text.length.toLocaleString()}文字</span>` : ''}
           <button class="btn small ${isPlanned(x) ? 'primary' : ''}" data-a="plan">予定・カレンダー</button>
-          ${isPlanned(x) ? '' : `<button class="btn small ${x.bniDone ? '' : 'primary'}" data-a="bni">BNIに登録</button>`}
+          ${isPlanned(x) || catOf(m) === 'BNI以外' ? '' : `<button class="btn small ${x.bniDone ? '' : 'primary'}" data-a="bni">BNIコネクトに登録</button>`}
           ${x.text ? '<button class="btn small" data-a="toggle">全文</button><button class="btn small" data-a="copy">AI用にコピー</button><button class="btn small" data-a="ai">AIの返答を貼る</button>' : ''}
           <button class="btn small danger" data-a="del">削除</button></div>
         <div class="mtg-plan hidden">${planPanel(m, x)}</div>
@@ -660,7 +702,7 @@ function openDetail(id) {
         <div class="mtg-body hidden">${hl(x.text || '', terms)}</div>
         <div class="mtg-ai hidden"><textarea placeholder="AIの返答をここに貼り付け（Ctrl＋V）→ 自動で反映画面が開きます"></textarea></div>
       </div>`).join('') || '<div class="howto">まだ記録はありません。</div>'}
-      <div class="row" style="margin-top:8px"><button class="btn small primary" id="dAddPlan">＋ 1to1を予定する</button><button class="btn small" id="dAddMtg">＋ 1to1を記録（BNI登録用）</button><button class="btn small" id="dAddTs">＋ 文字起こしを追加</button></div>
+      <div class="row" style="margin-top:8px"><button class="btn small primary" id="dAddPlan">＋ 1to1を予定する</button><button class="btn small" id="dAddMtg">＋ 1to1を記録（BNIコネクト登録用）</button><button class="btn small" id="dAddTs">＋ 文字起こしを追加</button></div>
       ${(m.meetings || []).some(x => x.text) ? '<p class="howto">AIで要約：①「AI用にコピー」→ ② ClaudeやChatGPTに貼り付けて送信 → ③ 返答をコピーして「AIの返答を貼る」に貼り付け<br>※AIに送る前に：録音・文字起こしは相手の了承を得ていること、AIの学習への利用をオフにしていることを確認してください。</p>' : ''}
     </div>
     <div class="actions">
@@ -719,7 +761,10 @@ function formHtml(data, highlightBlank, changed) {
     const area = t.includes('area');
     const wide = area && (t.includes('wide') || (data[k] || '').length > 60 || (data[k] || '').includes('\n')) ? 'wide' : '';
     const rows = Math.min(10, Math.max(2, (data[k] || '').split('\n').length + Math.floor((data[k] || '').length / 70)));
-    const input = area
+    const opts = t.startsWith('select:') ? t.slice(7).split('|') : null;
+    const input = opts
+      ? `<select data-k="${k}" class="${changed && changed.has(k) ? 'changed' : ''}">${opts.map(o => `<option ${(data[k] || opts[0]) === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`
+      : area
       ? `<textarea data-k="${k}" class="${blank ? 'blank' : ''} ${changed && changed.has(k) ? 'changed' : ''}" rows="${rows}">${esc(data[k] || '')}</textarea>`
       : `<input data-k="${k}" type="${t === 'date' ? 'date' : 'text'}" class="${blank ? 'blank' : ''} ${changed && changed.has(k) ? 'changed' : ''}" value="${esc(data[k] || '')}">`;
     return `<div class="f ${wide}"><label>${esc(l)}${blank ? '　<span style="color:#b07b00">読み取れず・要入力</span>' : ''}</label>${input}</div>`;
@@ -1014,7 +1059,7 @@ function applyAi(m, text, rec) {
     else if (areaKeys.has(k)) { next[k] += `\n【${date || ''} 1to1より】\n` + r[k]; changed.add(k); }
     else kept.push(`${LABEL[k]}（AI：${r[k]}）`);
   }
-  openEdit(next, { changed, banner: `AIの要約から <b>${changed.size}項目</b> を反映しました（緑色の欄）。内容を確認して「保存」を押してください。` + (topicSaved ? '<br>BNI登録用の「会話のトピック」も記録に入れました。' : '') + (kept.length ? `<br>既に入力済みのため変えなかった項目：${esc(kept.join('、'))}` : '') });
+  openEdit(next, { changed, banner: `AIの要約から <b>${changed.size}項目</b> を反映しました（緑色の欄）。内容を確認して「保存」を押してください。` + (topicSaved ? '<br>BNIコネクト登録用の「会話のトピック」も記録に入れました。' : '') + (kept.length ? `<br>既に入力済みのため変えなかった項目：${esc(kept.join('、'))}` : '') });
 }
 
 // ===== 1to1の予定とカレンダー連携 =====
@@ -1119,7 +1164,7 @@ const fmtDate = d => (d || '').replace(/-/g, '/');
 function bniPanel(m, x) {
   const cross = myChapter && m.chapter && nameKey(m.chapter).replace(/チャプター$/, '') !== nameKey(myChapter).replace(/チャプター$/, '');
   const places = [...new Set(members.flatMap(y => (y.meetings || []).map(z => z.place)).filter(Boolean))];
-  return `<div class="hint"><b>自動入力：</b>①「BNI自動入力用にコピー」→ ② BNI Connectを開く → ③ ブックマークの「BNI 1to1自動入力」を押す → ④ 内容を確認して「わかりました」→ ⑤ ここで「BNIに登録済みにする」<br>
+  return `<div class="hint"><b>自動入力：</b>①「BNI自動入力用にコピー」→ ② BNI Connectを開く → ③ ブックマークの「BNI 1to1自動入力」を押す → ④ 内容を確認して「わかりました」→ ⑤ ここで「BNIコネクトに登録済みにする」<br>
       <span style="font-weight:400">ブックマークをまだ作っていない方は <a href="#" data-b="setup">こちら（最初の1回だけ）</a>。手で入力する場合は、各項目の「コピー」を使ってください。</span></div>
     <div class="bmk-setup hidden">${bookmarkletSetup()}</div>
 
@@ -1133,7 +1178,7 @@ function bniPanel(m, x) {
       <button class="btn small primary" data-b="auto">BNI自動入力用にコピー</button>
       <a class="btn small" href="${BNI_URL}" target="_blank" rel="noopener">BNI Connectを開く</a>
       <button class="btn small" data-b="save">入力内容を保存</button>
-      <button class="btn small ${x.bniDone ? '' : 'primary'}" data-b="done">${x.bniDone ? '未登録に戻す' : 'BNIに登録済みにする'}</button>
+      <button class="btn small ${x.bniDone ? '' : 'primary'}" data-b="done">${x.bniDone ? '未登録に戻す' : 'BNIコネクトに登録済みにする'}</button>
     </div>`;
 }
 function bindBniPanel(box, m, rec) {
@@ -1167,7 +1212,7 @@ function bindBniPanel(box, m, rec) {
       if (!f.initiator || !f.place || !f.date) { if (!confirm('「提案したメンバー」「場所」「日付」に空欄があります。登録済みにしますか？')) return; }
       await persist({ bniDone: true, bniDoneAt: today() });
     }
-    toast(rec.bniDone ? '未登録に戻しました' : 'BNI登録済みにしました'); openDetail(m.id);
+    toast(rec.bniDone ? '未登録に戻しました' : 'BNIコネクト登録済みにしました'); openDetail(m.id);
   };
 }
 function bookmarkletSetup() {
@@ -1181,7 +1226,7 @@ function bookmarkletSetup() {
 }
 
 // 未登録の1to1の一覧
-function pendingBni() { return members.flatMap(m => (m.meetings || []).filter(x => !x.bniDone && !isPlanned(x)).map(x => ({ m, x }))).sort((a, b) => (b.x.date || '').localeCompare(a.x.date || '')); }
+function pendingBni() { return members.filter(m => catOf(m) !== 'BNI以外').flatMap(m => (m.meetings || []).filter(x => !x.bniDone && !isPlanned(x)).map(x => ({ m, x }))).sort((a, b) => (b.x.date || '').localeCompare(a.x.date || '')); }
 function updateBniBar() {
   const n = pendingBni().length;
   $('bniBar').classList.toggle('hidden', !n);
@@ -1189,7 +1234,7 @@ function updateBniBar() {
 }
 $('bniBtn').onclick = () => {
   const list = pendingBni();
-  $('overlay').innerHTML = `<div class="detail"><div class="head"><div class="nm" style="font-size:18px">BNIに未登録の1to1（${list.length}件）</div><button class="btn small close" id="pClose">✕ 閉じる</button></div>
+  $('overlay').innerHTML = `<div class="detail"><div class="head"><div class="nm" style="font-size:18px">BNIコネクトに未登録の1to1（${list.length}件）</div><button class="btn small close" id="pClose">✕ 閉じる</button></div>
     ${list.map(({ m, x }) => `<div class="mtg"><div class="mtg-h"><span class="ttl">${esc(x.date || '日付なし')}　${esc(m.name || '')}${m.business ? '（' + esc(m.business) + '）' : ''}</span><button class="btn small primary" data-open="${m.id}" data-mid="${x.id}">登録を進める</button></div></div>`).join('')}</div>`;
   $('overlay').classList.remove('hidden');
   $('pClose').onclick = closeOverlay;
