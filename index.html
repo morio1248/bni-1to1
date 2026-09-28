@@ -202,7 +202,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.4.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.5.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2120,6 +2120,68 @@ $('wipe').onclick = async () => {
 
 $('bmkSetupTab').innerHTML = bookmarkletSetup();
 $('myChapterSave').onclick = async () => { myChapter = $('myChapter').value.trim(); await Store.set('myChapter', myChapter); toast('保存しました'); };
+const AUTHOR_VERSION = 1;
+const AUTHOR = {
+ "id": "author-saito-masahiro",
+ "builtin": "author",
+ "category": "BNI",
+ "name": "斎藤政宏",
+ "kana": "さいとうまさひろ",
+ "chapter": "F×R",
+ "region": "東京MS",
+ "contact": "LINE：https://line.me/ti/p/YsKtNqLfGo\nFacebook：https://www.facebook.com/share/1K4RBh7HXM/",
+ "sheetUrl": "https://morio1248.github.io/1to1-saito/",
+ "business": "がん保険",
+ "companyName": "アフラック保険サービス株式会社（代理店）",
+ "specialty": "がん保険・小児がん保険",
+ "location": "新宿モノリス（東京第三支社第四営業所）。平日9時〜18時に出社",
+ "experience": "保険営業：2025年7月〜（アフラックコンサルタント）",
+ "businessContents": "ご家庭の状況やご希望をうかがい、細かくカスタマイズしたオーダーメイドの保障をご提案\nがん保険がメイン。特に小児がん保険の大切さを伝えることを使命に活動\n法人向けに、社員の福利厚生としてのがん保険も取り扱い",
+ "pastJobs": "学生時代：丸源ラーメン、ピザハットのアルバイト\nネットワーク系エンジニア（8年）：お客様と話す中で営業を意識\nSES営業・人材紹介営業（2年）：個人営業が向いていると気づく\n2025年7月〜：保険営業（アフラックコンサルタント）",
+ "wantReferrals": "【金の卵：直接ご紹介いただきたい方】\n・アフラックの保険をお持ちの方（今の保障の見直しをお手伝い）\n・小さいお子様がいる方（小児がんへの備えを一緒に）\n・ダーツ好きな方\n・ペット好きの方",
+ "collaborators": "【金のがちょう：継続的に紹介し合えるパートナー】\n・医療系の事業者\n・健康系の事業者\n・子供向けの事業者",
+ "usp": "がん保険をメインで取り扱う、珍しい保険屋。ご家庭ごとに必要な分だけをオーダーメイドで設計。保険屋なのに基本出社で、ご相談の時間を合わせやすい",
+ "story": "父のがん闘病をきっかけに、同じ思いをする家族をもう増やしたくないと考え、エンジニアから保険営業へ",
+ "introTemplate": "東京MSリージョン、F×Rチャプターでがん保険カテゴリーとして活動されている、アフラック保険サービス株式会社の斎藤政宏さんをご紹介します。\nがん保険をメインで取り扱っている、珍しい保険屋さんです。\n小児がん保険の大切さを伝えることを使命に活動されています。\n保険業界2年目で、色々な方と繋がりたいとのことですので、よろしければご紹介いかがでしょうか。",
+ "family": "妻、長女（2歳）、次女（0歳）",
+ "pets": "キャバリア2匹（リア・ロキ）、ヒガシヘルマンリクガメ（もなか）、文鳥（そぼろ）",
+ "hobbies": "ダーツ（ブル率50%）、クラフトビール（IPA）、ボードゲーム（カタン）、ポーカー",
+ "otherInterests": "動物（爬虫類などレアなもの）、水耕栽培（引退後はトマトの水耕栽培）",
+ "hometown": "東京都西東京市（ひばりヶ丘）",
+ "residence": "東京都西東京市（ひばりヶ丘）",
+ "wish": "小児がんの保険の大切さを伝えること",
+ "secret": "一人でご飯を食べるのが苦手。一人でラーメン屋に行ったこともありません。ぜひご一緒に",
+ "successKey": "家庭にとって本当に必要な保険はなにか？を、一緒に考えること",
+ "goals": "3年以内にがん保険販売件数 全社1位",
+ "accomplishments": "ルーキー賞（10人に1人くらい）\n空手：高校1年で高校生の部 東京都8位・西東京市で優勝",
+ "interests": "動物（爬虫類などレアなもの）、水耕栽培、ダーツバー、ボードゲーム（カタン）、ポーカー",
+ "networks": "ITエンジニア、色々な交流会で出会った方々",
+ "skills": "がん保険の提案、空手（8年）、剣道（3年）",
+ "otherInfo": "最近の口ぐせ：「がん保険は、2人に1人は使わずに終わる」\nゴールドリボン運動に毎月募金し、街頭募金活動にも参加",
+ "source": "作者の自己紹介ページ",
+ "sources": [
+  {
+   "name": "作者の自己紹介ページ",
+   "at": "2026-09-28"
+  }
+ ]
+};
+// 配布用：作者（斎藤政宏）の情報を最初から登録しておく。削除されたら再登録しない。作者が内容を更新したら、利用者が編集していない場合だけ差し替える
+async function seedAuthor() {
+  const seeded = (await Store.get('authorSeeded')) || 0;
+  if (seeded >= AUTHOR_VERSION || tombstones[AUTHOR.id]) return;
+  const cur = members.find(x => x.id === AUTHOR.id);
+  const other = members.find(x => x.id !== AUTHOR.id && nameKey(x.name) === nameKey(AUTHOR.name));
+  const lastStamp = await Store.get('authorStamp');
+  if (!other && (!cur || cur.updatedAt === lastStamp)) { // 未登録、または利用者が一度も編集していない
+    const stamp = Date.now();
+    await Store.put({ ...(cur || {}), ...AUTHOR, meetings: (cur && cur.meetings) || [], createdAt: (cur && cur.createdAt) || stamp, updatedAt: stamp, authorVersion: AUTHOR_VERSION });
+    await Store.set('authorStamp', stamp);
+    await changed();
+  }
+  await Store.set('authorSeeded', AUTHOR_VERSION);
+}
+
 // ===== かんたんセットアップ（初回ウィザード） =====
 const Wizard = (() => {
   const isMac = /Mac/i.test(navigator.platform || navigator.userAgent);
@@ -2246,6 +2308,7 @@ $('privacyOk').onclick = async () => { await Store.set('privacyAck', '1.0.0'); $
   await reload();
   await AutoSave.init();
   await Inbox.init();
+  await seedAuthor();
   updateSaveState();
   if (await Wizard.autoStart()) $('privacyFirst').classList.add('hidden');
 })();
