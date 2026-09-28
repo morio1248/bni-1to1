@@ -202,7 +202,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.6.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.7.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -1174,8 +1174,7 @@ function buildSheetPrompt(fields) {
 ・項目名は下の表記のまま変えないでください（言い換え・番号・太字・表・コードブロックは使わない）
 ・「項目名：」の項目は、同じ行の「：」の後に書いてください
 ・【】の項目は、次の行から書いてください。内容はできるだけ省略せず、元の文章を残してください
-・生年月日は 1990-06-10 のように「年-月-日」の数字で書いてください（年が分からなければ「生年月日」は省略し、分かる範囲を【シート内のその他の項目】に書く）
-・下の項目に当てはまらない内容は、【シート内のその他の項目】に「見出し：内容」の形でまとめてください
+・下の項目に当てはまらない内容は、【名簿にないその他の項目】に「見出し：内容」の形でまとめてください
 ・画像の中の文字も読み取ってください。シートが添付されていない場合や、読み取れない場合は、その旨だけを答えてください
 ・前置きやまとめは不要です。下の形式だけを出力してください
 
@@ -1225,7 +1224,7 @@ function parseSheetText(raw, opts) { return parseLabeledText(raw, opts); }
 
 // ===== 項目定義 =====
 const SECTIONS = [
-  { title: 'メンバー情報', fields: [['name','名前'],['kana','ふりがな'],['romaji','ローマ字'],['business','カテゴリー'],['businessEn','カテゴリー（英語表記）'],['bniRole','BNIの役職'],['joinDate','入会日（宣誓式の日）','date'],['category','区分','select:BNI|BNI以外'],['chapter','チャプター'],['region','リージョン'],['birthday','生年月日','date']] },
+  { title: 'メンバー情報', fields: [['name','名前'],['kana','ふりがな'],['romaji','ローマ字'],['business','カテゴリー'],['businessEn','カテゴリー（英語表記）'],['bniRole','BNIの役職'],['joinDate','入会日（宣誓式の日）','date'],['category','区分','select:BNI|BNI以外'],['chapter','チャプター'],['region','リージョン']] },
   { title: 'ビジネス情報', fields: [['companyName','会社名'],['title','肩書・部署'],['phone','電話番号'],['location','郵便番号・住所'],['email','メールアドレス'],['homepage','ホームページ'],['facebook','Facebook']] },
   { title: 'ビジネスについて', fields: [['bizName','事業名'],['specialty','専門分野'],['office','所在地'],['experience','現在のビジネスの経験年数'],['pastJobs','過去に経験した職業','area']] },
   { title: '家族について', fields: [['spouse','配偶者'],['family','その他家族'],['pets','ペット'],['hobbies','趣味','area'],['otherInterests','その他関心事'],['hometown','出身地'],['residence','居住地'],['residenceYears','居住年数']] },
@@ -1235,17 +1234,23 @@ const SECTIONS = [
   { title: 'コンタクトサークル', fields: [['contactTop3','Contact Circle Top3','area'],['contactCircle','コンタクトサークル（紹介し合える・協業しやすい仲間）','area']] },
   { title: '直近10件の顧客リスト', fields: [['recentCustomers','直近10件の顧客','area wide'],['howCame','彼らはどのようにしてあなたの元へやってきましたか？','area'],['servicesProvided','彼らにどのような商品・サービスを提供しましたか？','area'],['averageCustomer','彼らは平均的な顧客でしたか？','area']] },
   { title: 'リファーラルについて', fields: [['otherReferrers','その他のリファーラル提供者にはどんな人がいますか？','area'],['qualityReferral','「質の高い」リファーラルとは？','area'],['mismatch','「不適切な」リファーラルとは？','area']] },
-  { title: '1to1 Navi 独自の項目', fields: [['date1to1','1to1実施日','date'],['sheetUrl','1to1シートのURL'],['introTemplate','紹介するときのテンプレート','area wide'],['otherInfo','シート内のその他の項目','area wide']] },
+  { title: '1to1 Navi 独自の項目', fields: [['date1to1','1to1実施日','date'],['sheetUrl','1to1シートのURL'],['otherInfo','名簿にないその他の項目','area wide']] },
   { title: '自分用メモ', fields: [['memo','メモ（紹介できそうな人、話したこと等）','area wide']] },
 ];
 const ALL_FIELDS = SECTIONS.flatMap(s => s.fields);
 const LABEL = Object.fromEntries(ALL_FIELDS.map(f => [f[0], f[1]]));
 const USER_ONLY = new Set(['category','chapter','date1to1','memo','sheetUrl']);
 // 以前の項目・名簿にない項目の引っ越し先（データは消さない）
-const LEGACY_TO = { businessContents: 'servicesProvided', collaborators: 'contactCircle' };
+const LEGACY_TO = { businessContents: 'servicesProvided', collaborators: 'contactCircle', introTemplate: 'closing' };
 const LEGACY_LABEL = { contact: '連絡先', education: '学歴', story: '起業の経緯・思い', specialSkill: '特技', bniCareer: 'BNI歴', lifework: 'ライフワーク', personality: '性格・こだわり', values: '大切にしていること', motto: '座右の銘', bniRoles: '経験した役職', whyBni: 'Why BNI?', birthdayNote: '生年月日のメモ' };
 function migrateLegacy(m) {
   let changed = false;
+  if (m.birthday) { // 生年月日は名簿の「名前とプライベート情報」へ
+    const d = String(m.birthday).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const txt = d ? `${d[1]}年${+d[2]}月${+d[3]}日生まれ` : `生年月日：${m.birthday}`;
+    if (!(m.privateInfo || '').includes(d ? `${+d[2]}月${+d[3]}日` : m.birthday)) m.privateInfo = m.privateInfo ? txt + '\n' + m.privateInfo : txt;
+    delete m.birthday; changed = true;
+  }
   for (const [o, n] of Object.entries(LEGACY_TO)) if (m[o]) { m[n] = m[n] ? (m[n].includes(m[o]) ? m[n] : m[n] + '\n' + m[o]) : m[o]; delete m[o]; changed = true; }
   for (const [o, l] of Object.entries(LEGACY_LABEL)) if (m[o]) { const line = `${l}：${m[o]}`; if (!(m.otherInfo || '').includes(m[o])) m.otherInfo = m.otherInfo ? m.otherInfo + '\n' + line : line; delete m[o]; changed = true; }
   return changed;
@@ -2207,14 +2212,13 @@ $('wipe').onclick = async () => {
 
 $('bmkSetupTab').innerHTML = bookmarkletSetup();
 $('myChapterSave').onclick = async () => { myChapter = $('myChapter').value.trim(); await Store.set('myChapter', myChapter); toast('保存しました'); };
-const AUTHOR_VERSION = 4;
+const AUTHOR_VERSION = 5;
 const AUTHOR = {
  "id": "author-saito-masahiro",
  "builtin": "author",
  "category": "BNI",
  "name": "斎藤政宏",
  "kana": "さいとうまさひろ",
- "birthday": "1990-06-10",
  "chapter": "F×R",
  "region": "東京MS",
  "sheetUrl": "https://morio1248.github.io/1to1-saito/",
@@ -2224,7 +2228,6 @@ const AUTHOR = {
  "pastJobs": "学生時代：丸源ラーメン、ピザハットのアルバイト\nネットワーク系エンジニア（8年）：お客様と話す中で営業を意識\nSES営業・人材紹介営業（2年）：個人営業が向いていると気づく\n2025年7月〜：保険営業（アフラックコンサルタント）",
  "wantReferrals": "【金の卵：直接ご紹介いただきたい方】\n・アフラックの保険をお持ちの方（今の保障の見直しをお手伝い）\n・小さいお子様がいる方（小児がんへの備えを一緒に）\n・ダーツ好きな方\n・ペット好きの方",
  "usp": "がん保険をメインで取り扱う、珍しい保険屋。ご家庭ごとに必要な分だけをオーダーメイドで設計。保険屋なのに基本出社で、ご相談の時間を合わせやすい",
- "introTemplate": "東京MSリージョン、F×Rチャプターでがん保険カテゴリーとして活動されている、アフラック保険サービス株式会社の斎藤政宏さんをご紹介します。\nがん保険をメインで取り扱っている、珍しい保険屋さんです。\n小児がん保険の大切さを伝えることを使命に活動されています。\n保険業界2年目で、色々な方と繋がりたいとのことですので、よろしければご紹介いかがでしょうか。",
  "family": "妻、長女（2歳）、次女（0歳）",
  "pets": "キャバリア2匹（リア・ロキ）、ヒガシヘルマンリクガメ（もなか）、文鳥（そぼろ）",
  "hobbies": "ダーツ（ブル率50%）、クラフトビール（IPA）、ボードゲーム（カタン）、ポーカー",
@@ -2255,11 +2258,12 @@ const AUTHOR = {
  "bizName": "アフラック保険サービス株式会社",
  "office": "新宿モノリス（平日9時〜18時に出社）",
  "experience": "1年（2025年7月〜）",
- "privateInfo": "斎藤政宏（サイトウ マサヒロ）1990年生まれ\n東京都西東京市（ひばりヶ丘）出身・在住\n妻、長女（2歳）、次女（0歳）\n\n趣味：ダーツ（ブル率50%）、クラフトビール（IPA）、ボードゲーム（カタン）、ポーカー",
+ "privateInfo": "斎藤政宏（サイトウ マサヒロ）1990年6月10日生まれ\n東京都西東京市（ひばりヶ丘）出身・在住\n妻、長女（2歳）、次女（0歳）\n\n趣味：ダーツ（ブル率50%）、クラフトビール（IPA）、ボードゲーム（カタン）、ポーカー",
  "companyTitle": "アフラック保険サービス株式会社・アフラックコンサルタント",
  "otoSpecialty": "がん保険（特に小児がん保険）",
  "servicesProvided": "ご家庭の状況やご希望をうかがい、細かくカスタマイズしたオーダーメイドのがん保険をご提案\n子ども用がん保険（小児がんへの備え）\n法人向けに、社員の福利厚生としてのがん保険",
- "contactCircle": "【金のがちょう：継続的に紹介し合えるパートナー】\n・医療系の事業者\n・健康系の事業者\n・子供向けの事業者"
+ "contactCircle": "【金のがちょう：継続的に紹介し合えるパートナー】\n・医療系の事業者\n・健康系の事業者\n・子供向けの事業者",
+ "closing": "東京MSリージョン、F×Rチャプターでがん保険カテゴリーとして活動されている、アフラック保険サービス株式会社の斎藤政宏さんをご紹介します。\nがん保険をメインで取り扱っている、珍しい保険屋さんです。\n小児がん保険の大切さを伝えることを使命に活動されています。\n保険業界2年目で、色々な方と繋がりたいとのことですので、よろしければご紹介いかがでしょうか。"
 };
 // 配布用：作者（斎藤政宏）の情報を最初から登録しておく。削除されたら再登録しない。作者が内容を更新したら、利用者が編集していない場合だけ差し替える
 async function seedAuthor() {
