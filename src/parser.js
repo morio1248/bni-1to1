@@ -136,6 +136,8 @@ const MULTI = new Set(['goals', 'accomplishments', 'interests', 'networks', 'ski
 
 // 「ラベル：値」「【見出し】」などのテキスト → 項目
 function parseLabeledText(raw, opts = {}) {
+  if (!opts.hard && isRosterText(raw)) return parseRosterText(raw);
+  if (opts.hard && !opts.ai && isRosterText(raw)) return parseRosterText(raw);
   const hard = !!opts.hard; // Word/PowerPoint：改行はそのまま意味のある改行
   const pre = norm(raw).replace(/\r/g, '').replace(/[\uFE0E\uFE0F]/g, '').split('\n');
   // 2行以上にまたがる【見出し】を1行にまとめる
@@ -503,6 +505,7 @@ const WEB_HEAD_JA = [
 ];
 const WEB_JUNK = /^(規約とサポート|プライバシーポリシー|を使用してデザイン|To Contact|Contact|お問い合わせ|\d{1,2})$/i;
 function parseWebText(raw) {
+  if (isRosterText(raw)) return parseRosterText(raw);
   const blocks = norm(raw).replace(/\r/g, '').split(/\n\s*\n/).map(b => b.split('\n').map(s => s.trim()).filter(s => s && !WEB_JUNK.test(s)).join('\n')).filter(Boolean);
   const n = blocks.length, claimed = new Array(n).fill(false), out = {};
   const put = (k, v, head) => {
@@ -658,6 +661,69 @@ function buildAiPrompt(name, transcript) {
 ${transcript}
 ---- 文字起こし ここまで ----`;
 }
+// ===== BNI名簿（メンバー略歴シート／G.A.I.N.S／ONE to ONE ミーティングシート）の読み取り =====
+// 名簿のページを Ctrl+A → Ctrl+C で貼り付けたテキストや、そのPDFを、項目名どおりに振り分ける
+const ROSTER_SECTIONS = [
+  ['member', /^(Myプロフィール.*|メンバー情報)$/], ['biz', /^ビジネス情報$/], ['_skip', /^(写真・名刺|ファイル・推薦のことば|メンバーからのありがとう|メンバー略歴シート)$/],
+  ['about', /^ビジネスについて$/], ['family', /^家族について$/], ['other', /^その他$/], ['gains', /^G\.?A\.?I\.?N\.?S\.?$/i],
+  ['oto', /^ONEtoONEミーティングシート$/i], ['cc', /^(コンタクトサークル|ContactCircle.*)$/i], ['recent', /^直近10件の顧客(リスト)?$/],
+  ['cust', /^顧客について$/], ['ref', /^リファーラルについて$/],
+];
+const ROSTER_LABELS = [
+  // [ラベル, キー, そのラベルを優先するセクション（省略時はどこでも）]
+  ['名前', 'name', 'member'], ['ふりがな', 'kana'], ['ローマ字', 'romaji'], ['カテゴリー', 'business'], ['カテゴリー(英語表記)', 'businessEn'],
+  ['BNIの役職', 'bniRole'], ['入会日(宣誓式の日)', 'joinDate'], ['入会日', 'joinDate'],
+  ['会社名', 'companyName'], ['肩書・部署', 'title'], ['電話番号', 'phone'], ['郵便番号・住所', 'location'], ['メールアドレス', 'email'], ['ホームページ', 'homepage'], ['Facebook', 'facebook'],
+  ['事業名', 'bizName'], ['専門分野', 'specialty', 'about'], ['所在地', 'office'], ['現在のビジネスの経験年数', 'experience'], ['過去に経験した職業', 'pastJobs'],
+  ['配偶者', 'spouse'], ['その他家族', 'family'], ['ペット', 'pets'], ['趣味', 'hobbies'], ['その他関心事', 'otherInterests'], ['出身地', 'hometown'], ['居住地', 'residence'], ['居住年数', 'residenceYears'],
+  ['私の強い願望', 'wish'], ['誰も知らない私', 'secret'], ['私の成功の鍵', 'successKey'],
+  ['Goal(目標)', 'goals'], ['Goals(目標)', 'goals'], ['Accomplishments(実績)', 'accomplishments'], ['Interests(興味)', 'interests'], ['Networks(人脈)', 'networks'], ['Skill(スキル)', 'skills'], ['Skills(スキル)', 'skills'],
+  ['名前とプライベート情報', 'privateInfo'], ['会社名・役職', 'companyTitle'], ['専門分野', 'otoSpecialty', 'oto'], ['他社にない強み', 'usp'],
+  ['こんな人や会社がわたしのお客様になります', 'wantReferrals'], ['当社について、どう話を切り出したらよいか?', 'closing'], ['当社について、どう話を切り出したらよいか', 'closing'],
+  ['トップ3', 'contactTop3'],
+  ['彼らはどのようにしてあなたの元へやってきましたか?', 'howCame'], ['彼らにどのような商品・サービスを提供しましたか?', 'servicesProvided'], ['彼らは平均的な顧客でしたか?', 'averageCustomer'],
+  ['その他のリファーラル提供者にはどんな人がいますか?', 'otherReferrers'], ['「質の高い」リファーラルとは?', 'qualityReferral'], ['「不適切な」リファーラルとは?', 'mismatch'],
+];
+const rosterNorm = s => (s || '').normalize('NFKC').replace(/\s+/g, '').replace(/^\d{1,2}[.、．]/, '');
+function isRosterText(raw) {
+  const n = rosterNorm((raw || '').slice(0, 20000));
+  const marks = ['メンバー略歴シート', 'ONEtoONEミーティングシート', '現在のビジネスの経験年数', '過去に経験した職業', '私の成功の鍵', '肩書・部署', 'コンタクトサークル', '直近10件の顧客', 'こんな人や会社がわたしのお客様になります', '入会日(宣誓式の日)'];
+  return marks.filter(m => n.includes(m)).length >= 4;
+}
+function parseRosterText(raw) {
+  const out = {}; let sec = '', cur = null, pending = null;
+  const add = (k, v) => { if (!v) return; out[k] = out[k] ? out[k] + '\n' + v : v; };
+  const findLabel = l => { const n = rosterNorm(l); return ROSTER_LABELS.find(([lab, , s]) => rosterNorm(lab) === n && s === sec) || ROSTER_LABELS.find(([lab, , s]) => rosterNorm(lab) === n && !s) || ROSTER_LABELS.find(([lab]) => rosterNorm(lab) === n); };
+  for (const line0 of (raw || '').replace(/\r/g, '').split('\n')) {
+    const line = line0.replace(/ /g, ' ').trim();
+    const head = line.split('\t')[0].trim();
+    const s = ROSTER_SECTIONS.find(([, r]) => r.test(rosterNorm(head)) || r.test(head.normalize('NFKC').trim()));
+    if (s && (!line.includes('\t') || !line.split('\t').slice(1).join('').trim())) {
+      if (s[0] === 'cc' && sec === 'cc' && /Top3|トップ/i.test(head)) { cur = null; continue; }
+      sec = s[0]; cur = null; pending = null; continue;
+    }
+    if (!line) { if (cur && out[cur]) out[cur] += '\n'; continue; }
+    const num = line.normalize('NFKC').match(/^(\d{1,2})(?:\t|\s{2,}|$)/);
+    if (num && (sec === 'cc' || sec === 'recent')) {
+      const k = sec === 'cc' ? 'contactCircle' : 'recentCustomers', v = line.replace(/^\S+\s*/, '').trim();
+      if (v) { add(k, `${num[1]}. ${v}`); pending = null; } else pending = { k, n: num[1] };
+      cur = null; continue;
+    }
+    if (pending && !findLabel(line.split('\t')[0])) { add(pending.k, `${pending.n}. ${line}`); pending = null; continue; }
+    pending = null;
+    let label = null, value = '';
+    if (line.includes('\t')) { const i = line.indexOf('\t'); label = findLabel(line.slice(0, i)); value = line.slice(i + 1).trim(); }
+    else label = findLabel(line);
+    if (!label) { const m = line.match(/^(.{1,40}?)[\s　]{1,}(.+)$/); const l2 = m && findLabel(m[1]); if (l2) { label = l2; value = m[2].trim(); } }
+    if (label) { cur = label[1]; if (sec === '_skip') sec = ''; add(cur, value); continue; }
+    if (cur) add(cur, line);
+  }
+  for (const k of Object.keys(out)) { out[k] = out[k].replace(/\n{3,}/g, '\n\n').trim(); if (!out[k]) delete out[k]; }
+  if (out.joinDate) { const d = out.joinDate.normalize('NFKC').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); if (d) out.joinDate = `${d[1]}-${d[2].padStart(2, '0')}-${d[3].padStart(2, '0')}`; else { out.otherInfo = '入会日：' + out.joinDate; delete out.joinDate; } }
+  if (out.name) out.name = out.name.replace(/\s*[\(（].*$/, '').trim();
+  return out;
+}
+
 // ===== 1to1シートを無料のAIで読み取るための指示文と、その返答の読み取り =====
 // fields: [[key, label, type], ...]（アプリの項目定義）
 function buildSheetPrompt(fields) {
@@ -709,7 +775,7 @@ function parseAiAnswer(raw) {
     .filter(l => !/^\s*```/.test(l))
     .map(l => l.replace(/\*\*|__/g, '').replace(/^\s*#{1,6}\s*/, '').replace(/^\s*[-*]\s+(?!【|[^\s:：]{1,12}[:：])/, '・').replace(/^\s*[-*]\s+(?=【|[^\s:：]{1,12}[:：])/, ''))
     .join('\n');
-  const r = parseSheetText(t, { hard: true });
+  const r = parseSheetText(t, { hard: true, ai: true });
   delete r.otherInfo;
   return r;
 }
@@ -717,4 +783,4 @@ function parseAiAnswer(raw) {
 // Word等のテキスト（行の配列）用
 function parseSheetText(raw, opts) { return parseLabeledText(raw, opts); }
 
-if (typeof module !== 'undefined') module.exports = { parseSheetText, parsePdfPages, smartJoin, docxXmlToText, pptxToText, parseWebText, cleanTranscript, guessDate, buildAiPrompt, parseAiAnswer, buildSheetPrompt, parseAiSheet };
+if (typeof module !== 'undefined') module.exports = { parseSheetText, parsePdfPages, smartJoin, docxXmlToText, pptxToText, parseWebText, cleanTranscript, guessDate, buildAiPrompt, parseAiAnswer, buildSheetPrompt, parseAiSheet, isRosterText, parseRosterText };

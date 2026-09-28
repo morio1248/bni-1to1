@@ -202,7 +202,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.5.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.6.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -252,7 +252,8 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     </div>
     <input type="file" id="file" accept=".pdf,.docx,.pptx" multiple hidden>
     <div class="web">
-      <div class="web-t">Webページ（Canvaなど）で届いた場合</div>
+      <div class="web-t">Webページ（BNIの名簿・Canvaなど）で届いた場合</div>
+      <p class="howto" style="margin:0 0 6px">BNIの名簿（メンバー略歴シート）のページは、この方法で全項目がそのまま入ります。</p>
       <div class="row">
         <input type="url" id="webUrl" placeholder="https://〇〇.my.canva.site/…　のURLを貼り付け">
         <button class="btn primary" id="webOpen">ページを開く</button>
@@ -325,7 +326,8 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <li>「Geminiを開く」を押し、入力欄をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd>（Macは <kbd>⌘</kbd>＋<kbd>V</kbd>）で貼り付けます。</li>
       <li>入力欄の左の「＋」→「ファイルをアップロード」で、1to1シートのPDFや画像を選び、送信します。</li>
       <li>返答の下にあるコピーのアイコン（四角が2つ重なった形）を押し、1to1 Naviの枠に貼り付けます。</li></ol></div>
-    <div class="card-g"><b>Webページ（Canvaなど）で届いたとき</b>
+    <div class="card-g"><b>BNIの名簿のページ・Webページ（Canvaなど）で届いたとき</b>
+      <p>BNIの名簿（メンバー略歴シート）のページは、この方法で<b>全項目がそのまま正しく入ります</b>。いちばん確実です。</p>
       <ol><li>「Webページで届いた場合」の欄にURLを貼って「ページを開く」を押します。</li>
       <li>開いたページで <kbd>Ctrl</kbd>＋<kbd>A</kbd> → <kbd>Ctrl</kbd>＋<kbd>C</kbd>、1to1 Naviに戻って枠に <kbd>Ctrl</kbd>＋<kbd>V</kbd> します。</li>
       <li>うまく入らないときは、ページのスクリーンショット（Windowsは <kbd>Win</kbd>＋<kbd>Shift</kbd>＋<kbd>S</kbd>、Macは <kbd>⌘</kbd>＋<kbd>Shift</kbd>＋<kbd>4</kbd>）を撮り、Geminiに貼り付けて読み取ります。</li></ol></div>
@@ -438,18 +440,31 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 
 // ===== 項目定義 =====
 const SECTIONS = [
-  { title: '基本', fields: [['name','名前'],['kana','よみがな'],['category','区分','select:BNI|BNI以外'],['birthday','生年月日','date'],['chapter','チャプター'],['region','リージョン'],['bniCareer','BNI歴'],['date1to1','1to1実施日','date'],['contact','連絡先'],['sheetUrl','1to1シートのURL']] },
-  { title: 'ビジネスについて', fields: [['business','事業名・カテゴリー'],['companyName','会社名'],['specialty','専門分野'],['location','所在地・住所'],['experience','経験年数'],['education','学歴'],['businessContents','事業内容','area'],['pastJobs','経歴・過去の職業','area'],['recentCustomers','直近の顧客','area wide']] },
-  { title: '紹介・協業', accent: true, fields: [['wantReferrals','紹介してほしい方','area wide'],['collaborators','協業しやすい方','area'],['mismatch','ミスマッチな紹介（紹介しないでほしい方）','area'],['usp','強み（USP）','area'],['story','起業の経緯・思い','area'],['closing','紹介の仕方・声のかけ方','area'],['introTemplate','紹介するときのテンプレート','area wide']] },
-  { title: '個人的な情報', fields: [['spouse','配偶者'],['family','家族'],['pets','ペット'],['hobbies','趣味','area'],['specialSkill','特技'],['otherInterests','その他の関心事'],['hometown','出身地'],['residence','居住地'],['residenceYears','居住年数']] },
-  { title: '人柄・想い', fields: [['wish','強い願望','area'],['secret','誰も知らない私','area'],['successKey','成功の鍵','area']] },
-  { title: 'G.A.I.N.S.', fields: [['goals','Goals（目標）','area'],['accomplishments','Accomplishments（実績）','area'],['interests','Interests（興味）','area'],['networks','Networks（人脈）','area'],['skills','Skills（スキル・資格）','area']] },
-  { title: 'その他の情報', fields: [['otherInfo','シート内のその他の項目','area wide']] },
+  { title: 'メンバー情報', fields: [['name','名前'],['kana','ふりがな'],['romaji','ローマ字'],['business','カテゴリー'],['businessEn','カテゴリー（英語表記）'],['bniRole','BNIの役職'],['joinDate','入会日（宣誓式の日）','date'],['category','区分','select:BNI|BNI以外'],['chapter','チャプター'],['region','リージョン'],['birthday','生年月日','date']] },
+  { title: 'ビジネス情報', fields: [['companyName','会社名'],['title','肩書・部署'],['phone','電話番号'],['location','郵便番号・住所'],['email','メールアドレス'],['homepage','ホームページ'],['facebook','Facebook']] },
+  { title: 'ビジネスについて', fields: [['bizName','事業名'],['specialty','専門分野'],['office','所在地'],['experience','現在のビジネスの経験年数'],['pastJobs','過去に経験した職業','area']] },
+  { title: '家族について', fields: [['spouse','配偶者'],['family','その他家族'],['pets','ペット'],['hobbies','趣味','area'],['otherInterests','その他関心事'],['hometown','出身地'],['residence','居住地'],['residenceYears','居住年数']] },
+  { title: 'その他', fields: [['wish','私の強い願望','area'],['secret','誰も知らない私','area'],['successKey','私の成功の鍵','area']] },
+  { title: 'G.A.I.N.S', fields: [['goals','Goal（目標）','area'],['accomplishments','Accomplishments（実績）','area'],['interests','Interests（興味）','area'],['networks','Networks（人脈）','area'],['skills','Skill（スキル）','area']] },
+  { title: 'ONE to ONE ミーティングシート', accent: true, fields: [['privateInfo','名前とプライベート情報','area'],['companyTitle','会社名・役職'],['otoSpecialty','専門分野（ONE to ONE）'],['usp','他社にない強み','area'],['wantReferrals','こんな人や会社がわたしのお客様になります','area wide'],['closing','当社について、どう話を切り出したらよいか？','area']] },
+  { title: 'コンタクトサークル', fields: [['contactTop3','Contact Circle Top3','area'],['contactCircle','コンタクトサークル','area']] },
+  { title: '直近10件の顧客リスト', fields: [['recentCustomers','直近10件の顧客','area wide'],['howCame','彼らはどのようにしてあなたの元へやってきましたか？','area'],['servicesProvided','彼らにどのような商品・サービスを提供しましたか？','area'],['averageCustomer','彼らは平均的な顧客でしたか？','area']] },
+  { title: 'リファーラルについて', fields: [['otherReferrers','その他のリファーラル提供者にはどんな人がいますか？','area'],['qualityReferral','「質の高い」リファーラルとは？','area'],['mismatch','「不適切な」リファーラルとは？','area']] },
+  { title: '1to1 Navi 独自の項目', fields: [['date1to1','1to1実施日','date'],['sheetUrl','1to1シートのURL'],['collaborators','協業しやすい方','area'],['introTemplate','紹介するときのテンプレート','area wide'],['otherInfo','シート内のその他の項目','area wide']] },
   { title: '自分用メモ', fields: [['memo','メモ（紹介できそうな人、話したこと等）','area wide']] },
 ];
 const ALL_FIELDS = SECTIONS.flatMap(s => s.fields);
 const LABEL = Object.fromEntries(ALL_FIELDS.map(f => [f[0], f[1]]));
-const USER_ONLY = new Set(['chapter','date1to1','contact','memo','sheetUrl']);
+const USER_ONLY = new Set(['category','chapter','date1to1','memo','sheetUrl']);
+// 以前の項目・名簿にない項目の引っ越し先（データは消さない）
+const LEGACY_TO = { businessContents: 'servicesProvided' };
+const LEGACY_LABEL = { contact: '連絡先', education: '学歴', story: '起業の経緯・思い', specialSkill: '特技', bniCareer: 'BNI歴', lifework: 'ライフワーク', personality: '性格・こだわり', values: '大切にしていること', motto: '座右の銘', bniRoles: '経験した役職', whyBni: 'Why BNI?', birthdayNote: '生年月日のメモ' };
+function migrateLegacy(m) {
+  let changed = false;
+  for (const [o, n] of Object.entries(LEGACY_TO)) if (m[o]) { m[n] = m[n] ? (m[n].includes(m[o]) ? m[n] : m[n] + '\n' + m[o]) : m[o]; delete m[o]; changed = true; }
+  for (const [o, l] of Object.entries(LEGACY_LABEL)) if (m[o]) { const line = `${l}：${m[o]}`; if (!(m.otherInfo || '').includes(m[o])) m.otherInfo = m.otherInfo ? m.otherInfo + '\n' + line : line; delete m[o]; changed = true; }
+  return changed;
+}
 const MUST = new Set(['name','business']);
 
 // ===== 保存（IndexedDB、使えなければメモリ） =====
@@ -489,7 +504,11 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&l
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const nameKey = s => (s || '').normalize('NFKC').replace(/\s/g, '');
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2400); }
-async function reload() { members = await Store.all(); renderList(); }
+async function reload() {
+  members = await Store.all();
+  for (const m of members) if (migrateLegacy(m)) await Store.put(m);
+  renderList();
+}
 
 // 変更のたびに呼ぶ
 async function saveMember(m) { await Store.put(m); delete tombstones[m.id]; await Store.set('tombstones', tombstones); await changed(); }
@@ -634,7 +653,7 @@ const catOf = m => m.category || 'BNI';
 async function applyPatch(obj) {
   let add = 0, upd = 0;
   for (const it of obj.items || []) {
-    const f = { ...(it.fields || {}) }; const name = (it.name || f.name || '').trim(); if (!name) continue;
+    const f = { ...(it.fields || {}) }; migrateLegacy(f); const name = (it.name || f.name || '').trim(); if (!name) continue;
     f.name = f.name || name;
     const cur = members.find(x => nameKey(x.name) === nameKey(name));
     const m = cur ? { ...cur } : { id: uid(), createdAt: Date.now() };
@@ -677,6 +696,7 @@ async function mergeData(obj) {
   }
   for (const m of list) {
     if (!m || !m.id) continue;
+    migrateLegacy(m);
     if (tombstones[m.id] && tombstones[m.id] >= (m.updatedAt || 0)) continue;
     const cur = members.find(x => x.id === m.id);
     if (cur && (cur.updatedAt || 0) >= (m.updatedAt || 0)) continue;
@@ -923,6 +943,7 @@ function mergeInto(base, f, mode, source) {
   return stat;
 }
 function addReview(data, source) {
+  data = { ...data }; migrateLegacy(data);
   const manual = source === '手入力';
   const card = document.createElement('div');
   card.className = 'review';
@@ -1401,7 +1422,7 @@ $('wipe').onclick = async () => {
 
 $('bmkSetupTab').innerHTML = bookmarkletSetup();
 $('myChapterSave').onclick = async () => { myChapter = $('myChapter').value.trim(); await Store.set('myChapter', myChapter); toast('保存しました'); };
-const AUTHOR_VERSION = 2;
+const AUTHOR_VERSION = 3;
 const AUTHOR = {
  "id": "author-saito-masahiro",
  "builtin": "author",
@@ -1411,19 +1432,14 @@ const AUTHOR = {
  "birthday": "1990-06-10",
  "chapter": "F×R",
  "region": "東京MS",
- "contact": "LINE：https://line.me/ti/p/YsKtNqLfGo\nFacebook：https://www.facebook.com/share/1K4RBh7HXM/",
  "sheetUrl": "https://morio1248.github.io/1to1-saito/",
  "business": "がん保険",
  "companyName": "アフラック保険サービス株式会社（代理店）",
  "specialty": "がん保険・小児がん保険",
- "location": "新宿モノリス（東京第三支社第四営業所）。平日9時〜18時に出社",
- "experience": "保険営業：2025年7月〜（アフラックコンサルタント）",
- "businessContents": "ご家庭の状況やご希望をうかがい、細かくカスタマイズしたオーダーメイドの保障をご提案\nがん保険がメイン。特に小児がん保険の大切さを伝えることを使命に活動\n法人向けに、社員の福利厚生としてのがん保険も取り扱い",
  "pastJobs": "学生時代：丸源ラーメン、ピザハットのアルバイト\nネットワーク系エンジニア（8年）：お客様と話す中で営業を意識\nSES営業・人材紹介営業（2年）：個人営業が向いていると気づく\n2025年7月〜：保険営業（アフラックコンサルタント）",
  "wantReferrals": "【金の卵：直接ご紹介いただきたい方】\n・アフラックの保険をお持ちの方（今の保障の見直しをお手伝い）\n・小さいお子様がいる方（小児がんへの備えを一緒に）\n・ダーツ好きな方\n・ペット好きの方",
  "collaborators": "【金のがちょう：継続的に紹介し合えるパートナー】\n・医療系の事業者\n・健康系の事業者\n・子供向けの事業者",
  "usp": "がん保険をメインで取り扱う、珍しい保険屋。ご家庭ごとに必要な分だけをオーダーメイドで設計。保険屋なのに基本出社で、ご相談の時間を合わせやすい",
- "story": "父のがん闘病をきっかけに、同じ思いをする家族をもう増やしたくないと考え、エンジニアから保険営業へ",
  "introTemplate": "東京MSリージョン、F×Rチャプターでがん保険カテゴリーとして活動されている、アフラック保険サービス株式会社の斎藤政宏さんをご紹介します。\nがん保険をメインで取り扱っている、珍しい保険屋さんです。\n小児がん保険の大切さを伝えることを使命に活動されています。\n保険業界2年目で、色々な方と繋がりたいとのことですので、よろしければご紹介いかがでしょうか。",
  "family": "妻、長女（2歳）、次女（0歳）",
  "pets": "キャバリア2匹（リア・ロキ）、ヒガシヘルマンリクガメ（もなか）、文鳥（そぼろ）",
@@ -1439,14 +1455,26 @@ const AUTHOR = {
  "interests": "動物（爬虫類などレアなもの）、水耕栽培、ダーツバー、ボードゲーム（カタン）、ポーカー",
  "networks": "ITエンジニア、色々な交流会で出会った方々",
  "skills": "がん保険の提案、空手（8年）、剣道（3年）",
- "otherInfo": "最近の口ぐせ：「がん保険は、2人に1人は使わずに終わる」\nゴールドリボン運動に毎月募金し、街頭募金活動にも参加",
+ "otherInfo": "LINE：https://line.me/ti/p/YsKtNqLfGo\nこの仕事を始めたきっかけ：父のがん闘病をきっかけに、同じ思いをする家族をもう増やしたくないと考え、エンジニアから保険営業へ\n最近の口ぐせ：「がん保険は、2人に1人は使わずに終わる」\nゴールドリボン運動に毎月募金し、街頭募金活動にも参加",
  "source": "作者の自己紹介ページ",
  "sources": [
   {
    "name": "作者の自己紹介ページ",
    "at": "2026-09-28"
   }
- ]
+ ],
+ "romaji": "Masahiro Saito",
+ "title": "東京第三支社第四営業所 アフラックコンサルタント",
+ "location": "新宿モノリス（東京都新宿区）",
+ "facebook": "https://www.facebook.com/share/1K4RBh7HXM/",
+ "homepage": "https://morio1248.github.io/1to1-saito/",
+ "bizName": "アフラック保険サービス株式会社",
+ "office": "新宿モノリス（平日9時〜18時に出社）",
+ "experience": "1年（2025年7月〜）",
+ "privateInfo": "斎藤政宏（サイトウ マサヒロ）1990年生まれ\n東京都西東京市（ひばりヶ丘）出身・在住\n妻、長女（2歳）、次女（0歳）\n\n趣味：ダーツ（ブル率50%）、クラフトビール（IPA）、ボードゲーム（カタン）、ポーカー",
+ "companyTitle": "アフラック保険サービス株式会社・アフラックコンサルタント",
+ "otoSpecialty": "がん保険（特に小児がん保険）",
+ "servicesProvided": "ご家庭の状況やご希望をうかがい、細かくカスタマイズしたオーダーメイドのがん保険をご提案\n子ども用がん保険（小児がんへの備え）\n法人向けに、社員の福利厚生としてのがん保険"
 };
 // 配布用：作者（斎藤政宏）の情報を最初から登録しておく。削除されたら再登録しない。作者が内容を更新したら、利用者が編集していない場合だけ差し替える
 async function seedAuthor() {
