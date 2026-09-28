@@ -234,6 +234,18 @@ mark{background:#ffe58a;padding:0 1px}
       <textarea id="webPaste" placeholder="ここをクリックして Ctrl＋V で貼り付け"></textarea>
       <div class="note">※ブラウザの安全上の制限により、URLだけで直接読み込むことはできないため、この手順になります。</div>
     </div>
+    <div class="web" id="aiSheetPanel">
+      <div class="web-t">無料のAI（ChatGPT・Gemini・Claude など）で読み取る</div>
+      <p class="howto" style="margin:4px 0 8px">画像で作られたPDF、Canvaのページ、独自の様式など、上の方法でうまく項目に入らないときにおすすめです。手入力はほとんど要りません。</p>
+      <ol class="steps">
+        <li><button class="btn small primary" id="aiSheetCopy">AI用の指示文をコピー</button></li>
+        <li>AIのチャットに貼り付け、<b>1to1シートのPDF・画像を添付</b>（Webページの場合はURLを貼る。開けないと言われたら、ページのスクリーンショットを添付）して送信</li>
+        <li>AIの返答を全部コピーし、下の枠に貼り付け → 確認画面が開きます</li>
+      </ol>
+      <input type="url" id="aiSheetUrl" placeholder="（任意）シートのURL：記録用に残したいときだけ" style="margin-bottom:6px;width:100%;box-sizing:border-box">
+      <textarea id="aiSheetPaste" placeholder="ここをクリックして、AIの返答を Ctrl＋V で貼り付け"></textarea>
+      <div class="note">※AIにはメンバーの個人情報を送ることになります。AIの設定で、会話をAIの学習に使う設定をオフにしてから使ってください。</div>
+    </div>
     <div class="row" style="margin-top:10px;justify-content:flex-end">
       <button class="btn" id="manualBtn">白紙から手入力する</button>
     </div>
@@ -821,6 +833,7 @@ function addReview(data, source) {
   let userPicked = false;
   card.innerHTML = `<h3>${esc(data.name || (manual ? '新規メンバー' : '名前が読み取れませんでした'))}</h3>
     <div class="src">${esc(source)}${manual ? '' : `　／　${filled} 項目を読み取りました。内容を確認・修正してから登録してください。`}</div>
+    ${!manual && source !== 'AIで読み取り' && filled < 8 ? `<div class="howto" style="color:#8a6200">うまく読み取れていない場合は、取り込み画面の「無料のAIで読み取る」を使うと、ほぼ手入力なしで項目に入れられます。</div>` : ''}
     <div class="target-box">
       <label><b>登録先</b><select data-a="target"></select></label>
       <label class="mode hidden"><b>同じ項目に内容があるとき</b><select data-a="mode">
@@ -961,6 +974,19 @@ $('webPaste').addEventListener('paste', () => setTimeout(() => {
   if (/^https?:\/\//i.test(u)) data.sheetUrl = u;
   addReview(data, u ? 'Webページ（' + u.replace(/^https?:\/\//, '').slice(0, 50) + '）' : 'Webページ');
   $('webPaste').value = ''; $('webUrl').value = '';
+}, 0));
+
+// 無料のAIで読み取る：指示文をコピー → AIの返答を貼り付け
+const AI_SHEET_FIELDS = ALL_FIELDS.filter(([k]) => !['category', 'date1to1', 'memo', 'sheetUrl'].includes(k));
+$('aiSheetCopy').onclick = async () => { await copyText(buildSheetPrompt(AI_SHEET_FIELDS)); toast('指示文をコピーしました。AIに貼り付けて、シートを添付して送信してください'); };
+$('aiSheetPaste').addEventListener('paste', () => setTimeout(() => {
+  const text = $('aiSheetPaste').value.trim(); if (!text) return;
+  const data = parseAiSheet(text, AI_SHEET_FIELDS);
+  if (Object.keys(data).length < 2) { alert('AIの返答から項目を読み取れませんでした。\n指示文をコピーしてAIに送ったか、AIがシートを読めたか（「読み取れません」と返ってきていないか）を確認してください。'); return; }
+  data.category = 'BNI';
+  const u = $('aiSheetUrl').value.trim(); if (/^https?:\/\//i.test(u)) data.sheetUrl = u;
+  addReview(data, 'AIで読み取り');
+  $('aiSheetPaste').value = ''; $('aiSheetUrl').value = '';
 }, 0));
 
 // ===== 1to1の文字起こし =====

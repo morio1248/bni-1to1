@@ -658,6 +658,51 @@ function buildAiPrompt(name, transcript) {
 ${transcript}
 ---- 文字起こし ここまで ----`;
 }
+// ===== 1to1シートを無料のAIで読み取るための指示文と、その返答の読み取り =====
+// fields: [[key, label, type], ...]（アプリの項目定義）
+function buildSheetPrompt(fields) {
+  const lines = fields.map(([k, l, t = '']) => (t.includes('area') ? `【${l}】` : `${l}：`)).join('\n');
+  return `添付（または下に貼り付けた／URLの）BNIメンバーの1to1シートを読み取り、書かれている内容を、下の形式に当てはめて書き出してください。
+
+ルール：
+・シートに書かれていることだけを書き、推測や一般論は書かないでください
+・シートにない項目は、項目名ごと省略してください
+・項目名は下の表記のまま変えないでください（言い換え・番号・太字・表・コードブロックは使わない）
+・「項目名：」の項目は、同じ行の「：」の後に書いてください
+・【】の項目は、次の行から書いてください。内容はできるだけ省略せず、元の文章を残してください
+・生年月日は 1990-06-10 のように「年-月-日」の数字で書いてください（年が分からなければ「生年月日」は省略し、分かる範囲を【シート内のその他の項目】に書く）
+・下の項目に当てはまらない内容は、【シート内のその他の項目】に「見出し：内容」の形でまとめてください
+・画像の中の文字も読み取ってください。URLを開けない場合や、読み取れない場合は、その旨だけを答えてください
+・前置きやまとめは不要です。下の形式だけを出力してください
+
+${lines}`;
+}
+function parseAiSheet(raw, fields) {
+  const norm = v => v.normalize('NFKC').replace(/\s/g, '').toLowerCase();
+  const byLabel = new Map(fields.map(([k, l]) => [norm(l), k]));
+  const lines = (raw || '').replace(/\r/g, '').split('\n')
+    .filter(l => !/^\s*```/.test(l))
+    .map(l => l.replace(/\*\*|__/g, '').replace(/^\s*#{1,6}\s*/, '').replace(/^\s*[-*]\s+(?=【|[^：:]{1,30}[：:])/, ''));
+  const out = {}; let cur = null;
+  for (const line of lines) {
+    const t = line.trim();
+    let m = t.match(/^【([^】]{1,40})】\s*(.*)$/);
+    let key = m && byLabel.get(norm(m[1]));
+    if (!key) { const m2 = t.match(/^([^：:]{1,30})[：:]\s*(.*)$/); const k2 = m2 && byLabel.get(norm(m2[1])); if (k2) { key = k2; m = m2; } }
+    if (key) { cur = key; const v = (m[2] || '').trim(); out[cur] = out[cur] ? out[cur] + (v ? '\n' + v : '') : v; continue; }
+    const tb = t.replace(/^[-*・•]\s*/, '・');
+    if (cur && t) out[cur] = out[cur] ? out[cur] + '\n' + tb : tb;
+    else if (cur && !t && out[cur]) out[cur] += '\n';
+  }
+  for (const k of Object.keys(out)) { out[k] = out[k].replace(/\n{3,}/g, '\n\n').trim(); if (!out[k] || /^(なし|不明|記載なし|-|ー|―)$/.test(out[k])) delete out[k]; }
+  if (out.birthday) {
+    const d = out.birthday.normalize('NFKC').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+    if (d) out.birthday = `${d[1]}-${d[2].padStart(2, '0')}-${d[3].padStart(2, '0')}`;
+    else { out.otherInfo = (out.otherInfo ? out.otherInfo + '\n' : '') + '生年月日：' + out.birthday; delete out.birthday; }
+  }
+  return out;
+}
+
 // AIの返答の装飾（Markdown）を取り除いてからラベル読み取り
 function parseAiAnswer(raw) {
   const t = (raw || '').replace(/\r/g, '').split('\n')
@@ -672,4 +717,4 @@ function parseAiAnswer(raw) {
 // Word等のテキスト（行の配列）用
 function parseSheetText(raw, opts) { return parseLabeledText(raw, opts); }
 
-if (typeof module !== 'undefined') module.exports = { parseSheetText, parsePdfPages, smartJoin, docxXmlToText, pptxToText, parseWebText, cleanTranscript, guessDate, buildAiPrompt, parseAiAnswer };
+if (typeof module !== 'undefined') module.exports = { parseSheetText, parsePdfPages, smartJoin, docxXmlToText, pptxToText, parseWebText, cleanTranscript, guessDate, buildAiPrompt, parseAiAnswer, buildSheetPrompt, parseAiSheet };

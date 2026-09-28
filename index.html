@@ -234,6 +234,18 @@ mark{background:#ffe58a;padding:0 1px}
       <textarea id="webPaste" placeholder="ここをクリックして Ctrl＋V で貼り付け"></textarea>
       <div class="note">※ブラウザの安全上の制限により、URLだけで直接読み込むことはできないため、この手順になります。</div>
     </div>
+    <div class="web" id="aiSheetPanel">
+      <div class="web-t">無料のAI（ChatGPT・Gemini・Claude など）で読み取る</div>
+      <p class="howto" style="margin:4px 0 8px">画像で作られたPDF、Canvaのページ、独自の様式など、上の方法でうまく項目に入らないときにおすすめです。手入力はほとんど要りません。</p>
+      <ol class="steps">
+        <li><button class="btn small primary" id="aiSheetCopy">AI用の指示文をコピー</button></li>
+        <li>AIのチャットに貼り付け、<b>1to1シートのPDF・画像を添付</b>（Webページの場合はURLを貼る。開けないと言われたら、ページのスクリーンショットを添付）して送信</li>
+        <li>AIの返答を全部コピーし、下の枠に貼り付け → 確認画面が開きます</li>
+      </ol>
+      <input type="url" id="aiSheetUrl" placeholder="（任意）シートのURL：記録用に残したいときだけ" style="margin-bottom:6px;width:100%;box-sizing:border-box">
+      <textarea id="aiSheetPaste" placeholder="ここをクリックして、AIの返答を Ctrl＋V で貼り付け"></textarea>
+      <div class="note">※AIにはメンバーの個人情報を送ることになります。AIの設定で、会話をAIの学習に使う設定をオフにしてから使ってください。</div>
+    </div>
     <div class="row" style="margin-top:10px;justify-content:flex-end">
       <button class="btn" id="manualBtn">白紙から手入力する</button>
     </div>
@@ -984,6 +996,51 @@ function buildAiPrompt(name, transcript) {
 ${transcript}
 ---- 文字起こし ここまで ----`;
 }
+// ===== 1to1シートを無料のAIで読み取るための指示文と、その返答の読み取り =====
+// fields: [[key, label, type], ...]（アプリの項目定義）
+function buildSheetPrompt(fields) {
+  const lines = fields.map(([k, l, t = '']) => (t.includes('area') ? `【${l}】` : `${l}：`)).join('\n');
+  return `添付（または下に貼り付けた／URLの）BNIメンバーの1to1シートを読み取り、書かれている内容を、下の形式に当てはめて書き出してください。
+
+ルール：
+・シートに書かれていることだけを書き、推測や一般論は書かないでください
+・シートにない項目は、項目名ごと省略してください
+・項目名は下の表記のまま変えないでください（言い換え・番号・太字・表・コードブロックは使わない）
+・「項目名：」の項目は、同じ行の「：」の後に書いてください
+・【】の項目は、次の行から書いてください。内容はできるだけ省略せず、元の文章を残してください
+・生年月日は 1990-06-10 のように「年-月-日」の数字で書いてください（年が分からなければ「生年月日」は省略し、分かる範囲を【シート内のその他の項目】に書く）
+・下の項目に当てはまらない内容は、【シート内のその他の項目】に「見出し：内容」の形でまとめてください
+・画像の中の文字も読み取ってください。URLを開けない場合や、読み取れない場合は、その旨だけを答えてください
+・前置きやまとめは不要です。下の形式だけを出力してください
+
+${lines}`;
+}
+function parseAiSheet(raw, fields) {
+  const norm = v => v.normalize('NFKC').replace(/\s/g, '').toLowerCase();
+  const byLabel = new Map(fields.map(([k, l]) => [norm(l), k]));
+  const lines = (raw || '').replace(/\r/g, '').split('\n')
+    .filter(l => !/^\s*```/.test(l))
+    .map(l => l.replace(/\*\*|__/g, '').replace(/^\s*#{1,6}\s*/, '').replace(/^\s*[-*]\s+(?=【|[^：:]{1,30}[：:])/, ''));
+  const out = {}; let cur = null;
+  for (const line of lines) {
+    const t = line.trim();
+    let m = t.match(/^【([^】]{1,40})】\s*(.*)$/);
+    let key = m && byLabel.get(norm(m[1]));
+    if (!key) { const m2 = t.match(/^([^：:]{1,30})[：:]\s*(.*)$/); const k2 = m2 && byLabel.get(norm(m2[1])); if (k2) { key = k2; m = m2; } }
+    if (key) { cur = key; const v = (m[2] || '').trim(); out[cur] = out[cur] ? out[cur] + (v ? '\n' + v : '') : v; continue; }
+    const tb = t.replace(/^[-*・•]\s*/, '・');
+    if (cur && t) out[cur] = out[cur] ? out[cur] + '\n' + tb : tb;
+    else if (cur && !t && out[cur]) out[cur] += '\n';
+  }
+  for (const k of Object.keys(out)) { out[k] = out[k].replace(/\n{3,}/g, '\n\n').trim(); if (!out[k] || /^(なし|不明|記載なし|-|ー|―)$/.test(out[k])) delete out[k]; }
+  if (out.birthday) {
+    const d = out.birthday.normalize('NFKC').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+    if (d) out.birthday = `${d[1]}-${d[2].padStart(2, '0')}-${d[3].padStart(2, '0')}`;
+    else { out.otherInfo = (out.otherInfo ? out.otherInfo + '\n' : '') + '生年月日：' + out.birthday; delete out.birthday; }
+  }
+  return out;
+}
+
 // AIの返答の装飾（Markdown）を取り除いてからラベル読み取り
 function parseAiAnswer(raw) {
   const t = (raw || '').replace(/\r/g, '').split('\n')
@@ -1495,6 +1552,7 @@ function addReview(data, source) {
   let userPicked = false;
   card.innerHTML = `<h3>${esc(data.name || (manual ? '新規メンバー' : '名前が読み取れませんでした'))}</h3>
     <div class="src">${esc(source)}${manual ? '' : `　／　${filled} 項目を読み取りました。内容を確認・修正してから登録してください。`}</div>
+    ${!manual && source !== 'AIで読み取り' && filled < 8 ? `<div class="howto" style="color:#8a6200">うまく読み取れていない場合は、取り込み画面の「無料のAIで読み取る」を使うと、ほぼ手入力なしで項目に入れられます。</div>` : ''}
     <div class="target-box">
       <label><b>登録先</b><select data-a="target"></select></label>
       <label class="mode hidden"><b>同じ項目に内容があるとき</b><select data-a="mode">
@@ -1635,6 +1693,19 @@ $('webPaste').addEventListener('paste', () => setTimeout(() => {
   if (/^https?:\/\//i.test(u)) data.sheetUrl = u;
   addReview(data, u ? 'Webページ（' + u.replace(/^https?:\/\//, '').slice(0, 50) + '）' : 'Webページ');
   $('webPaste').value = ''; $('webUrl').value = '';
+}, 0));
+
+// 無料のAIで読み取る：指示文をコピー → AIの返答を貼り付け
+const AI_SHEET_FIELDS = ALL_FIELDS.filter(([k]) => !['category', 'date1to1', 'memo', 'sheetUrl'].includes(k));
+$('aiSheetCopy').onclick = async () => { await copyText(buildSheetPrompt(AI_SHEET_FIELDS)); toast('指示文をコピーしました。AIに貼り付けて、シートを添付して送信してください'); };
+$('aiSheetPaste').addEventListener('paste', () => setTimeout(() => {
+  const text = $('aiSheetPaste').value.trim(); if (!text) return;
+  const data = parseAiSheet(text, AI_SHEET_FIELDS);
+  if (Object.keys(data).length < 2) { alert('AIの返答から項目を読み取れませんでした。\n指示文をコピーしてAIに送ったか、AIがシートを読めたか（「読み取れません」と返ってきていないか）を確認してください。'); return; }
+  data.category = 'BNI';
+  const u = $('aiSheetUrl').value.trim(); if (/^https?:\/\//i.test(u)) data.sheetUrl = u;
+  addReview(data, 'AIで読み取り');
+  $('aiSheetPaste').value = ''; $('aiSheetUrl').value = '';
 }, 0));
 
 // ===== 1to1の文字起こし =====
