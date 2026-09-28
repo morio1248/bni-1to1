@@ -13,3 +13,7 @@ BNIメンバーの1to1シート（PDF・Word・PowerPoint・Canva）を取り込
 - PDF.js（cdnjs.cloudflare.com）… PDFの文字読み取り
 - JSZip（cdnjs.cloudflare.com）… Word・PowerPointの読み取り
 - BIZ UDPゴシック（Google Fonts）… 表示フォント
+
+## 著作権・利用条件
+© 2026 斎藤政宏。本ツールの著作権は作者に帰属します。
+公開URLから開いて、ご自身のBNI活動のために使うことは自由ですが、作者の許可なく全部または一部を複製・改変・再配布・販売することを禁止します。詳しくは [LICENSE](LICENSE) をご覧ください。
