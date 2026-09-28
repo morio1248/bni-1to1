@@ -191,6 +191,7 @@ mark{background:#ffe58a;padding:0 1px}
       </ul><div style="text-align:right"><button class="btn primary" id="privacyOk">確認しました</button></div></div>
   <div id="storageWarn" class="notice hidden">このブラウザではデータを保存できない設定になっています（プライベートモード等）。「保存・バックアップ」で保存先ファイルを設定してください。</div>
   <div id="resumeBar" class="notice hidden"><span id="resumeText"></span><button class="btn primary small" id="resumeBtn">自動保存を再開</button></div>
+  <div id="inboxBar" class="notice hidden"><span>受け取りフォルダの読み込みが一時停止中です。ボタンを押して許可すると取り込みます。</span><button class="btn primary small" id="inboxResume">受け取りを再開</button></div>
   <div id="bniBar" class="notice hidden"><span id="bniText"></span><button class="btn primary small" id="bniBtn">確認する</button></div>
   <div id="remindBar" class="notice hidden"><span id="remindText"></span><button class="btn small" id="remindBtn">バックアップを設定</button></div>
 
@@ -267,6 +268,17 @@ mark{background:#ffe58a;padding:0 1px}
         <button class="btn danger hidden" id="fsForget">自動保存を解除</button>
       </div>
       <p id="fsUnsupported" class="hidden" style="margin-top:10px;color:#8a6200">このブラウザは自動保存に対応していません。Google Chrome か Microsoft Edge で開くと使えます。それまでは下の「書き出し」で定期的に保存してください。</p>
+    </div>
+    <div class="panel">
+      <b>受け取りフォルダ（自動取り込み）</b>
+      <p>ここで選んだフォルダに1to1 Naviの形式のJSONファイルが置かれると、1to1 Naviを開いたとき・タブに戻ったときに自動で取り込み、取り込んだファイルはフォルダから削除します。<br>
+      AIなどに1to1シートを読み取らせて、Googleドライブ等のフォルダにファイルを置いてもらうと、手作業なしで登録できます。</p>
+      <div class="status" id="inboxStatus">受け取りフォルダは未設定です（使わなくても大丈夫です）</div>
+      <div class="row" id="inboxButtons">
+        <button class="btn" id="inboxPick">受け取りフォルダを選ぶ</button>
+        <button class="btn hidden" id="inboxScan">今すぐ確認する</button>
+        <button class="btn danger hidden" id="inboxForget">解除</button>
+      </div>
     </div>
     <div class="privacy"><h3>個人情報の取り扱いについて（必ずお読みください）</h3>
       <ul>
@@ -380,6 +392,7 @@ const AutoSave = (() => {
   const payload = () => JSON.stringify({ app: 'bni-1to1-book', version: 2, savedAt: new Date().toISOString(), members, tombstones }, null, 2);
   async function write() {
     if (!handle || state !== 'ok') return;
+    await readAndMerge(); // 他の場所（別のPC・同期）で書き足された分を先に取り込む
     try { const w = await handle.createWritable(); await w.write(payload()); await w.close(); await Store.set('lastBackupAt', Date.now()); }
     catch (e) { console.error(e); state = 'error'; toast('保存ファイルに書き込めませんでした'); }
     render();
@@ -436,8 +449,70 @@ const AutoSave = (() => {
     },
     async forget() { if (!confirm('自動保存を解除しますか？（保存ファイル自体は消えません）')) return; handle = null; state = 'none'; await Store.set('fileHandle', null); render(); },
     schedule() { if (state !== 'ok') return; clearTimeout(timer); timer = setTimeout(write, 600); },
+    async refresh() { if (handle && state === 'ok') await readAndMerge(); },
   };
 })();
+
+// ===== 受け取りフォルダ（自動取り込み） =====
+// 指定フォルダに置かれたJSON（1to1 Naviの形式）を、開いたとき・タブに戻ったときに取り込み、取り込んだファイルは削除する
+const Inbox = (() => {
+  const supported = 'showDirectoryPicker' in window;
+  let dir = null, state = 'none', busy = false; // none | ok | needPermission
+  async function scan(quiet) {
+    if (!dir || state !== 'ok' || busy) return;
+    busy = true; let add = 0, upd = 0, files = 0;
+    try {
+      const done = new Set((await Store.get('inboxDone')) || []);
+      for await (const [name, h] of dir.entries()) {
+        if (h.kind !== 'file' || !/\.json$/i.test(name) || done.has(name)) continue;
+        try {
+          const r = await mergeData(JSON.parse(await (await h.getFile()).text()));
+          add += r.add; upd += r.upd; files++;
+          try { await dir.removeEntry(name); } catch (e) { done.add(name); }
+        } catch (e) { console.error('受け取りフォルダ', name, e); }
+      }
+      await Store.set('inboxDone', [...done]);
+      if (add || upd) { await changed(); toast(`受け取りフォルダから取り込みました（追加 ${add} 件・更新 ${upd} 件）`); }
+      else if (!quiet) toast(files ? '新しい内容はありませんでした' : '受け取りフォルダは空です');
+    } catch (e) { console.error(e); } finally { busy = false; }
+    render();
+  }
+  function render() {
+    const st = $('inboxStatus');
+    $('inboxButtons').classList.toggle('hidden', !supported);
+    $('inboxForget').classList.toggle('hidden', !dir);
+    $('inboxScan').classList.toggle('hidden', state !== 'ok');
+    $('inboxPick').textContent = dir ? '別のフォルダに切り替える' : '受け取りフォルダを選ぶ';
+    $('inboxBar').classList.toggle('hidden', state !== 'needPermission');
+    if (!supported) { st.className = 'status warn'; st.textContent = 'このブラウザでは使えません（Chrome / Edge で使えます）'; }
+    else if (state === 'ok') { st.className = 'status ok'; st.textContent = `✓ 「${dir.name}」フォルダを見ています`; }
+    else if (state === 'needPermission') { st.className = 'status warn'; st.textContent = `「${dir.name}」フォルダの読み込みは一時停止中（許可待ち）`; }
+    else { st.className = 'status'; st.textContent = '受け取りフォルダは未設定です（使わなくても大丈夫です）'; }
+  }
+  return {
+    render, scan,
+    async init() {
+      if (!supported) { render(); return; }
+      dir = (await Store.get('inboxHandle')) || null;
+      if (dir) { try { state = (await dir.queryPermission({ mode: 'readwrite' })) === 'granted' ? 'ok' : 'needPermission'; } catch (e) { state = 'needPermission'; } }
+      render(); await scan(true);
+    },
+    async resume() { try { if (await dir.requestPermission({ mode: 'readwrite' }) === 'granted') { state = 'ok'; await scan(false); } } catch (e) { toast('許可されませんでした'); } render(); },
+    async pick() {
+      try {
+        const d = await window.showDirectoryPicker({ mode: 'readwrite' });
+        dir = d; state = 'ok'; await Store.set('inboxHandle', d); await Store.set('inboxDone', []); render(); await scan(false);
+      } catch (e) { if (e.name !== 'AbortError') alert('フォルダを設定できませんでした：' + e.message); }
+    },
+    async forget() { if (!confirm('受け取りフォルダの設定を解除しますか？（フォルダ自体は消えません）')) return; dir = null; state = 'none'; await Store.set('inboxHandle', null); render(); },
+  };
+})();
+
+// タブに戻ってきたら、保存ファイルと受け取りフォルダを確認
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible') return;
+  await AutoSave.refresh(); await Inbox.scan(true);
+});
 
 // 他の保存データ（JSON）と合流：新しい方を採用、削除記録も反映
 async function mergeData(obj) {
@@ -482,6 +557,10 @@ $('resumeBtn').onclick = () => AutoSave.resume();
 $('fsCreate').onclick = () => AutoSave.create();
 $('fsOpen').onclick = () => AutoSave.open();
 $('fsForget').onclick = () => AutoSave.forget();
+$('inboxPick').onclick = () => Inbox.pick();
+$('inboxScan').onclick = () => Inbox.scan(false);
+$('inboxForget').onclick = () => Inbox.forget();
+$('inboxResume').onclick = () => Inbox.resume();
 
 // ===== 画面切り替え =====
 function show(view) {
@@ -1160,6 +1239,7 @@ $('privacyOk').onclick = async () => { await Store.set('privacyAck', '1.0.0'); $
   tombstones = (await Store.get('tombstones')) || {};
   await reload();
   await AutoSave.init();
+  await Inbox.init();
   updateSaveState();
 })();
 </script>
