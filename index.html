@@ -53,6 +53,43 @@ h2{font-size:18px;margin:0 0 12px}
 .tools input[type=search]{flex:1;min-width:200px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}
 .tools select{padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
 .count{color:var(--sub);font-size:13px;margin:-4px 0 12px}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 12px}
+.qchip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink)}
+.qchip span{margin-left:6px;font-weight:400;color:var(--sub);font-size:12px}
+.qchip.on{background:var(--red);border-color:var(--red);color:#fff}.qchip.on span{color:#fde}
+.vtoggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.vtoggle button{border:0;background:none;padding:8px 12px;cursor:pointer;font-weight:700;color:var(--sub)}
+.vtoggle button.on{background:var(--red-soft);color:var(--red)}
+.gtoggle{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:var(--sub);white-space:nowrap}
+details.igroup{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+details.igroup>summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+details.igroup>summary::-webkit-details-marker{display:none}
+details.igroup>summary::before{content:'▶';font-size:11px;color:var(--red);transition:transform .15s}
+details.igroup[open]>summary::before{transform:rotate(90deg)}
+details.igroup[open]>summary{border-bottom:1px solid var(--line)}
+.ig-t{font-weight:700;font-size:16px}.ig-n{color:var(--red);font-weight:700;font-size:13px}
+.ig-names{color:var(--sub);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+details.igroup>.grid,details.igroup>.ltable{padding:12px;background:var(--bg)}
+.ihead{font-weight:700;color:var(--red);margin:14px 0 6px;padding-left:8px;border-left:4px solid var(--red)}
+.card{position:relative}
+.star{position:absolute;top:8px;right:8px;border:0;background:none;font-size:20px;line-height:1;cursor:pointer;color:#c9ccd1;padding:4px}
+.star.on{color:#e0a800}
+.ltable{display:flex;flex-direction:column;gap:0}
+.lrow{position:relative;display:grid;grid-template-columns:32px 1.3fr 1.2fr 1.4fr .9fr .9fr;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-top:0;padding:9px 12px;cursor:pointer;font-size:14px}
+.lrow:first-child{border-top:1px solid var(--line);border-radius:10px 10px 0 0}.lrow:last-child{border-radius:0 0 10px 10px}
+.lrow:hover{background:#fffafa}
+.lrow .star{position:static;font-size:18px}
+.lrow.lhead{cursor:default;background:#f6f7f9;font-size:12px;color:var(--sub);font-weight:700}
+.l-nm small{display:block;color:var(--sub);font-size:11px}.l-biz{color:var(--red);font-weight:700;font-size:13px}
+.l-co,.l-ch{color:var(--sub);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.l-dt{font-size:13px}.l-dt.old{color:#b25b00;font-weight:700}
+@media (max-width:640px){
+  .lrow{grid-template-columns:28px 1fr auto;row-gap:2px}
+  .lrow.lhead{display:none}
+  .l-nm{grid-column:2}.l-dt{grid-column:3;grid-row:1}
+  .l-biz,.l-co,.l-ch{grid-column:2/4;white-space:normal}
+  .l-co:empty,.l-ch:empty{display:none}
+}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
 .card:hover{border-color:#f0a8af;box-shadow:0 2px 10px rgba(0,0,0,.06)}
@@ -162,7 +199,8 @@ mark{background:#ffe58a;padding:0 1px}
 .toast.show{opacity:1}
 @media (max-width:640px){
   nav{margin-left:0;width:100%}
-  nav button{flex:1;padding:8px 4px}
+  nav button{flex:1;padding:8px 2px;font-size:12.5px;white-space:nowrap;letter-spacing:-.02em}
+  .tools select{flex:1;min-width:0}
   .dl{grid-template-columns:1fr}
   .dl dt{margin-top:6px}
   .detail{padding:18px 16px}
@@ -202,7 +240,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.7.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.8.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -230,14 +268,17 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
   <section id="view-list">
     <div class="tools">
       <input type="search" id="q" placeholder="名前・業種・紹介してほしい方・趣味など何でも検索（スペース区切りでAND）">
-      <select id="fCat"><option value="">BNI・BNI以外すべて</option><option value="BNI">BNIのみ</option><option value="BNI以外">BNI以外のみ</option></select>
-      <select id="fBiz"><option value="">すべての事業</option></select>
+      <select id="fInd"><option value="">すべての業種</option></select>
       <select id="sort">
         <option value="updated">更新が新しい順</option>
-        <option value="name">名前順</option>
-        <option value="date1to1">1to1実施日が新しい順</option>
+        <option value="name">名前順（あいうえお）</option>
+        <option value="date1to1">最後の1to1が新しい順</option>
+        <option value="chapter">チャプター別</option>
       </select>
+      <div class="vtoggle"><button id="vCard" class="on" title="カード表示">▦ カード</button><button id="vList" title="一覧表示">☰ 一覧</button></div>
+      <label class="gtoggle"><input type="checkbox" id="gToggle" checked> 業種でまとめる</label>
     </div>
+    <div class="quick" id="quick"></div>
     <div class="upcoming hidden" id="upcoming"></div>
     <div class="count" id="count"></div>
     <div class="grid" id="grid"></div>
@@ -333,6 +374,12 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <li>うまく入らないときは、ページのスクリーンショット（Windowsは <kbd>Win</kbd>＋<kbd>Shift</kbd>＋<kbd>S</kbd>、Macは <kbd>⌘</kbd>＋<kbd>Shift</kbd>＋<kbd>4</kbd>）を撮り、Geminiに貼り付けて読み取ります。</li></ol></div>
 
     <h3 id="g3">③ 1to1を記録する</h3>
+    <div class="card-g"><b>メンバー一覧の見方</b><ul>
+      <li><b>業種でまとめる</b>：カテゴリーから自動で「士業」「美容・健康・医療」などに分けて表示します。グループ名を押すと開閉します。振り分けが違う人は、編集画面の「業種グループ」で変えられます。</li>
+      <li><b>カード／一覧</b>：「☰ 一覧」にすると1人1行で表示され、人数が多くても見渡せます。</li>
+      <li><b>絞り込みボタン</b>：「自分のチャプター」「BNIコネクト未登録」「しばらく会っていない人（最後の1to1から3か月以上）」などを1回押すだけで絞り込めます。</li>
+      <li><b>★お気に入り</b>：☆を押すと、その人が常に一番上に表示されます。</li>
+    </ul></div>
     <div class="card-g"><ol>
       <li>メンバー一覧でその人を開き、「＋ 1to1を予定する」で日時を入れると、Googleカレンダーにも登録できます。</li>
       <li>1to1が終わったら「＋ 1to1を記録」で、話した内容や文字起こしを残します。</li>
@@ -1234,7 +1281,7 @@ const SECTIONS = [
   { title: 'コンタクトサークル', fields: [['contactTop3','Contact Circle Top3','area'],['contactCircle','コンタクトサークル（紹介し合える・協業しやすい仲間）','area']] },
   { title: '直近10件の顧客リスト', fields: [['recentCustomers','直近10件の顧客','area wide'],['howCame','彼らはどのようにしてあなたの元へやってきましたか？','area'],['servicesProvided','彼らにどのような商品・サービスを提供しましたか？','area'],['averageCustomer','彼らは平均的な顧客でしたか？','area']] },
   { title: 'リファーラルについて', fields: [['otherReferrers','その他のリファーラル提供者にはどんな人がいますか？','area'],['qualityReferral','「質の高い」リファーラルとは？','area'],['mismatch','「不適切な」リファーラルとは？','area']] },
-  { title: '1to1 Navi 独自の項目', fields: [['date1to1','1to1実施日','date'],['sheetUrl','1to1シートのURL'],['otherInfo','名簿にないその他の項目','area wide']] },
+  { title: '1to1 Navi 独自の項目', fields: [['date1to1','1to1実施日','date'],['sheetUrl','1to1シートのURL'],['industry','業種グループ（空欄なら自動）','select:=|士業|保険・金融|不動産・建築・住まい|美容・健康・医療|飲食・食品|IT・Web・通信|広告・デザイン・印刷|物流・運送・倉庫|教育・子ども・スクール|車・乗り物|冠婚葬祭・イベント・趣味|人材・ビジネスサポート|その他'],['otherInfo','名簿にないその他の項目','area wide']] },
   { title: '自分用メモ', fields: [['memo','メモ（紹介できそうな人、話したこと等）','area wide']] },
 ];
 const ALL_FIELDS = SECTIONS.flatMap(s => s.fields);
@@ -1537,34 +1584,104 @@ function hl(text, terms) {
   return s;
 }
 const firstLine = s => (s || '').split('\n').map(x => x.trim()).find(x => x && !/^【.*】$/.test(x)) || '';
+// ===== 一覧：業種グループ・表示切替・絞り込みボタン・お気に入り =====
+const INDUSTRY_GROUPS = [
+  ['士業', /税理士|会計|弁護士|法律|司法書士|行政書士|社労士|社会保険労務士|弁理士|土地家屋調査士|中小企業診断士|公認会計|労務|登記|相続/],
+  ['保険・金融', /保険|ファイナンシャル|FP|証券|投資|資産運用|銀行|融資|金融|ローン|年金|クレジット/],
+  ['不動産・建築・住まい', /不動産|賃貸|建築|工務|リフォーム|リノベ|住宅|設計|外壁|塗装|内装|解体|電気工事|設備|水道|空調|エアコン|ハウス|土地|マンション|家具|インテリア|清掃|ハウスクリーニング|害虫|エクステリア|造園|庭/],
+  ['美容・健康・医療', /美容|エステ|ネイル|まつ|ヘア|サロン|鍼|灸|整体|整骨|接骨|マッサージ|カイロ|健康|医療|クリニック|歯科|病院|薬|看護|介護|福祉|フィットネス|ジム|ヨガ|ピラティス|パーソナル|ダイエット|栄養|サプリ|化粧|コスメ|脱毛|メンタル|カウンセ/],
+  ['飲食・食品', /飲食|レストラン|カフェ|居酒屋|ケータリング|料理|食品|パン|菓子|スイーツ|酒|ワイン|ビール|日本酒|コーヒー|弁当|惣菜|農|野菜|米/],
+  ['IT・Web・通信', /IT|Web|WEB|ウェブ|システム|アプリ|ソフト|開発|プログラム|ホームページ|サイト|SEO|DX|ネットワーク|サーバ|通信|パソコン|PC|AI|セキュリティ|クラウド|EC/],
+  ['広告・デザイン・印刷', /広告|デザイン|印刷|看板|映像|動画|写真|撮影|カメラ|ブランディング|マーケ|SNS|PR|広報|コピー|イラスト|ノベルティ|販促|名刺|グラフィック/],
+  ['物流・運送・倉庫', /物流|運送|配送|宅配|倉庫|輸送|引っ越|引越|トラック|倉|貨物|梱包/],
+  ['教育・子ども・スクール', /教育|塾|スクール|学校|保育|子ども|子供|キッズ|ベビー|習い事|英会話|語学|家庭教師|研修|講師|セミナー|コーチ|コンサル/],
+  ['車・乗り物', /車|自動車|カー|バイク|中古車|整備|板金|タイヤ|レンタカー/],
+  ['冠婚葬祭・イベント・趣味', /結婚|ブライダル|葬|仏|墓|イベント|パーティ|旅行|ホテル|花|フラワー|ギフト|音楽|楽器|アート|占い|ペット|動物/],
+  ['人材・ビジネスサポート', /人材|採用|派遣|求人|紹介業|秘書|事務|代行|アウトソーシング|翻訳|通訳|オフィス|OA|コピー機|電力|電気料金|ガス|法人|経営/],
+];
+const INDUSTRY_NAMES = INDUSTRY_GROUPS.map(g => g[0]).concat(['その他']);
+function industryOf(m) {
+  if (m.industry) return m.industry;
+  const hay = [m.business, m.specialty, m.otoSpecialty, m.bizName, m.companyName, m.businessEn].filter(Boolean).join(' ');
+  if (!hay) return 'その他';
+  const g = INDUSTRY_GROUPS.find(([, r]) => r.test(hay));
+  return g ? g[0] : 'その他';
+}
+const chapKey = v => nameKey(v || '').replace(/チャプター$/i, '').toLowerCase();
+function lastContact(m) {
+  const ds = [m.date1to1, ...(m.meetings || []).filter(x => x.date && (x.text || x.bniDone) && x.date <= today()).map(x => x.date)].filter(Boolean).sort();
+  return ds.length ? ds[ds.length - 1] : '';
+}
+const daysSince = d => d ? Math.floor((new Date(today()) - new Date(d)) / 86400000) : Infinity;
+const QUICK = [
+  ['all', 'すべて'], ['fav', '★お気に入り'], ['mine', '自分のチャプター'], ['other', '他チャプター'], ['nonbni', 'BNI以外'],
+  ['bnitodo', 'BNIコネクト未登録'], ['recent', '最近1to1した人'], ['long', 'しばらく会っていない人'],
+];
+let quick = 'all', viewMode = 'card', groupBy = true;
+const openGroups = new Set();
+function quickMatch(m) {
+  switch (quick) {
+    case 'fav': return !!m.fav;
+    case 'mine': return catOf(m) === 'BNI' && myChapter && chapKey(m.chapter) === chapKey(myChapter);
+    case 'other': return catOf(m) === 'BNI' && (!myChapter || chapKey(m.chapter) !== chapKey(myChapter));
+    case 'nonbni': return catOf(m) === 'BNI以外';
+    case 'bnitodo': return catOf(m) !== 'BNI以外' && (m.meetings || []).some(x => !x.bniDone && !isPlanned(x));
+    case 'recent': return daysSince(lastContact(m)) <= 30;
+    case 'long': return daysSince(lastContact(m)) >= 90;
+    default: return true;
+  }
+}
+function renderQuick() {
+  $('quick').innerHTML = QUICK.map(([k, l]) => {
+    const n = k === 'all' ? members.length : members.filter(m => { const q = quick; quick = k; const r = quickMatch(m); quick = q; return r; }).length;
+    return `<button class="qchip ${quick === k ? 'on' : ''}" data-q="${k}">${esc(l)}<span>${n}</span></button>`;
+  }).join('');
+  $('quick').querySelectorAll('[data-q]').forEach(b => b.onclick = async () => {
+    const k = b.dataset.q;
+    if ((k === 'mine' || k === 'other') && !myChapter) {
+      const v = (prompt('あなたのチャプター名を入れてください（例：F×R）') || '').trim(); if (!v) return;
+      myChapter = v; await Store.set('myChapter', v); if ($('myChapter')) $('myChapter').value = v;
+    }
+    quick = k; renderList();
+  });
+}
+async function toggleFav(id) {
+  const m = members.find(x => x.id === id); if (!m) return;
+  await saveMember({ ...m, fav: !m.fav, updatedAt: Date.now() });
+}
 function renderList() {
   renderTsMembers();
   refreshQueueTargets();
   renderUpcoming();
   updateBniBar();
+  renderQuick();
+  $('vCard').classList.toggle('on', viewMode === 'card'); $('vList').classList.toggle('on', viewMode === 'list');
+  $('gToggle').checked = groupBy;
   const terms = $('q').value.normalize('NFKC').toLowerCase().split(/\s+/).filter(Boolean);
-  const biz = $('fBiz').value;
-  const bizList = [...new Set(members.map(m => m.business).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja'));
-  $('fBiz').innerHTML = '<option value="">すべての事業</option>' + bizList.map(b => `<option ${b === biz ? 'selected' : ''}>${esc(b)}</option>`).join('');
-  const cat = $('fCat').value;
+  const ind = $('fInd').value;
+  $('fInd').innerHTML = '<option value="">すべての業種</option>' + INDUSTRY_NAMES.map(g => { const n = members.filter(m => industryOf(m) === g).length; return n ? `<option value="${g}" ${g === ind ? 'selected' : ''}>${g}（${n}）</option>` : ''; }).join('');
   let list = members.filter(m => {
-    if (cat && catOf(m) !== cat) return false;
-    if (biz && m.business !== biz) return false;
+    if (!quickMatch(m)) return false;
+    if (ind && industryOf(m) !== ind) return false;
     if (!terms.length) return true;
     const hay = (ALL_FIELDS.map(([k]) => m[k] || '').join(' ') + ' ' + (m.meetings || []).map(x => x.text).join(' ')).normalize('NFKC').toLowerCase();
     return terms.every(t => hay.includes(t));
   });
   const sort = $('sort').value;
-  list.sort((a, b) => sort === 'name' ? (a.kana || a.name || '').localeCompare(b.kana || b.name || '', 'ja')
-    : sort === 'date1to1' ? (b.date1to1 || '').localeCompare(a.date1to1 || '')
-    : (b.updatedAt || 0) - (a.updatedAt || 0));
+  const kanaOf = m => (m.kana || m.name || '').normalize('NFKC');
+  list.sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || (sort === 'name' ? kanaOf(a).localeCompare(kanaOf(b), 'ja')
+    : sort === 'date1to1' ? (lastContact(b) || '').localeCompare(lastContact(a) || '')
+    : sort === 'chapter' ? (a.chapter || '￿').localeCompare(b.chapter || '￿', 'ja') || kanaOf(a).localeCompare(kanaOf(b), 'ja')
+    : (b.updatedAt || 0) - (a.updatedAt || 0)));
   $('count').textContent = members.length ? `${list.length} 人表示 ／ 登録 ${members.length} 人` : '';
   if (!members.length) {
+    $('grid').className = 'grid';
     $('grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><div style="font-size:17px;font-weight:700;color:var(--ink)">まだメンバーが登録されていません</div><p>1to1シート（PDF・Word・PowerPoint）を取り込むと、ここに一覧で表示されます。</p><button class="btn primary" onclick="show('import')">取り込みへ進む</button></div>`;
     return;
   }
-  if (!list.length) { $('grid').innerHTML = `<div class="empty" style="grid-column:1/-1">条件に合うメンバーがいません</div>`; return; }
-  $('grid').innerHTML = list.map(m => {
+  if (!list.length) { $('grid').className = 'grid'; $('grid').innerHTML = `<div class="empty" style="grid-column:1/-1">条件に合うメンバーがいません</div>`; return; }
+  const star = m => `<button class="star ${m.fav ? 'on' : ''}" data-fav="${m.id}" title="お気に入り">${m.fav ? '★' : '☆'}</button>`;
+  const card = m => {
     const chips = (m.hobbies || '').split(/[、,，・\/。\n]/).map(s => s.replace(/\(.*?\)|（.*?）/g, '').trim()).filter(s => s && s.length <= 12).slice(0, 5);
     let hit = '';
     if (terms.length) {
@@ -1573,20 +1690,58 @@ function renderList() {
       else { const mt = (m.meetings || []).find(x => terms.some(t => x.text.normalize('NFKC').toLowerCase().includes(t))); if (mt) { const i = Math.max(0, mt.text.normalize('NFKC').toLowerCase().indexOf(terms[0]) - 15); hit = `<div class="meta">1to1の記録（${esc(mt.date || '')}）：${hl((i ? '…' : '') + mt.text.slice(i, i + 60), terms)}</div>`; } }
     }
     const want = firstLine(m.wantReferrals).replace(/^\d位\s*/, '');
-    return `<div class="card" data-id="${m.id}">
-      <div class="biz">${hl(m.business || '事業名未入力', terms)}</div>
+    return `<div class="card" data-id="${m.id}">${star(m)}
+      <div class="biz">${hl(m.business || 'カテゴリー未入力', terms)}</div>
       <div class="nm">${hl(m.name || '(名前未入力)', terms)}</div>
       <div class="meta">${hl([m.companyName, m.specialty].filter(Boolean).join('／'), terms)}</div>
       ${catOf(m) === 'BNI以外' ? '<div class="meta"><span class="badge plan">BNI以外</span></div>' : m.chapter ? `<div class="meta">${hl(m.chapter, terms)}チャプター</div>` : ''}
       ${want ? `<div class="want"><b>紹介してほしい：</b>${hl(want, terms)}</div>` : ''}
       ${hit}
-      ${(m.meetings || []).length ? `<div class="meta">📝 1to1の記録 ${m.meetings.length}件</div>` : ''}
+      ${(m.meetings || []).length ? `<div class="meta">📝 1to1の記録 ${m.meetings.length}件${lastContact(m) ? '（最後：' + esc(fmtDate(lastContact(m))) + '）' : ''}</div>` : ''}
       ${chips.length ? `<div class="chips">${chips.map(c => `<span class="chip">${esc(c)}</span>`).join('')}</div>` : ''}
     </div>`;
-  }).join('');
-  document.querySelectorAll('.card').forEach(c => c.onclick = () => openDetail(c.dataset.id));
+  };
+  const row = m => {
+    const lc = lastContact(m), d = daysSince(lc);
+    return `<div class="lrow" data-id="${m.id}">${star(m)}
+      <div class="l-nm"><b>${hl(m.name || '(名前未入力)', terms)}</b>${m.kana ? `<small>${esc(m.kana)}</small>` : ''}</div>
+      <div class="l-biz">${hl(m.business || '', terms)}</div>
+      <div class="l-co">${hl(m.companyName || '', terms)}</div>
+      <div class="l-ch">${catOf(m) === 'BNI以外' ? '<span class="badge plan">BNI以外</span>' : esc(m.chapter || '')}</div>
+      <div class="l-dt ${d >= 90 && lc ? 'old' : ''}">${lc ? esc(fmtDate(lc)) : '<span style="color:#aaa">1to1なし</span>'}</div>
+    </div>`;
+  };
+  const block = items => viewMode === 'list'
+    ? `<div class="ltable"><div class="lrow lhead"><span></span><div>名前</div><div>カテゴリー</div><div>会社名</div><div>チャプター</div><div>最後の1to1</div></div>${items.map(row).join('')}</div>`
+    : `<div class="grid">${items.map(card).join('')}</div>`;
+  let html = '';
+  if (groupBy && !ind) {
+    const groups = INDUSTRY_NAMES.map(g => [g, list.filter(m => industryOf(m) === g)]).filter(([, a]) => a.length);
+    const autoOpen = terms.length || quick !== 'all' || list.length <= 12;
+    html = groups.map(([g, a]) => {
+      const open = autoOpen || openGroups.has(g);
+      return `<details class="igroup" data-g="${g}" ${open ? 'open' : ''}><summary><span class="ig-t">${g}</span><span class="ig-n">${a.length}人</span><span class="ig-names">${esc(a.slice(0, 4).map(m => m.name).join('、'))}${a.length > 4 ? ' ほか' : ''}</span></summary>${block(a)}</details>`;
+    }).join('');
+  } else if (sort === 'name') {
+    const ROWS = [['あ', /^[ぁ-おア-オ]/], ['か', /^[か-ごカ-ゴ]/], ['さ', /^[さ-ぞサ-ゾ]/], ['た', /^[た-どタ-ド]/], ['な', /^[な-のナ-ノ]/], ['は', /^[は-ぽハ-ポ]/], ['ま', /^[ま-もマ-モ]/], ['や', /^[ゃ-よャ-ヨ]/], ['ら', /^[ら-ろラ-ロ]/], ['わ', /^[ゎ-んヮ-ン]/]];
+    const rowOf = m => { if (m.fav) return '★お気に入り'; const k = kanaOf(m); const r = ROWS.find(([, re]) => re.test(k)); return r ? r[0] + '行' : 'その他'; };
+    const order = ['★お気に入り', ...ROWS.map(r => r[0] + '行'), 'その他'];
+    html = order.map(h => [h, list.filter(m => rowOf(m) === h)]).filter(([, a]) => a.length).map(([h, a]) => `<div class="ihead">${h}</div>${block(a)}`).join('');
+  } else if (sort === 'chapter') {
+    const heads = [...new Set(list.map(m => catOf(m) === 'BNI以外' ? 'BNI以外' : (m.chapter ? m.chapter + 'チャプター' : 'チャプター未入力')))];
+    const headOf = m => catOf(m) === 'BNI以外' ? 'BNI以外' : (m.chapter ? m.chapter + 'チャプター' : 'チャプター未入力');
+    html = heads.map(h => `<div class="ihead">${esc(h)}</div>${block(list.filter(m => headOf(m) === h))}`).join('');
+  } else html = block(list);
+  $('grid').className = '';
+  $('grid').innerHTML = html;
+  $('grid').querySelectorAll('.card, .lrow[data-id]').forEach(c => c.onclick = () => openDetail(c.dataset.id));
+  $('grid').querySelectorAll('[data-fav]').forEach(b => b.onclick = e => { e.stopPropagation(); toggleFav(b.dataset.fav); });
+  $('grid').querySelectorAll('details.igroup').forEach(d => d.ontoggle = () => { d.open ? openGroups.add(d.dataset.g) : openGroups.delete(d.dataset.g); });
 }
-['q','fCat','fBiz','sort'].forEach(id => $(id).addEventListener('input', renderList));
+['q','fInd','sort'].forEach(id => $(id).addEventListener('input', renderList));
+$('vCard').onclick = async () => { viewMode = 'card'; await Store.set('viewMode', viewMode); renderList(); };
+$('vList').onclick = async () => { viewMode = 'list'; await Store.set('viewMode', viewMode); renderList(); };
+$('gToggle').onchange = async () => { groupBy = $('gToggle').checked; await Store.set('groupBy', groupBy); renderList(); };
 
 // ===== 詳細 =====
 function ageOf(d) { const b = new Date(d), n = new Date(); if (isNaN(b)) return ''; let a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return `（${a}歳）`; }
@@ -1605,7 +1760,7 @@ function openDetail(id) {
   }).join('');
   $('overlay').innerHTML = `<div class="detail">
     <div class="head"><div><div class="biz">${esc(m.business || '')}</div><div class="nm">${esc(m.name || '(名前未入力)')}</div>${m.kana ? `<div style="color:var(--sub);font-size:13px">${esc(m.kana)}</div>` : ''}</div>
-      <button class="btn small close" id="dClose">✕ 閉じる</button></div>
+      <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn small" id="dFav">${m.fav ? '★ お気に入り' : '☆ お気に入りに追加'}</button><button class="btn small close" id="dClose">✕ 閉じる</button></div></div>
     ${body}
     ${m.memo ? `<div class="sec"><span class="sec-t">自分用メモ</span><div style="white-space:pre-wrap">${hl(m.memo, terms)}</div></div>` : ''}
     <div class="sec"><span class="sec-t accent">1to1の記録</span>
@@ -1633,6 +1788,7 @@ function openDetail(id) {
     </div></div>`;
   $('overlay').classList.remove('hidden');
   $('dClose').onclick = closeOverlay;
+  $('dFav').onclick = async () => { await toggleFav(m.id); openDetail(m.id); };
   $('dDel').onclick = async () => { if (!confirm(`${m.name || 'このメンバー'} を削除しますか？`)) return; await deleteMember(m.id); closeOverlay(); toast('削除しました'); };
   $('dEdit').onclick = () => openEdit(m);
   $('dAddMtg').onclick = async () => {
@@ -1683,7 +1839,7 @@ function formHtml(data, highlightBlank, changed) {
     const rows = Math.min(10, Math.max(2, (data[k] || '').split('\n').length + Math.floor((data[k] || '').length / 70)));
     const opts = t.startsWith('select:') ? t.slice(7).split('|') : null;
     const input = opts
-      ? `<select data-k="${k}" class="${changed && changed.has(k) ? 'changed' : ''}">${opts.map(o => `<option ${(data[k] || opts[0]) === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`
+      ? `<select data-k="${k}" class="${changed && changed.has(k) ? 'changed' : ''}">${opts.map(o => `<option value="${esc(o)}" ${(data[k] || opts[0]) === o ? 'selected' : ''}>${o ? esc(o) : '（自動で判定）'}</option>`).join('')}</select>`
       : area
       ? `<textarea data-k="${k}" class="${blank ? 'blank' : ''} ${changed && changed.has(k) ? 'changed' : ''}" rows="${rows}">${esc(data[k] || '')}</textarea>`
       : `<input data-k="${k}" type="${t === 'date' ? 'date' : 'text'}" class="${blank ? 'blank' : ''} ${changed && changed.has(k) ? 'changed' : ''}" value="${esc(data[k] || '')}">`;
@@ -2403,6 +2559,8 @@ $('privacyOk').onclick = async () => { await Store.set('privacyAck', '1.0.0'); $
   await Store.init();
   if (!(await Store.get('privacyAck'))) $('privacyFirst').classList.remove('hidden');
   myChapter = (await Store.get('myChapter')) || ''; $('myChapter').value = myChapter;
+  viewMode = (await Store.get('viewMode')) || (innerWidth < 640 ? 'list' : 'card');
+  const gb = await Store.get('groupBy'); groupBy = gb === undefined ? true : !!gb;
   tombstones = (await Store.get('tombstones')) || {};
   await reload();
   await AutoSave.init();
