@@ -2,7 +2,7 @@
 
 BNIメンバーの1to1シート（PDF・Word・PowerPoint・Canva）を取り込み、検索・管理できるツールです。
 
-**使い方：** 公開URLをPCのGoogle Chrome または Microsoft Edge で開いてください。
+**使い方：** 公開URLをPCのGoogle Chrome または Microsoft Edge で開いてください。初回は「かんたんセットアップ」が開き、保存先（Googleドライブ推奨）とAI（Gemini）の準備を案内します。
 
 ## データについて
 - 取り込んだメンバー情報は、**各自のブラウザの中（と各自が設定した保存ファイル）だけ**に保存されます。

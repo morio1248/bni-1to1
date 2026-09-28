@@ -168,17 +168,47 @@ mark{background:#ffe58a;padding:0 1px}
   .detail{padding:18px 16px}
 }
 @media print{header,.actions,.close{display:none}.overlay{position:static;background:none;padding:0}}
+.wz{position:fixed;inset:0;background:rgba(20,22,26,.55);z-index:40;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:28px 12px}
+.wz-box{background:#fff;border-radius:16px;max-width:720px;width:100%;padding:26px 28px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.wz-prog{display:flex;gap:6px;margin-bottom:18px}
+.wz-prog span{flex:1;height:6px;border-radius:99px;background:#eceef1}
+.wz-prog span.on{background:var(--red)}
+.wz-step{font-size:13px;color:var(--sub);font-weight:700}
+.wz h2{margin:4px 0 12px;font-size:21px}
+.wz p{margin:8px 0;line-height:1.75}
+.wz ol.big{padding-left:0;list-style:none;counter-reset:n;margin:14px 0}
+.wz ol.big>li{counter-increment:n;position:relative;padding:12px 14px 12px 50px;border:1px solid var(--line);border-radius:12px;margin:10px 0;line-height:1.7}
+.wz ol.big>li::before{content:counter(n);position:absolute;left:14px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
+.wz .ok{background:#eaf6ee;border:1px solid #bfe3ca;color:#1d6b35;border-radius:10px;padding:10px 14px;font-weight:700;margin:10px 0}
+.wz .ng{background:var(--warn);border:1px solid var(--warn-line);color:#7a5600;border-radius:10px;padding:10px 14px;margin:10px 0;line-height:1.7}
+.wz .tip{background:#f6f7f9;border-radius:10px;padding:10px 14px;font-size:13.5px;color:#444;margin:10px 0;line-height:1.7}
+.wz label.chk{display:flex;gap:10px;align-items:flex-start;background:var(--red-soft);border-radius:10px;padding:12px 14px;margin:14px 0;font-weight:700;cursor:pointer;line-height:1.6}
+.wz label.chk input{width:20px;height:20px;margin-top:2px;flex:none}
+.wz-nav{display:flex;gap:10px;align-items:center;margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.wz-nav .btn.primary{margin-left:auto;padding:10px 22px;font-size:15px}
+.wz-nav .btn.primary:disabled{opacity:.4;cursor:not-allowed}
+.wz .os{font-size:12px;font-weight:700;color:var(--red);border:1px solid #f2c3c8;border-radius:99px;padding:1px 8px;margin-right:4px}
+.guide{max-width:860px}
+.guide h2{margin-top:0}
+.guide h3{margin:26px 0 8px;padding-left:10px;border-left:4px solid var(--red);font-size:17px}
+.guide p,.guide li{line-height:1.8}
+.guide ol,.guide ul{padding-left:22px}
+.guide .toc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 18px;margin:12px 0}
+.guide .toc a{color:var(--red);text-decoration:none;font-weight:700}
+.guide .card-g{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:10px 0}
+.guide kbd{background:#f1f2f4;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;font-family:inherit;font-size:12px}
 footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;border-top:1px solid var(--line,#e5e5e5);color:var(--sub,#777);font-size:11.5px;line-height:1.7;text-align:center}
 </style>
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo"><b>BNI</b>1to1 Navi<span class="ver">v1.0.0</span></div>
+  <div class="logo"><b>BNI</b>1to1 Navi<span class="ver">v1.4.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
     <button data-view="import">取り込み</button>
     <button data-view="backup">保存・バックアップ</button>
+    <button data-view="guide">使い方</button>
   </nav>
 </div></header>
 
@@ -188,7 +218,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
         <li><b>データの保存場所：</b>取り込んだメンバー情報は、お使いのパソコンのこのブラウザの中（と、ご自身で設定した保存ファイル）だけに保存され、外部のサーバーには送信されません。</li>
         <li><b>書き出したファイルを他人に渡さない：</b>「JSON／CSVで書き出し」したファイルや自動保存の保存ファイルには、メンバーの個人情報（家族構成・生年月日など）が含まれます。他の人に渡したり、共有フォルダ・グループのドライブに置いたりしないでください。</li>
         <li><b>録音・文字起こしは相手の了承を得てから：</b>1to1を録音・文字起こしする場合は、必ず事前に相手の了承を得てください。</li>
-        <li><b>AIを使う場合の設定：</b>「AI用にコピー」でChatGPTやClaudeに貼り付けると、会話の内容が外部のAIサービスに送られます。ChatGPTは「設定 → データコントロール → すべての人のためにモデルを改善する」をオフにしてから使ってください。Claudeなど他のAIも、設定のプライバシー項目で学習への利用をオフにしてください。</li>
+        <li><b>AIを使う場合の設定：</b>AIにシートや会話を渡すと、その内容が外部のAIサービスに送られます。おすすめのGeminiは、左下の「設定とヘルプ」→「アクティビティ」で保存を「オフ」にしてから使ってください（オフでも最長72時間はGoogleに保存されます）。他のAIを使う場合も、学習への利用をオフにしてください。</li>
       </ul><div style="text-align:right"><button class="btn primary" id="privacyOk">確認しました</button></div></div>
   <div id="storageWarn" class="notice hidden">このブラウザではデータを保存できない設定になっています（プライベートモード等）。「保存・バックアップ」で保存先ファイルを設定してください。</div>
   <div id="resumeBar" class="notice hidden"><span id="resumeText"></span><button class="btn primary small" id="resumeBtn">自動保存を再開</button></div>
@@ -236,16 +266,18 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <div class="note">※ブラウザの安全上の制限により、URLだけで直接読み込むことはできないため、この手順になります。</div>
     </div>
     <div class="web" id="aiSheetPanel">
-      <div class="web-t">無料のAI（ChatGPT・Gemini・Claude など）で読み取る</div>
-      <p class="howto" style="margin:4px 0 8px">画像で作られたPDF、Canvaのページ、独自の様式など、上の方法でうまく項目に入らないときにおすすめです。手入力はほとんど要りません。</p>
-      <ol class="steps">
-        <li><button class="btn small primary" id="aiSheetCopy">AI用の指示文をコピー</button></li>
-        <li>AIのチャットに貼り付け、<b>1to1シートのPDF・画像を添付</b>（Webページの場合はURLを貼る。開けないと言われたら、ページのスクリーンショットを添付）して送信</li>
-        <li>AIの返答を全部コピーし、下の枠に貼り付け → 確認画面が開きます</li>
+      <div class="web-t">Gemini（Googleの無料AI）で読み取る　<span style="font-weight:400;font-size:13px;color:var(--sub)">いちばん確実な方法です</span></div>
+      <p class="howto" style="margin:4px 0 8px">画像で作られたPDF、Canvaのページ、独自の様式など、上の方法でうまく項目に入らないときに使います。手入力はほとんど要りません。</p>
+      <ol class="steps" style="color:var(--ink)">
+        <li><button class="btn small primary" id="aiSheetCopy">AI用の指示文をコピー</button> → <button class="btn small" id="aiSheetGemini">Geminiを開く</button></li>
+        <li>Geminiの入力欄をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd>（Macは <kbd>⌘</kbd>＋<kbd>V</kbd>）で指示文を貼り付ける</li>
+        <li>入力欄の左の <b>「＋」→「ファイルをアップロード」</b>で、1to1シートのPDFや画像を選んで送信する<br>
+          <span style="font-size:13px;color:var(--sub)">Webページのシートは、ページのスクリーンショット（Windowsは <kbd>Win</kbd>＋<kbd>Shift</kbd>＋<kbd>S</kbd>、Macは <kbd>⌘</kbd>＋<kbd>Shift</kbd>＋<kbd>4</kbd>）を撮って、入力欄に貼り付けてください。</span></li>
+        <li>Geminiの返答の下にある<b>コピーのアイコン</b>（四角が2つ重なった形）を押し、下の枠をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd> → 確認画面が開きます</li>
       </ol>
       <input type="url" id="aiSheetUrl" placeholder="（任意）シートのURL：記録用に残したいときだけ" style="margin-bottom:6px;width:100%;box-sizing:border-box">
-      <textarea id="aiSheetPaste" placeholder="ここをクリックして、AIの返答を Ctrl＋V で貼り付け"></textarea>
-      <div class="note">※AIにはメンバーの個人情報を送ることになります。AIの設定で、会話をAIの学習に使う設定をオフにしてから使ってください。</div>
+      <textarea id="aiSheetPaste" placeholder="ここをクリックして、Geminiの返答を Ctrl＋V で貼り付け"></textarea>
+      <div class="note">※Geminiはアクティビティ（学習）をオフにしてから使ってください。設定方法は「使い方」または「かんたんセットアップ」で案内しています。</div>
     </div>
     <div class="row" style="margin-top:10px;justify-content:flex-end">
       <button class="btn" id="manualBtn">白紙から手入力する</button>
@@ -267,9 +299,68 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     <div class="queue" id="queue"></div>
   </section>
 
+  <!-- 使い方 -->
+  <section id="view-guide" class="hidden guide">
+    <h2>1to1 Navi の使い方</h2>
+    <p>はじめての方は、まず<button class="btn small primary" id="guideSetup">かんたんセットアップ</button>を行ってください（10分ほど）。データが消えないための設定と、AIの準備を1画面ずつ案内します。</p>
+    <div class="toc">
+      <a href="#g1">① 最初にやること</a>　<a href="#g2">② 1to1シートを取り込む</a>　<a href="#g3">③ 1to1を記録する</a>　<a href="#g4">④ BNIコネクトに登録する</a>　<a href="#g5">⑤ 別のパソコンで使う</a>　<a href="#g6">⑥ 困ったとき</a>
+    </div>
+
+    <h3 id="g1">① 最初にやること（1回だけ）</h3>
+    <div class="card-g"><ol>
+      <li><b>パソコンの Google Chrome</b>（または Microsoft Edge）で開きます。スマホやSafariでは保存がうまくできません。</li>
+      <li><b>Googleドライブ パソコン版</b>を入れて、Googleアカウントでログインします。</li>
+      <li>1to1 Naviの<b>保存ファイルをGoogleドライブの「マイドライブ」に作ります</b>。以後、登録や修正をするたびに自動で保存され、クラウドにも自動でバックアップされます。</li>
+      <li>AIで読み取りたい場合は、<b>Gemini</b>に同じGoogleアカウントでログインし、アクティビティ（学習）をオフにします。</li>
+    </ol><p>この4つは「かんたんセットアップ」で順番に案内します。</p></div>
+
+    <h3 id="g2">② 1to1シートを取り込む</h3>
+    <p>「取り込み」画面で、シートの届き方に合わせて選びます。どの方法でも、最後に確認画面が出るので、内容を見て「登録」を押します。</p>
+    <div class="card-g"><b>PDF・Word・PowerPointで届いたとき</b>
+      <ol><li>ファイルを「取り込み」画面の枠にドラッグ＆ドロップします。</li>
+      <li>確認画面で項目が少ししか入っていない（画像のPDFなど）ときは、下の「Geminiで読み取る」を使います。</li></ol></div>
+    <div class="card-g"><b>Geminiで読み取る（いちばん確実）</b>
+      <ol><li>「取り込み」画面の「AI用の指示文をコピー」を押します。</li>
+      <li>「Geminiを開く」を押し、入力欄をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd>（Macは <kbd>⌘</kbd>＋<kbd>V</kbd>）で貼り付けます。</li>
+      <li>入力欄の左の「＋」→「ファイルをアップロード」で、1to1シートのPDFや画像を選び、送信します。</li>
+      <li>返答の下にあるコピーのアイコン（四角が2つ重なった形）を押し、1to1 Naviの枠に貼り付けます。</li></ol></div>
+    <div class="card-g"><b>Webページ（Canvaなど）で届いたとき</b>
+      <ol><li>「Webページで届いた場合」の欄にURLを貼って「ページを開く」を押します。</li>
+      <li>開いたページで <kbd>Ctrl</kbd>＋<kbd>A</kbd> → <kbd>Ctrl</kbd>＋<kbd>C</kbd>、1to1 Naviに戻って枠に <kbd>Ctrl</kbd>＋<kbd>V</kbd> します。</li>
+      <li>うまく入らないときは、ページのスクリーンショット（Windowsは <kbd>Win</kbd>＋<kbd>Shift</kbd>＋<kbd>S</kbd>、Macは <kbd>⌘</kbd>＋<kbd>Shift</kbd>＋<kbd>4</kbd>）を撮り、Geminiに貼り付けて読み取ります。</li></ol></div>
+
+    <h3 id="g3">③ 1to1を記録する</h3>
+    <div class="card-g"><ol>
+      <li>メンバー一覧でその人を開き、「＋ 1to1を予定する」で日時を入れると、Googleカレンダーにも登録できます。</li>
+      <li>1to1が終わったら「＋ 1to1を記録」で、話した内容や文字起こしを残します。</li>
+      <li>文字起こしがあれば「AI用にコピー」→ Geminiに貼り付け → 返答を「AIの返答を貼る」に貼ると、相手の情報が各項目に反映されます。</li>
+    </ol><p>録音・文字起こしは、必ず相手の了承を得てから行ってください。</p></div>
+
+    <h3 id="g4">④ BNIコネクトに登録する</h3>
+    <div class="card-g"><p>1to1をした記録には「BNIコネクト未登録」の印が付きます。画面上部のお知らせから、BNIコネクトへの登録に必要な内容を確認し、登録が済んだら「BNIコネクトに登録済みにする」を押してください。区分が「BNI以外」の人は対象外です。</p></div>
+
+    <h3 id="g5">⑤ 別のパソコンで使う・パソコンを買い替えた</h3>
+    <div class="card-g"><ol>
+      <li>新しいパソコンにも Googleドライブ パソコン版を入れて、同じGoogleアカウントでログインします。</li>
+      <li>1to1 Naviを開き、「かんたんセットアップ」の保存ファイルの手順で<b>「作成済みの保存ファイルを開く」</b>を選び、マイドライブの「1to1Navi_データ.json」を選びます。</li>
+      <li>これで、これまでのデータがそのまま使えます。</li>
+    </ol></div>
+
+    <h3 id="g6">⑥ 困ったとき</h3>
+    <div class="card-g"><ul>
+      <li><b>画面の上に「自動保存 一時停止中」と出る：</b>ブラウザの安全のための仕組みです。「自動保存を再開」を押し、「許可」を選べば元に戻ります。</li>
+      <li><b>画面右上が「⚠ 未バックアップ」になっている：</b>保存ファイルが設定されていません。「保存・バックアップ」から設定してください。</li>
+      <li><b>Geminiが「読み取れません」と答える：</b>PDFの代わりに、シートのスクリーンショットを添付してみてください。</li>
+      <li><b>Geminiの返答を貼っても項目に入らない：</b>「AI用の指示文をコピー」から貼り付けたか確認し、返答を最初から最後まで全部コピーしてください。</li>
+      <li><b>データを消してしまった：</b>保存ファイルがマイドライブにあれば、「作成済みの保存ファイルを開く」で戻せます。Googleドライブのゴミ箱や「版の管理」から、以前の状態に戻せる場合もあります。</li>
+    </ul></div>
+  </section>
+
   <!-- 保存・バックアップ -->
   <section id="view-backup" class="hidden">
     <h2>保存・バックアップ</h2>
+    <p><button class="btn" id="setupAgain">かんたんセットアップをもう一度見る</button>　保存先やAIの設定を、1画面ずつの案内でやり直せます。</p>
     <div class="panel main">
       <b>自動保存（おすすめ）</b>
       <div class="caution">保存ファイルにはメンバーの個人情報が含まれます。<b>自分専用のフォルダ</b>に作り、共有フォルダやグループのドライブには置かないでください。</div>
@@ -299,7 +390,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
         <li><b>データの保存場所：</b>取り込んだメンバー情報は、お使いのパソコンのこのブラウザの中（と、ご自身で設定した保存ファイル）だけに保存され、外部のサーバーには送信されません。</li>
         <li><b>書き出したファイルを他人に渡さない：</b>「JSON／CSVで書き出し」したファイルや自動保存の保存ファイルには、メンバーの個人情報（家族構成・生年月日など）が含まれます。他の人に渡したり、共有フォルダ・グループのドライブに置いたりしないでください。</li>
         <li><b>録音・文字起こしは相手の了承を得てから：</b>1to1を録音・文字起こしする場合は、必ず事前に相手の了承を得てください。</li>
-        <li><b>AIを使う場合の設定：</b>「AI用にコピー」でChatGPTやClaudeに貼り付けると、会話の内容が外部のAIサービスに送られます。ChatGPTは「設定 → データコントロール → すべての人のためにモデルを改善する」をオフにしてから使ってください。Claudeなど他のAIも、設定のプライバシー項目で学習への利用をオフにしてください。</li>
+        <li><b>AIを使う場合の設定：</b>AIにシートや会話を渡すと、その内容が外部のAIサービスに送られます。おすすめのGeminiは、左下の「設定とヘルプ」→「アクティビティ」で保存を「オフ」にしてから使ってください（オフでも最長72時間はGoogleに保存されます）。他のAIを使う場合も、学習への利用をオフにしてください。</li>
       </ul></div>
     <div class="panel">
       <b>BNIサイトへの1to1登録（自動入力ボタン）</b>
@@ -339,6 +430,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </footer>
 
 <div id="overlay" class="overlay hidden"></div>
+<div id="wizard" class="wz hidden"></div>
 <div id="toast" class="toast"></div>
 
 <script>
@@ -623,7 +715,7 @@ $('inboxResume').onclick = () => Inbox.resume();
 // ===== 画面切り替え =====
 function show(view) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
-  ['list','import','backup'].forEach(v => $('view-' + v).classList.toggle('hidden', v !== view));
+  ['list','import','backup','guide'].forEach(v => $('view-' + v).classList.toggle('hidden', v !== view));
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.view));
@@ -839,7 +931,7 @@ function addReview(data, source) {
   let userPicked = false;
   card.innerHTML = `<h3>${esc(data.name || (manual ? '新規メンバー' : '名前が読み取れませんでした'))}</h3>
     <div class="src">${esc(source)}${manual ? '' : `　／　${filled} 項目を読み取りました。内容を確認・修正してから登録してください。`}</div>
-    ${!manual && source !== 'AIで読み取り' && filled < 8 ? `<div class="howto" style="color:#8a6200">うまく読み取れていない場合は、取り込み画面の「無料のAIで読み取る」を使うと、ほぼ手入力なしで項目に入れられます。</div>` : ''}
+    ${!manual && source !== 'AIで読み取り' && filled < 8 ? `<div class="howto" style="color:#8a6200">うまく読み取れていない場合は、取り込み画面の「Geminiで読み取る」を使うと、ほぼ手入力なしで項目に入れられます。</div>` : ''}
     <div class="target-box">
       <label><b>登録先</b><select data-a="target"></select></label>
       <label class="mode hidden"><b>同じ項目に内容があるとき</b><select data-a="mode">
@@ -984,11 +1076,12 @@ $('webPaste').addEventListener('paste', () => setTimeout(() => {
 
 // 無料のAIで読み取る：指示文をコピー → AIの返答を貼り付け
 const AI_SHEET_FIELDS = ALL_FIELDS.filter(([k]) => !['category', 'date1to1', 'memo', 'sheetUrl'].includes(k));
-$('aiSheetCopy').onclick = async () => { await copyText(buildSheetPrompt(AI_SHEET_FIELDS)); toast('指示文をコピーしました。AIに貼り付けて、シートを添付して送信してください'); };
+$('aiSheetCopy').onclick = async () => { await copyText(buildSheetPrompt(AI_SHEET_FIELDS)); toast('指示文をコピーしました。次に「Geminiを開く」を押してください'); };
+$('aiSheetGemini').onclick = () => window.open('https://gemini.google.com/', '_blank', 'noopener');
 $('aiSheetPaste').addEventListener('paste', () => setTimeout(() => {
   const text = $('aiSheetPaste').value.trim(); if (!text) return;
   const data = parseAiSheet(text, AI_SHEET_FIELDS);
-  if (Object.keys(data).length < 2) { alert('AIの返答から項目を読み取れませんでした。\n指示文をコピーしてAIに送ったか、AIがシートを読めたか（「読み取れません」と返ってきていないか）を確認してください。'); return; }
+  if (Object.keys(data).length < 2) { alert('AIの返答から項目を読み取れませんでした。\n「AI用の指示文をコピー」から貼り付けてGeminiに送ったか、Geminiがシートを読めたか（「読み取れません」と返ってきていないか）、返答を全部コピーしたかを確認してください。'); return; }
   data.category = 'BNI';
   const u = $('aiSheetUrl').value.trim(); if (/^https?:\/\//i.test(u)) data.sheetUrl = u;
   addReview(data, 'AIで読み取り');
@@ -1308,6 +1401,123 @@ $('wipe').onclick = async () => {
 
 $('bmkSetupTab').innerHTML = bookmarkletSetup();
 $('myChapterSave').onclick = async () => { myChapter = $('myChapter').value.trim(); await Store.set('myChapter', myChapter); toast('保存しました'); };
+// ===== かんたんセットアップ（初回ウィザード） =====
+const Wizard = (() => {
+  const isMac = /Mac/i.test(navigator.platform || navigator.userAgent);
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (isMac && navigator.maxTouchPoints > 1);
+  const K = isMac ? '⌘' : 'Ctrl';
+  let step = 0, checks = {};
+  const STEPS = ['ようこそ', '個人情報の約束', 'Googleドライブ', '保存ファイル', 'Gemini', '完了'];
+  const chk = (id, text) => `<label class="chk"><input type="checkbox" data-c="${id}" ${checks[id] ? 'checked' : ''}><span>${text}</span></label>`;
+  function body() {
+    if (step === 0) {
+      const ok = AutoSave.supported && !isMobile;
+      return `<h2>1to1 Navi へようこそ</h2>
+        <p>これから、<b>データが消えないための設定</b>と、<b>AIで1to1シートを読み取る準備</b>を、1画面ずつ案内します。全部で10分ほどです。</p>
+        <p>画面の案内どおりに進めれば、パソコンに詳しくなくても大丈夫です。</p>
+        ${ok ? `<div class="ok">✓ このパソコン・ブラウザで使えます</div>`
+          : `<div class="ng"><b>このままでは、データの自動保存が使えません。</b><br>${isMobile ? 'スマホ・タブレットではなく、<b>パソコン</b>で開いてください。' : '<b>Google Chrome</b>（または Microsoft Edge）で、このページを開き直してください。'}<br>
+            下のボタンでこのページのアドレスをコピーし、${isMobile ? 'パソコンに送ってから' : 'Chromeのアドレス欄に貼り付けて'}開いてください。<br>
+            <button class="btn small" data-w="copyurl" style="margin-top:6px">このページのアドレスをコピー</button></div>`}`;
+    }
+    if (step === 1) return `<h2>個人情報の取り扱いについて</h2>
+      <p>1to1シートには、家族構成や生年月日など大切な個人情報が含まれます。次の3つを必ず守ってください。</p>
+      <ol class="big">
+        <li><b>データは自分のパソコンと自分のGoogleドライブだけに保存されます。</b>1to1 Naviのサーバーに送られることはありません。</li>
+        <li><b>保存ファイルや書き出したファイルを、他の人に渡したり、共有フォルダに置いたりしないでください。</b></li>
+        <li><b>録音・文字起こしやAIでの読み取りは、相手の了承を得てから。</b>AIは学習に使わない設定にして使います（この後で案内します）。</li>
+      </ol>${chk('privacy', '上の3つを守ります')}`;
+    if (step === 2) return `<h2>Googleドライブ パソコン版を入れる</h2>
+      <p>1to1 Naviのデータを<b>Googleドライブに自動で保存</b>します。パソコンが壊れても、買い替えても、データは消えません。そのために「Googleドライブ パソコン版」というソフトを使います。</p>
+      <div class="tip"><b>すでに入っているか確かめる方法</b><br>
+        ${isMac ? 'Finder（青い顔のアイコン）を開き、左側に「Google Drive」があれば入っています。' : 'エクスプローラー（黄色いフォルダのアイコン）を開き、左側に「Google Drive (G:)」があれば入っています。'}
+        入っていれば、下の①〜③は飛ばしてください。</div>
+      <ol class="big">
+        <li><button class="btn primary small" data-w="gdl">ダウンロードのページを開く</button><br>開いたページの「パソコン版ドライブをダウンロード」を押します。</li>
+        <li>ダウンロードされたファイル（${isMac ? 'GoogleDrive.dmg' : 'GoogleDriveSetup.exe'}）を開き、画面の案内どおりにインストールします。</li>
+        <li><b>Googleアカウントでログイン</b>します。この後のGeminiでも同じアカウントを使うので、ふだん使っているGmailのアカウントがおすすめです。</li>
+      </ol>${chk('gdrive', 'Googleドライブ パソコン版が入っていて、ログインしています')}`;
+    if (step === 3) {
+      const ok = AutoSave.state === 'ok';
+      return `<h2>保存ファイルをGoogleドライブに作る</h2>
+        ${ok ? `<div class="ok">✓ 「${esc(AutoSave.name || '')}」に自動保存しています</div>` : ''}
+        <p>下のボタンを押すと、保存先を選ぶ画面が開きます。<b>次の順番で選んでください。</b></p>
+        <ol class="big">
+          <li><button class="btn primary small" data-w="fscreate">保存ファイルを作る</button></li>
+          <li>開いた画面の<b>左側</b>で、<b>${isMac ? '「Google Drive」' : '「Google Drive (G:)」'}</b>をクリックします。<br><span style="font-size:13px;color:var(--sub)">左側に見当たらないときは、左側を下にスクロールしてください。</span></li>
+          <li>右側に出てくる<b>「マイドライブ」をダブルクリック</b>して開きます。</li>
+          <li>ファイル名は「1to1Navi_データ.json」のまま、<b>「保存」</b>を押します。</li>
+        </ol>
+        <div class="tip">以前に別のパソコンで作った保存ファイルがある場合は、代わりに <button class="btn small" data-w="fsopen">作成済みの保存ファイルを開く</button> を押して、マイドライブの「1to1Navi_データ.json」を選び、「ファイルを編集」または「許可」を押してください。</div>
+        ${chk('fsplace', '保存ファイルを<b>Googleドライブの「マイドライブ」の中</b>に作りました（または開きました）')}`;
+    }
+    if (step === 4) return `<h2>Gemini（無料のAI）の準備</h2>
+      <p>画像のPDFやCanvaのシートなど、うまく読み取れない1to1シートは、Googleの無料AI「Gemini」に読み取ってもらいます。<b>使わない場合は「あとで」で飛ばせます。</b></p>
+      <ol class="big">
+        <li><button class="btn primary small" data-w="gemini">Geminiを開く</button><br>右上の「ログイン」から、<b>Googleドライブと同じGoogleアカウント</b>でログインします。</li>
+        <li><b>学習に使われないようにします。</b>画面の左下（または左上の「≡」の中）の<b>「設定とヘルプ」→「アクティビティ」</b>を開きます。</li>
+        <li><b>「オフにする」</b>を押します（「オフにしてアクティビティを削除」でもかまいません）。</li>
+      </ol>
+      <div class="tip">オフにすると、会話は学習に使われず、履歴にも残りません（ただし最長72時間はGoogleに保存されます）。1to1 Naviでの読み取りは毎回その場で終わるので、履歴が残らなくても困りません。</div>
+      ${chk('gemini', 'Geminiにログインし、アクティビティをオフにしました')}`;
+    return `<h2>セットアップ完了です</h2>
+      <p>おつかれさまでした。これで、登録や修正をするたびに<b>Googleドライブへ自動で保存</b>されます。</p>
+      <ol class="big">
+        <li><b>画面右上に「✓ 自動保存中」</b>と出ていれば正しく保存されています。</li>
+        <li>さっそく<b>最初の1人</b>を取り込んでみましょう。「取り込み」画面に1to1シートのPDFをドラッグするか、Geminiで読み取ります。</li>
+        <li>分からないときは、上の<b>「使い方」</b>にいつでも手順があります。</li>
+      </ol>`;
+  }
+  const canNext = () => step === 0 ? (AutoSave.supported && !isMobile)
+    : step === 1 ? !!checks.privacy : step === 2 ? !!checks.gdrive
+    : step === 3 ? (AutoSave.state === 'ok' && !!checks.fsplace) : step === 4 ? !!checks.gemini : true;
+  function render() {
+    const w = $('wizard');
+    w.innerHTML = `<div class="wz-box">
+      <div class="wz-prog">${STEPS.map((_, i) => `<span class="${i <= step ? 'on' : ''}"></span>`).join('')}</div>
+      <div class="wz-step">かんたんセットアップ　${step + 1} / ${STEPS.length}　${STEPS[step]}</div>
+      ${body()}
+      <div class="wz-nav">
+        ${step > 0 && step < STEPS.length - 1 ? '<button class="btn" data-w="back">戻る</button>' : ''}
+        ${step < STEPS.length - 1 ? '<button class="btn" data-w="later" style="font-weight:400">あとで</button>' : ''}
+        ${step === 4 ? '<button class="btn" data-w="skipai">Geminiは使わない</button>' : ''}
+        <button class="btn primary" data-w="next" ${canNext() ? '' : 'disabled'}>${step === STEPS.length - 1 ? '取り込みを始める' : '次へ'}</button>
+      </div></div>`;
+    w.classList.remove('hidden');
+    w.querySelectorAll('[data-c]').forEach(el => el.onchange = () => { checks[el.dataset.c] = el.checked; save(); render(); });
+    w.querySelectorAll('[data-w]').forEach(el => el.onclick = () => act(el.dataset.w));
+    w.scrollTop = 0;
+  }
+  async function save() { await Store.set('setup', { step, checks }); }
+  async function act(a) {
+    if (a === 'copyurl') { await copyText(location.href); toast('アドレスをコピーしました'); return; }
+    if (a === 'gdl') { window.open('https://www.google.com/intl/ja/drive/download/', '_blank', 'noopener'); return; }
+    if (a === 'gemini') { window.open('https://gemini.google.com/', '_blank', 'noopener'); return; }
+    if (a === 'fscreate') { await AutoSave.create(); render(); return; }
+    if (a === 'fsopen') { await AutoSave.open(); render(); return; }
+    if (a === 'later') { await save(); close(); toast('「使い方」または「保存・バックアップ」から、いつでも再開できます'); return; }
+    if (a === 'back') { step--; await save(); render(); return; }
+    if (a === 'skipai') { step = 5; await save(); render(); return; }
+    if (a === 'next') {
+      if (!canNext()) return;
+      if (step === 1) await Store.set('privacyAck', '1.0.0');
+      if (step === STEPS.length - 1) { await Store.set('setupDone', true); close(); show('import'); return; }
+      step++; await save(); render();
+    }
+  }
+  function close() { $('wizard').classList.add('hidden'); $('wizard').innerHTML = ''; }
+  return {
+    async open(fromStart) { const st = (await Store.get('setup')) || {}; checks = st.checks || {}; step = fromStart ? 0 : (st.step || 0); render(); },
+    async autoStart() {
+      if (await Store.get('setupDone')) return false;
+      if (AutoSave.state === 'ok' && (await Store.get('privacyAck'))) return false; // すでに使えている人は出さない
+      await this.open(false); return true;
+    },
+  };
+})();
+$('setupAgain').onclick = () => Wizard.open(true);
+$('guideSetup').onclick = () => Wizard.open(true);
+
 $('privacyOk').onclick = async () => { await Store.set('privacyAck', '1.0.0'); $('privacyFirst').classList.add('hidden'); };
 (async () => {
   await Store.init();
@@ -1318,6 +1528,7 @@ $('privacyOk').onclick = async () => { await Store.set('privacyAck', '1.0.0'); $
   await AutoSave.init();
   await Inbox.init();
   updateSaveState();
+  if (await Wizard.autoStart()) $('privacyFirst').classList.add('hidden');
 })();
 </script>
 </body>
