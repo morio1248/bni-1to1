@@ -202,7 +202,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.5.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.5.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2120,13 +2120,14 @@ $('wipe').onclick = async () => {
 
 $('bmkSetupTab').innerHTML = bookmarkletSetup();
 $('myChapterSave').onclick = async () => { myChapter = $('myChapter').value.trim(); await Store.set('myChapter', myChapter); toast('保存しました'); };
-const AUTHOR_VERSION = 1;
+const AUTHOR_VERSION = 2;
 const AUTHOR = {
  "id": "author-saito-masahiro",
  "builtin": "author",
  "category": "BNI",
  "name": "斎藤政宏",
  "kana": "さいとうまさひろ",
+ "birthday": "1990-06-10",
  "chapter": "F×R",
  "region": "東京MS",
  "contact": "LINE：https://line.me/ti/p/YsKtNqLfGo\nFacebook：https://www.facebook.com/share/1K4RBh7HXM/",
