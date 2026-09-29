@@ -255,7 +255,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.9.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.9.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -1311,6 +1311,7 @@ const LEGACY_TO = { businessContents: 'servicesProvided', collaborators: 'contac
 const LEGACY_LABEL = { contact: '連絡先', education: '学歴', story: '起業の経緯・思い', specialSkill: '特技', bniCareer: 'BNI歴', lifework: 'ライフワーク', personality: '性格・こだわり', values: '大切にしていること', motto: '座右の銘', bniRoles: '経験した役職', whyBni: 'Why BNI?', birthdayNote: '生年月日のメモ' };
 function migrateLegacy(m) {
   let changed = false;
+  for (const x of m.meetings || []) if (x.place && !PLACES.includes(x.place)) { x.place = normPlace(x.place); changed = true; }
   if (m.industry !== undefined && !['士業','保険・金融','不動産・建築・住まい','美容・健康・医療','飲食・食品','IT・Web・通信','広告・デザイン・印刷','物流・運送・倉庫','教育・子ども・スクール','車・乗り物','冠婚葬祭・イベント・趣味','人材・ビジネスサポート','その他'].includes(m.industry)) { delete m.industry; changed = true; }
   if (m.birthday) { // 生年月日は名簿の「名前とプライベート情報」へ
     const d = String(m.birthday).match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -2191,14 +2192,15 @@ function applyAi(m, text, rec) {
 }
 
 // ===== 1to1の予定とカレンダー連携 =====
+const PLACES = ['オンライン', '対面'];
+const normPlace = v => !v ? '' : /オンライン|online|zoom|meet|teams|web/i.test(v) ? 'オンライン' : '対面';
+const placeSelect = (attr, v) => `<select ${attr}><option value="">選択してください</option>${PLACES.map(o => `<option ${normPlace(v) === o ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
 const isPlanned = x => !x.text && !x.bniDone && (!x.date || x.date > today() || (x.date === today() && x.time && x.time > new Date().toTimeString().slice(0, 5)));
 function planFields(x) {
-  const places = [...new Set(members.flatMap(y => (y.meetings || []).map(z => z.place)).filter(Boolean))];
-  const lid = 'pl' + Math.random().toString(36).slice(2, 7);
   return `<label>日付<input type="date" data-p="date" value="${esc(x.date || '')}"></label>
     <label>開始時刻<input type="time" data-p="time" value="${esc(x.time || '')}" step="300"></label>
     <label>所要時間<select data-p="duration">${[30, 45, 60, 90, 120].map(n => `<option value="${n}" ${+(x.duration || 60) === n ? 'selected' : ''}>${n}分</option>`).join('')}</select></label>
-    <label style="grid-column:span 2">場所<input data-p="place" list="${lid}" value="${esc(x.place || '')}" placeholder="例：オンライン（Zoom）、〇〇駅のカフェ"><datalist id="${lid}">${['オンライン（Zoom）', 'オンライン（Google Meet）', ...places].map(p => `<option value="${esc(p)}">`).join('')}</datalist></label>`;
+    <label>場所${placeSelect('data-p="place"', x.place)}</label>`;
 }
 function readPlan(root) {
   const o = {}; root.querySelectorAll('[data-p]').forEach(el => o[el.dataset.p] = el.value.trim());
@@ -2291,14 +2293,13 @@ const BOOKMARKLET = "javascript:%28async%20%28%29%20%3D%3E%20%7B%20const%20sleep
 const fmtDate = d => (d || '').replace(/-/g, '/');
 function bniPanel(m, x) {
   const cross = myChapter && m.chapter && nameKey(m.chapter).replace(/チャプター$/, '') !== nameKey(myChapter).replace(/チャプター$/, '');
-  const places = [...new Set(members.flatMap(y => (y.meetings || []).map(z => z.place)).filter(Boolean))];
   return `<div class="hint"><b>自動入力：</b>①「BNI自動入力用にコピー」→ ② BNI Connectを開く → ③ ブックマークの「BNI 1to1自動入力」を押す → ④ 内容を確認して「わかりました」→ ⑤ ここで「BNIコネクトに登録済みにする」<br>
       <span style="font-weight:400">ブックマークをまだ作っていない方は <a href="#" data-b="setup">こちら（最初の1回だけ）</a>。手で入力する場合は、各項目の「コピー」を使ってください。</span></div>
     <div class="bmk-setup hidden">${bookmarkletSetup()}</div>
 
     <div class="bni-row"><label>会った相手</label><div class="val">${esc(m.name || '')}${m.chapter ? `<span style="font-weight:400;color:var(--sub)">（${esc(m.chapter)}）</span>` : ''}</div><button class="btn small" data-c="name">コピー</button></div>
     <div class="bni-row"><label>1to1を提案したメンバー</label><select data-f="initiator"><option value="">選択してください</option>${INITIATORS.map(([v, l]) => `<option value="${v}" ${x.initiator === v ? 'selected' : ''}>${l}</option>`).join('')}</select><span></span></div>
-    <div class="bni-row"><label>場所</label><input data-f="place" list="placeList-${x.id}" value="${esc(x.place || '')}" placeholder="例：オンライン（Zoom）、〇〇駅のカフェ"><datalist id="placeList-${x.id}">${['オンライン（Zoom）', 'オンライン（Google Meet）', ...places].map(p => `<option value="${esc(p)}">`).join('')}</datalist><button class="btn small" data-c="place">コピー</button></div>
+    <div class="bni-row"><label>場所</label>${placeSelect('data-f="place"', x.place)}<button class="btn small" data-c="place">コピー</button></div>
     <div class="bni-row"><label>日付</label><input type="date" data-f="date" value="${esc(x.date || '')}"><button class="btn small" data-c="date">コピー</button></div>
     <div class="bni-row"><label>会話のトピック</label><input data-f="bniTopic" value="${esc(x.bniTopic || defaultTopic())}"><button class="btn small" data-c="bniTopic">コピー</button></div>
     <div class="actions" style="margin-top:6px">
