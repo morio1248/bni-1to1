@@ -160,6 +160,10 @@ mark{background:#ffe58a;padding:0 1px}
 .mtg-h .ttl{font-weight:700;margin-right:auto}
 .mtg-h .len{font-size:12px;color:var(--sub)}
 .mtg-body{padding:10px 12px;white-space:pre-wrap;font-size:13px;max-height:360px;overflow:auto;border-top:1px solid var(--line)}
+.rec-gemini{background:#f6f8ff;border:1px solid #d7e0f5;border-radius:10px;padding:10px 14px;margin:10px 0;font-size:14px}
+.rec-gemini .steps{margin:6px 0 0;color:var(--ink)}
+.mtg-add{padding:10px 12px;border-top:1px solid var(--line);background:#fafbff}
+.mtg-add textarea{width:100%;min-height:90px;border:2px dashed #b9c6e6;border-radius:8px;padding:8px;box-sizing:border-box}
 .mtg-ai{padding:10px 12px;border-top:1px solid var(--line);background:#fffafa}
 .mtg-ai textarea{width:100%;min-height:80px;border:2px dashed #e7a3aa;border-radius:8px;padding:8px}
 .howto{font-size:12px;color:var(--sub);margin:6px 0 0}
@@ -255,7 +259,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.9.3</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.10.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -348,12 +352,19 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
         <input type="date" id="tsDate" title="1to1の日付">
         <input type="text" id="tsTitle" placeholder="タイトル（任意）" style="flex:1;min-width:160px">
       </div>
+      <div class="row" style="margin-top:6px"><label style="font-weight:700;font-size:14px;white-space:nowrap">追加先</label><select id="tsTarget" style="flex:1;min-width:200px"><option value="">新しい記録として追加</option></select></div>
+      <div class="rec-gemini">
+        <b>🎙 録音がある場合は、Geminiで文字起こし</b>
+        <ol class="steps"><li><button class="btn small primary" data-rec="copy">文字起こし用の指示文をコピー</button> <button class="btn small" data-rec="open">Geminiを開く</button></li>
+        <li>Geminiの入力欄に <kbd>Ctrl</kbd>＋<kbd>V</kbd> →「＋」→「ファイルをアップロード」で録音ファイル（m4a・mp3・wav など）を選んで送信</li>
+        <li>返答をコピーして、下の枠に貼り付けて「保存」<br><span style="font-size:12px;color:var(--sub)">1時間を超える録音は途中で止まることがあります。その場合は、録音を30分ずつなどに分けて送ってください。</span></li></ol>
+      </div>
       <div class="drop small" id="tsDrop"><b>文字起こしファイルをドラッグ</b>　またはクリックして選択<br><small>.txt .vtt .srt .docx .pdf .csv .json .md（Zoom・Google Meet・Teams・Notion・tl;dv・Otter・スマホアプリ等の書き出し）</small></div>
       <input type="file" id="tsFile" accept=".txt,.md,.vtt,.srt,.docx,.pdf,.csv,.tsv,.json" multiple hidden>
-      <textarea id="tsPaste" placeholder="またはここに文字起こしを貼り付けて「保存」" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px"></textarea>
+      <textarea id="tsPaste" placeholder="ここに、Geminiの返答や文字起こし・議事録を貼り付けて「保存」" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px"></textarea>
       <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn primary" id="tsSave">貼り付けた内容を保存</button></div>
-      <div class="note">取り込んだ文字起こしは、そのメンバーの「1to1の記録」に保存され、検索の対象になります。記録の「AI用にコピー」から、ClaudeやChatGPTで要約して各項目に反映できます。</div>
-      <div class="caution"><b>録音・文字起こしは、必ず事前に相手の了承を得てください。</b><br>AIに貼り付けると会話の内容が外部サービスに送られます。ChatGPTは「設定 → データコントロール → すべての人のためにモデルを改善する」をオフに、Claudeなど他のAIも設定のプライバシー項目で学習への利用をオフにしてから使ってください。</div>
+      <div class="note">取り込んだ文字起こしは、そのメンバーの「1to1の記録」に保存され、検索の対象になります。記録の「AI用にコピー」から、Geminiで相手の情報を各項目に反映できます。</div>
+      <div class="caution"><b>録音・文字起こしは、必ず事前に相手の了承を得てください。</b><br>Geminiに録音や文字起こしを渡すと、会話の内容がGoogleに送られます。Geminiのアクティビティ（学習）をオフにしてから使ってください。</div>
     </div>
     <div class="queue" id="queue"></div>
   </section>
@@ -446,12 +457,12 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
         <li><b>AIを使う場合の設定：</b>AIにシートや会話を渡すと、その内容が外部のAIサービスに送られます。おすすめのGeminiは、左下の「設定とヘルプ」→「アクティビティ」で保存を「オフ」にしてから使ってください（オフでも最長72時間はGoogleに保存されます）。他のAIを使う場合も、学習への利用をオフにしてください。</li>
       </ul></div>
     <div class="panel">
-      <b>BNIサイトへの1to1登録（自動入力ボタン）</b>
+      <b>BNIコネクトへの1to1登録（自動入力ボタン）</b>
       <div id="bmkSetupTab"></div>
     </div>
     <div class="panel">
       <b>自分のチャプター</b>
-      <p>BNIサイトに1to1を登録するとき、相手が他チャプターの方なら探し方を案内します。</p>
+      <p>BNIコネクトに1to1を登録するとき、相手が他チャプターの方なら探し方を案内します。</p>
       <div class="row"><input type="text" id="myChapter" placeholder="例：F×R" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;min-width:200px"><button class="btn" id="myChapterSave">保存</button></div>
     </div>
     <div class="panel">
@@ -897,14 +908,21 @@ function openDetail(id) {
           <button class="btn small ${isPlanned(x) ? 'primary' : ''}" data-a="plan">予定・カレンダー</button>
           ${isPlanned(x) || catOf(m) === 'BNI以外' ? '' : `<button class="btn small ${x.bniDone ? '' : 'primary'}" data-a="bni">BNIコネクトに登録</button>`}
           ${x.text ? '<button class="btn small" data-a="toggle">全文</button><button class="btn small" data-a="copy">AI用にコピー</button><button class="btn small" data-a="ai">AIの返答を貼る</button>' : ''}
+          <button class="btn small ${!x.text && !isPlanned(x) ? 'primary' : ''}" data-a="add">${x.text ? '議事録を追記' : '議事録・録音を追加'}</button>
           <button class="btn small danger" data-a="del">削除</button></div>
+        <div class="mtg-add hidden">
+          <div class="rec-gemini" style="margin-top:0"><b>🎙 録音がある場合</b>：<button class="btn small primary" data-r="copy">文字起こし用の指示文をコピー</button> <button class="btn small" data-r="open">Geminiを開く</button><br>
+            <span style="font-size:13px">Geminiに <kbd>Ctrl</kbd>＋<kbd>V</kbd> →「＋」→「ファイルをアップロード」で録音ファイルを添付して送信 → 返答をコピーして下に貼り付け</span></div>
+          <textarea placeholder="Geminiの返答、または文字起こし・議事録（Notion・Zoom・Google Meet など）を貼り付け"></textarea>
+          <div class="row" style="justify-content:space-between;margin-top:6px"><label class="btn small">ファイルから<input type="file" accept=".txt,.md,.vtt,.srt,.docx,.pdf,.csv,.tsv,.json" hidden></label><button class="btn small primary" data-r="save">この1to1に${x.text ? '追記' : '保存'}</button></div>
+        </div>
         <div class="mtg-plan hidden">${planPanel(m, x)}</div>
         <div class="mtg-bni hidden">${bniPanel(m, x)}</div>
         <div class="mtg-body hidden">${hl(x.text || '', terms)}</div>
         <div class="mtg-ai hidden"><textarea placeholder="AIの返答をここに貼り付け（Ctrl＋V）→ 自動で反映画面が開きます"></textarea></div>
       </div>`).join('') || '<div class="howto">まだ記録はありません。</div>'}
       <div class="row" style="margin-top:8px"><button class="btn small primary" id="dAddPlan">＋ 1to1を予定する</button><button class="btn small" id="dAddMtg">＋ 1to1を記録（BNIコネクト登録用）</button><button class="btn small" id="dAddTs">＋ 文字起こしを追加</button></div>
-      ${(m.meetings || []).some(x => x.text) ? '<p class="howto">AIで要約：①「AI用にコピー」→ ② ClaudeやChatGPTに貼り付けて送信 → ③ 返答をコピーして「AIの返答を貼る」に貼り付け<br>※AIに送る前に：録音・文字起こしは相手の了承を得ていること、AIの学習への利用をオフにしていることを確認してください。</p>' : ''}
+      ${(m.meetings || []).some(x => x.text) ? '<p class="howto">相手の情報を項目に反映：①「AI用にコピー」→ ② Geminiに貼り付けて送信 → ③ 返答をコピーして「AIの返答を貼る」に貼り付け<br>※AIに送る前に：録音・文字起こしは相手の了承を得ていること、AIの学習への利用をオフにしていることを確認してください。</p>' : ''}
     </div>
     <div class="actions">
       <span style="margin-right:auto;color:var(--sub);font-size:12px">${(m.sources && m.sources.length) ? '取り込んだシート：' + esc(m.sources.map(s => s.name).join('、')) + '　' : m.source ? '取り込み元：' + esc(m.source) + '　' : ''}更新：${new Date(m.updatedAt).toLocaleDateString('ja-JP')}</span>
@@ -929,14 +947,28 @@ function openDetail(id) {
     openDetail(m.id);
     const box = $('overlay').querySelector(`[data-mid="${rec.id}"]`); if (box) { box.querySelector('.mtg-plan').classList.remove('hidden'); box.scrollIntoView({ block: 'center' }); box.querySelector('[data-p=date]').focus(); }
   };
-  $('dAddTs').onclick = () => { closeOverlay(); show('import'); $('tsMember').value = m.id; $('tsPanel').scrollIntoView({ behavior: 'smooth' }); };
+  $('dAddTs').onclick = () => { closeOverlay(); show('import'); $('tsMember').value = m.id; refreshTsTargets(); $('tsPanel').scrollIntoView({ behavior: 'smooth' }); };
   $('overlay').querySelectorAll('.mtg').forEach(box => {
     const rec = (m.meetings || []).find(x => x.id === box.dataset.mid);
     const on = (a, fn) => { const b = box.querySelector(`[data-a=${a}]`); if (b) b.onclick = fn; };
     on('toggle', () => box.querySelector('.mtg-body').classList.toggle('hidden'));
+    on('add', () => { const a = box.querySelector('.mtg-add'); a.classList.toggle('hidden'); if (!a.classList.contains('hidden')) a.querySelector('textarea').focus(); });
+    const addBox = box.querySelector('.mtg-add');
+    addBox.querySelector('[data-r=open]').onclick = () => window.open('https://gemini.google.com/', '_blank', 'noopener');
+    addBox.querySelector('[data-r=copy]').onclick = async () => { await copyText(buildRecordingPrompt(m.name, rec.date)); toast('指示文をコピーしました。Geminiに貼り付けて、録音ファイルを添付して送信してください'); };
+    addBox.querySelector('[data-r=save]').onclick = async () => {
+      const raw = addBox.querySelector('textarea').value.trim(); if (!raw) { toast('内容を貼り付けてください'); return; }
+      await appendToMeeting(m.id, rec.id, { text: /【文字起こし】|【要約】/.test(raw) ? raw : cleanTranscript(raw, 'txt'), source: '貼り付け', date: rec.date });
+      toast(rec.text ? '追記しました' : '保存しました'); openDetail(m.id);
+    };
+    addBox.querySelector('input[type=file]').onchange = async e => {
+      const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      try { const r = await readTranscript(f); await appendToMeeting(m.id, rec.id, { text: r.text, source: f.name, date: rec.date || r.date }); toast(`${f.name} を追加しました`); openDetail(m.id); }
+      catch (err) { alert(`${f.name}\n${err.message || err}`); }
+    };
     on('copy', async () => {
       if (!(await Store.get('aiAck'))) {
-        if (!confirm('AIに送る前に確認してください。\n\n・この1to1の録音・文字起こしについて、相手の了承を得ていますか？\n・ChatGPTやClaudeの設定で、学習への利用をオフにしていますか？\n\n両方OKなら「OK」を押してください（次回からは表示しません）。')) return;
+        if (!confirm('AIに送る前に確認してください。\n\n・この1to1の録音・文字起こしについて、相手の了承を得ていますか？\n・Geminiのアクティビティ（学習）をオフにしていますか？\n\n両方OKなら「OK」を押してください（次回からは表示しません）。')) return;
         await Store.set('aiAck', true);
       }
       await copyText(buildAiPrompt(m.name, rec.text)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信してください'); });
@@ -1236,6 +1268,50 @@ async function addMeeting(memberId, rec) {
   if (rec.date && (!m.date1to1 || rec.date > m.date1to1)) next.date1to1 = rec.date;
   await saveMember(next);
 }
+function buildRecordingPrompt(name, date) {
+  return `添付した録音は、BNIの1to1ミーティング（${date ? date + '、' : ''}相手：${name || '相手の方'}さん）の音声です。
+次の形式で日本語で書き出してください。前置きや装飾（太字・表）は不要です。
+
+【要約】
+・話した内容を5〜10行の箇条書きで
+【相手の事業・強み】
+・分かった範囲で
+【紹介・協業の可能性】
+・誰を紹介できそうか、相手から何を紹介してもらえそうか
+【次のアクション】
+・約束したこと・宿題（誰が・何を）
+【文字起こし】
+話者ごとに「話者名：発言」の形で、省略せずに書き起こしてください。話者名が分からない場合は「自分」「相手」としてください。`;
+}
+// 既存の記録に文字起こし・議事録を追記（空なら入れる）
+async function appendToMeeting(memberId, meetingId, add) {
+  const m = members.find(x => x.id === memberId); if (!m) return;
+  const meetings = (m.meetings || []).map(x => {
+    if (x.id !== meetingId) return x;
+    const text = x.text ? `${x.text}\n\n―――― 追記（${today()}${add.source ? '・' + add.source : ''}）――――\n${add.text}` : add.text;
+    return { ...x, text, source: x.source && x.source !== '予定' && x.source !== '手入力' ? x.source : (add.source || x.source), date: x.date || add.date || today() };
+  });
+  await saveMember({ ...m, meetings, updatedAt: Date.now() });
+}
+async function saveTranscriptTo(memberId, targetId, rec) {
+  if (targetId) await appendToMeeting(memberId, targetId, rec); else await addMeeting(memberId, rec);
+}
+function refreshTsTargets() {
+  const id = $('tsMember').value, m = members.find(x => x.id === id), sel = $('tsTarget');
+  const list = m ? (m.meetings || []) : [];
+  const d = $('tsDate').value;
+  const past = list.filter(x => !x.date || x.date <= today()).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  // 日付が同じ記録 → まだ内容のない記録 → 直近2週間以内の記録（追記）の順に選ぶ
+  const guess = (d && list.find(x => x.date === d)) || past.find(x => !x.text) || past.find(x => x.date && daysSince(x.date) <= 14);
+  sel.innerHTML = '<option value="">新しい記録として追加</option>' + list.map(x => `<option value="${x.id}" ${guess && guess.id === x.id ? 'selected' : ''}>${esc(x.date || '日付なし')}　${esc(x.title || '1to1')}（${x.text ? '記録あり・追記' : isPlanned(x) ? '予定' : '記録なし'}）</option>`).join('');
+}
+$('tsMember').addEventListener('change', refreshTsTargets);
+$('tsDate').addEventListener('change', refreshTsTargets);
+document.querySelectorAll('.rec-gemini [data-rec]').forEach(b => b.onclick = async () => {
+  if (b.dataset.rec === 'open') { window.open('https://gemini.google.com/', '_blank', 'noopener'); return; }
+  const m = members.find(x => x.id === $('tsMember').value);
+  await copyText(buildRecordingPrompt(m && m.name, $('tsDate').value)); toast('指示文をコピーしました。Geminiに貼り付けて、録音ファイルを添付して送信してください');
+});
 function tsTarget() {
   const id = $('tsMember').value;
   if (!id) { toast('先に「誰との1to1か」を選んでください'); $('tsMember').focus(); $('tsPanel').scrollIntoView({ behavior: 'smooth' }); return null; }
@@ -1246,11 +1322,11 @@ async function handleTranscripts(files) {
   for (const f of files) {
     try {
       const r = await readTranscript(f);
-      await addMeeting(id, { date: $('tsDate').value || r.date, title: $('tsTitle').value.trim() || f.name.replace(/\.[^.]+$/, ''), source: f.name, text: r.text });
+      await saveTranscriptTo(id, $('tsTarget').value, { date: $('tsDate').value || r.date, title: $('tsTitle').value.trim() || f.name.replace(/\.[^.]+$/, ''), source: f.name, text: r.text });
       toast(`${f.name} を記録しました`);
     } catch (e) { console.error(e); alert(`${f.name}\n${e.message || e}`); }
   }
-  $('tsTitle').value = ''; $('tsDate').value = '';
+  $('tsTitle').value = ''; $('tsDate').value = ''; refreshTsTargets();
   openDetail(id);
 }
 $('tsDrop').onclick = () => $('tsFile').click();
@@ -1261,8 +1337,8 @@ $('tsDrop').addEventListener('drop', e => handleTranscripts([...e.dataTransfer.f
 $('tsSave').onclick = async () => {
   const id = tsTarget(); if (!id) return;
   const raw = $('tsPaste').value.trim(); if (!raw) { toast('文字起こしを貼り付けてください'); return; }
-  await addMeeting(id, { date: $('tsDate').value || guessDate(raw.slice(0, 300)) || today(), title: $('tsTitle').value.trim() || '1to1', source: '貼り付け', text: cleanTranscript(raw, 'txt') });
-  $('tsPaste').value = ''; $('tsTitle').value = ''; $('tsDate').value = '';
+  await saveTranscriptTo(id, $('tsTarget').value, { date: $('tsDate').value || guessDate(raw.slice(0, 300)) || today(), title: $('tsTitle').value.trim() || '1to1', source: '貼り付け', text: /【文字起こし】|【要約】/.test(raw) ? raw : cleanTranscript(raw, 'txt') });
+  $('tsPaste').value = ''; $('tsTitle').value = ''; $('tsDate').value = ''; refreshTsTargets();
   toast('記録しました'); openDetail(id);
 };
 function renderTsMembers() {
@@ -1388,7 +1464,7 @@ function renderUpcoming() {
   el.querySelectorAll('.up-item').forEach(r => r.onclick = () => openDetail(r.dataset.id));
 }
 
-// ===== BNIサイトへの1to1登録を手助け =====
+// ===== BNIコネクトへの1to1登録を手助け =====
 const BNI_URL = 'https://www.bniconnectglobal.com/';
 const INITIATORS = [['me', '自分から提案'], ['them', '相手から提案']];
 let myChapter = '';
@@ -1464,7 +1540,7 @@ function pendingBni() { return members.filter(m => catOf(m) !== 'BNI以外').fla
 function updateBniBar() {
   const n = pendingBni().length;
   $('bniBar').classList.toggle('hidden', !n);
-  if (n) $('bniText').textContent = `BNIサイトに未登録の1to1が ${n}件 あります。`;
+  if (n) $('bniText').textContent = `BNIコネクトに未登録の1to1が ${n}件 あります。`;
 }
 $('bniBtn').onclick = () => {
   const list = pendingBni();
