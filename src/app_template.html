@@ -255,7 +255,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.9.2</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.9.3</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -305,8 +305,8 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     <div class="web ai-flow" id="aiSheetPanel">
       <div class="ai-step"><span class="ai-no">1</span><div style="flex:1">
         <b>シートの届き方を選ぶ</b>
-        <div class="kind"><label><input type="radio" name="aiKind" value="web" checked> Webページ（URL）</label><label><input type="radio" name="aiKind" value="file"> PDF・画像・Word・PowerPoint</label></div>
-        <div id="aiWebBox">
+        <div class="kind"><label><input type="radio" name="aiKind" value="file" checked> PDF・画像・Word・PowerPoint</label><label><input type="radio" name="aiKind" value="web"> Webページ（URL）</label></div>
+        <div id="aiWebBox" class="hidden">
           <div class="row" style="margin-top:8px"><input type="url" id="webUrl" placeholder="シートのURLを貼り付け（https://…）"><button class="btn" id="webOpen">ページを開く</button></div>
           <ol class="steps">
             <li>「ページを開く」で別タブにシートが開きます</li>
@@ -316,16 +316,16 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
           <textarea id="webPaste" placeholder="ここにシートのページの内容を Ctrl＋V で貼り付け"></textarea>
           <div id="webPasteInfo" class="howto"></div>
         </div>
-        <div id="aiFileBox" class="hidden"><p class="howto" style="margin:8px 0 0">シートのファイルは、手順2でGeminiに添付します。先にパソコン（スマホ）に保存しておいてください。</p></div>
+        <div id="aiFileBox"><p class="howto" style="margin:8px 0 0">シートのファイルは、手順2でGeminiに添付します。先にパソコン（スマホ）に保存しておいてください。</p></div>
       </div></div>
       <div class="ai-step"><span class="ai-no">2</span><div style="flex:1">
         <b>Geminiに読み取ってもらう</b>
         <div class="row" style="margin:8px 0"><button class="btn primary" id="aiSheetCopy">指示文をコピー</button><button class="btn" id="aiSheetGemini">Geminiを開く</button></div>
-        <ol class="steps" id="aiStepsWeb">
+        <ol class="steps hidden" id="aiStepsWeb">
           <li>「指示文をコピー」を押す（貼り付けたページの内容も一緒にコピーされます）</li>
           <li>「Geminiを開く」→ 入力欄をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd> → 送信</li>
         </ol>
-        <ol class="steps hidden" id="aiStepsFile">
+        <ol class="steps" id="aiStepsFile">
           <li>「指示文をコピー」を押す</li>
           <li>「Geminiを開く」→ 入力欄をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd></li>
           <li>入力欄の左の <b>「＋」→「ファイルをアップロード」</b>でシートのファイルを選び、送信<br><span style="font-size:13px;color:var(--sub)">添付できない形式のときは、PDFで保存し直してから添付してください。</span></li>
@@ -1155,7 +1155,7 @@ $('webOpen').onclick = () => {
   window.open(u, '_blank', 'noopener');
   setTimeout(() => $('webPaste').focus(), 300);
 };
-const aiKind = () => (document.querySelector('input[name=aiKind]:checked') || {}).value || 'web';
+const aiKind = () => (document.querySelector('input[name=aiKind]:checked') || {}).value || 'file';
 document.querySelectorAll('input[name=aiKind]').forEach(r => r.onchange = () => {
   const web = aiKind() === 'web';
   $('aiWebBox').classList.toggle('hidden', !web); $('aiFileBox').classList.toggle('hidden', web);
