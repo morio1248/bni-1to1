@@ -1,6 +1,6 @@
 # 1to1 Navi
 
-BNIメンバーの1to1シート（PDF・Word・PowerPoint・Canva）を取り込み、検索・管理できるツールです。
+BNIメンバーの1to1シートをGoogleの無料AI「Gemini」で読み取り、1to1の記録とあわせて検索・管理できるツールです。
 
 **使い方：** 公開URLをPCのGoogle Chrome または Microsoft Edge で開いてください。初回は「かんたんセットアップ」が開き、保存先（Googleドライブ推奨）とAI（Gemini）の準備を案内します。
 
@@ -10,8 +10,8 @@ BNIメンバーの1to1シート（PDF・Word・PowerPoint・Canva）を取り込
 - 書き出したJSON・CSVや保存ファイルには個人情報が含まれるため、他の人に渡さないでください。
 
 ## 外部から読み込んでいる部品
-- PDF.js（cdnjs.cloudflare.com）… PDFの文字読み取り
-- JSZip（cdnjs.cloudflare.com）… Word・PowerPointの読み取り
+- PDF.js（cdnjs.cloudflare.com）… 文字起こしのPDFの読み取り
+- JSZip（cdnjs.cloudflare.com）… 文字起こしのWordの読み取り
 - BIZ UDPゴシック（Google Fonts）… 表示フォント
 
 ## 著作権・利用条件

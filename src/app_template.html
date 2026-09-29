@@ -259,7 +259,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.11.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.12.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -270,13 +270,6 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </div></header>
 
 <main>
-  <div class="privacy hidden" id="privacyFirst"><h3>個人情報の取り扱いについて（必ずお読みください）</h3>
-      <ul>
-        <li><b>データの保存場所：</b>取り込んだメンバー情報は、お使いのパソコンのこのブラウザの中（と、ご自身で設定した保存ファイル）だけに保存され、外部のサーバーには送信されません。</li>
-        <li><b>書き出したファイルを他人に渡さない：</b>「JSON／CSVで書き出し」したファイルや自動保存の保存ファイルには、メンバーの個人情報（家族構成・生年月日など）が含まれます。他の人に渡したり、共有フォルダ・グループのドライブに置いたりしないでください。</li>
-        <li><b>録音・文字起こしは相手の了承を得てから：</b>1to1を録音・文字起こしする場合は、必ず事前に相手の了承を得てください。</li>
-        <li><b>AIを使う場合の設定：</b>AIにシートや会話を渡すと、その内容が外部のAIサービスに送られます。おすすめのGeminiは、左下の「設定とヘルプ」→「アクティビティ」で保存を「オフ」にしてから使ってください（オフでも最長72時間はGoogleに保存されます）。他のAIを使う場合も、学習への利用をオフにしてください。</li>
-      </ul><div style="text-align:right"><button class="btn primary" id="privacyOk">確認しました</button></div></div>
   <div id="storageWarn" class="notice hidden">このブラウザではデータを保存できない設定になっています（プライベートモード等）。「保存・バックアップ」で保存先ファイルを設定してください。</div>
   <div id="resumeBar" class="notice hidden"><span id="resumeText"></span><button class="btn primary small" id="resumeBtn">自動保存を再開</button></div>
   <div id="bniBar" class="notice hidden"><span id="bniText"></span><button class="btn primary small" id="bniBtn">確認する</button></div>
@@ -388,7 +381,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <li><b>パソコンの Google Chrome</b>（または Microsoft Edge）で開きます。スマホやSafariでは保存がうまくできません。</li>
       <li><b>Googleドライブ パソコン版</b>を入れて、Googleアカウントでログインします。</li>
       <li>1to1 Naviの<b>保存ファイルをGoogleドライブの「マイドライブ」に作ります</b>。以後、登録や修正をするたびに自動で保存され、クラウドにも自動でバックアップされます。</li>
-      <li>AIで読み取りたい場合は、<b>Gemini</b>に同じGoogleアカウントでログインし、アクティビティ（学習）をオフにします。</li>
+      <li>1to1シートの読み取りに使う<b>Gemini</b>（Googleの無料AI）に、同じGoogleアカウントでログインし、アクティビティ（学習）をオフにします。</li>
     </ol><p>この4つは「かんたんセットアップ」で順番に案内します。</p></div>
 
     <h3 id="g2">② 1to1シートを取り込む</h3>
@@ -419,8 +412,9 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     </ul></div>
     <div class="card-g"><ol>
       <li>メンバー一覧でその人を開き、「＋ 1to1を予定する」で日時を入れると、Googleカレンダーにも登録できます。</li>
-      <li>1to1が終わったら「＋ 1to1を記録」で、話した内容や文字起こしを残します。</li>
-      <li>文字起こしがあれば「AI用にコピー」→ Geminiに貼り付け → 返答を「AIの返答を貼る」に貼ると、相手の情報が各項目に反映されます。</li>
+      <li>1to1が終わったら、その記録の「<b>議事録・録音を追加</b>」を押し、議事録や文字起こしを貼り付けて保存します。あとから入れる分も同じ記録に追記されます（まだ記録がなければ「＋ 1to1を記録」で作ります）。</li>
+      <li><b>録音がある場合</b>は、同じ画面の「文字起こし用の指示文をコピー」→「Geminiを開く」→ 貼り付けて録音ファイルを添付して送信 → 返答をコピーして貼り付けます。要約と文字起こしが入ります。</li>
+      <li>記録の「AI用にコピー」→ Geminiに貼り付け → 返答を「AIの返答を貼る」に貼ると、話の中で分かった相手の情報が各項目に反映されます。</li>
     </ol><p>録音・文字起こしは、必ず相手の了承を得てから行ってください。</p></div>
 
     <h3 id="g4">④ BNIコネクトに登録する</h3>
@@ -438,7 +432,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <li><b>画面の上に「自動保存 一時停止中」と出る：</b>ブラウザの安全のための仕組みです。「自動保存を再開」を押し、「許可」を選べば元に戻ります。</li>
       <li><b>画面右上が「⚠ 未バックアップ」になっている：</b>保存ファイルが設定されていません。「保存・バックアップ」から設定してください。</li>
       <li><b>Geminiが「読み取れません」と答える：</b>Webページの場合は、ページ全体をコピーできているか（<kbd>Ctrl</kbd>＋<kbd>A</kbd> を押してから <kbd>Ctrl</kbd>＋<kbd>C</kbd>）確認してください。ファイルの場合は、PDFで保存し直して添付してみてください。</li>
-      <li><b>Geminiの返答を貼っても項目に入らない：</b>「AI用の指示文をコピー」から貼り付けたか確認し、返答を最初から最後まで全部コピーしてください。</li>
+      <li><b>Geminiの返答を貼っても項目に入らない：</b>「指示文をコピー」を押してから貼り付けたか確認し、返答を最初から最後まで全部コピーしてください（返答の下のコピーのアイコンを使うと確実です）。</li>
       <li><b>データを消してしまった：</b>保存ファイルがマイドライブにあれば、「作成済みの保存ファイルを開く」で戻せます。Googleドライブのゴミ箱や「版の管理」から、以前の状態に戻せる場合もあります。</li>
     </ul></div>
   </section>
@@ -450,8 +444,8 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     <div class="panel main">
       <b>自動保存（おすすめ）</b>
       <div class="caution">保存ファイルにはメンバーの個人情報が含まれます。<b>自分専用のフォルダ</b>に作り、共有フォルダやグループのドライブには置かないでください。</div>
-      <p>パソコンの中に保存用ファイルを1つ作り、登録・編集するたびに自動で書き込みます。<br>
-      <b>OneDrive・Googleドライブ・Dropbox などの同期フォルダ</b>に作ると、クラウドにも自動でバックアップされ、別のパソコンでも同じファイルを開けば続きから使えます。</p>
+      <p>保存用ファイルを1つ作り、登録・編集するたびに自動で書き込みます。<br>
+      <b>Googleドライブの「マイドライブ」</b>に作ってください（Googleドライブ パソコン版が必要です）。クラウドにも自動でバックアップされ、パソコンを買い替えても、同じファイルを開けば続きから使えます。</p>
       <div class="status warn" id="fsStatus">保存先ファイルは未設定です</div>
       <div class="row" id="fsButtons">
         <button class="btn primary" id="fsCreate">保存先ファイルを作る</button>
@@ -465,7 +459,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
         <li><b>データの保存場所：</b>取り込んだメンバー情報は、お使いのパソコンのこのブラウザの中（と、ご自身で設定した保存ファイル）だけに保存され、外部のサーバーには送信されません。</li>
         <li><b>書き出したファイルを他人に渡さない：</b>「JSON／CSVで書き出し」したファイルや自動保存の保存ファイルには、メンバーの個人情報（家族構成・生年月日など）が含まれます。他の人に渡したり、共有フォルダ・グループのドライブに置いたりしないでください。</li>
         <li><b>録音・文字起こしは相手の了承を得てから：</b>1to1を録音・文字起こしする場合は、必ず事前に相手の了承を得てください。</li>
-        <li><b>AIを使う場合の設定：</b>AIにシートや会話を渡すと、その内容が外部のAIサービスに送られます。おすすめのGeminiは、左下の「設定とヘルプ」→「アクティビティ」で保存を「オフ」にしてから使ってください（オフでも最長72時間はGoogleに保存されます）。他のAIを使う場合も、学習への利用をオフにしてください。</li>
+        <li><b>AIを使う場合の設定：</b>AIにシートや会話を渡すと、その内容が外部のAIサービスに送られます。おすすめのGeminiは、左下の「設定とヘルプ」→「アクティビティ」で保存を「オフ」にしてから使ってください（オフでも最長72時間はGoogleに保存されます）。</li>
       </ul></div>
     <div class="panel">
       <b>BNIコネクトへの1to1登録（自動入力ボタン）</b>
@@ -742,11 +736,11 @@ const INDUSTRY_GROUPS = [
   ['冠婚葬祭・イベント・趣味', /結婚|ブライダル|葬|仏|墓|イベント|パーティ|旅行|ホテル|花|フラワー|ギフト|音楽|楽器|アート|占い|ペット|動物/],
   ['人材・ビジネスサポート', /人材|採用|派遣|求人|紹介業|秘書|事務|代行|アウトソーシング|翻訳|通訳|オフィス|OA|コピー機|電力|電気料金|ガス|法人|経営/],
 ];
-const INDUSTRY_NAMES = INDUSTRY_GROUPS.map(g => g[0]).concat(['その他']);
+const INDUSTRY_NAMES = INDUSTRY_GROUPS.map(g => g[0]).concat(['その他', 'カテゴリー未入力']);
 function industryOf(m) {
   if (m.industry && INDUSTRY_NAMES.includes(m.industry)) return m.industry;
   const hay = [m.business, m.specialty, m.otoSpecialty, m.bizName, m.companyName, m.businessEn].filter(Boolean).join(' ');
-  if (!hay) return 'その他';
+  if (!hay) return 'カテゴリー未入力';
   const g = INDUSTRY_GROUPS.find(([, r]) => r.test(hay));
   return g ? g[0] : 'その他';
 }
@@ -927,7 +921,7 @@ function openDetail(id) {
         <div class="mtg-body hidden">${hl(x.text || '', terms)}</div>
         <div class="mtg-ai hidden"><textarea placeholder="AIの返答をここに貼り付け（Ctrl＋V）→ 自動で反映画面が開きます"></textarea></div>
       </div>`).join('') || '<div class="howto">まだ記録はありません。</div>'}
-      <div class="row" style="margin-top:8px"><button class="btn small primary" id="dAddPlan">＋ 1to1を予定する</button><button class="btn small" id="dAddMtg">＋ 1to1を記録（BNIコネクト登録用）</button><button class="btn small" id="dAddTs">＋ 文字起こしを追加</button></div>
+      <div class="row" style="margin-top:8px"><button class="btn small primary" id="dAddPlan">＋ 1to1を予定する</button><button class="btn small" id="dAddMtg">＋ 1to1を記録（BNIコネクト登録用）</button></div>
       ${(m.meetings || []).some(x => x.text) ? '<p class="howto">相手の情報を項目に反映：①「AI用にコピー」→ ② Geminiに貼り付けて送信 → ③ 返答をコピーして「AIの返答を貼る」に貼り付け<br>※AIに送る前に：録音・文字起こしは相手の了承を得ていること、AIの学習への利用をオフにしていることを確認してください。</p>' : ''}
     </div>
     <div class="actions">
@@ -953,7 +947,6 @@ function openDetail(id) {
     openDetail(m.id);
     const box = $('overlay').querySelector(`[data-mid="${rec.id}"]`); if (box) { box.querySelector('.mtg-plan').classList.remove('hidden'); box.scrollIntoView({ block: 'center' }); box.querySelector('[data-p=date]').focus(); }
   };
-  $('dAddTs').onclick = () => { closeOverlay(); show('import'); $('tsMember').value = m.id; refreshTsTargets(); $('tsPanel').scrollIntoView({ behavior: 'smooth' }); };
   $('overlay').querySelectorAll('.mtg').forEach(box => {
     const rec = (m.meetings || []).find(x => x.id === box.dataset.mid);
     const on = (a, fn) => { const b = box.querySelector(`[data-a=${a}]`); if (b) b.onclick = fn; };
@@ -1124,60 +1117,9 @@ function addReview(data, source) {
   card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-async function readPdf(file) {
-  if (!window.pdfjsLib) throw new Error('PDF読み取り部品を読み込めませんでした。インターネットに接続してから開き直してください。');
-  const base = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
-  pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js';
-  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer(), cMapUrl: base + 'cmaps/', cMapPacked: true, standardFontDataUrl: base + 'standard_fonts/' }).promise;
-  const pages = [];
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const vp = page.getViewport({ scale: 1 });
-    const tc = await page.getTextContent();
-    pages.push({ w: vp.width, items: tc.items.filter(it => 'str' in it).map(it => ({ str: it.str, x: it.transform[4], y: it.transform[5], w: it.width, h: it.height || Math.abs(it.transform[3]) })) });
-  }
-  if (!pages.some(p => p.items.some(i => i.str.trim()))) throw new Error('文字情報のないPDF（スキャン画像など）のため読み取れませんでした。「白紙から手入力する」をご利用ください。');
-  return parsePdfPages(pages);
-}
-
-// Word（.docx）・PowerPoint（.pptx）：中のXMLを直接読む
 async function openZip(file) {
   if (!window.JSZip) throw new Error('Word/PowerPoint読み取り部品を読み込めませんでした。インターネットに接続してから開き直してください。');
   return JSZip.loadAsync(await file.arrayBuffer());
-}
-async function readDocx(file) {
-  const zip = await openZip(file);
-  const doc = zip.file('word/document.xml');
-  if (!doc) throw new Error('Wordファイルの中身を読み取れませんでした。');
-  const text = docxXmlToText(await doc.async('string'));
-  if (!text.trim()) throw new Error('Wordファイルから文字を読み取れませんでした。');
-  return parseSheetText(text, { hard: true });
-}
-async function readPptx(file) {
-  const zip = await openZip(file);
-  const names = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))
-    .sort((a, b) => parseInt(a.match(/(\d+)\.xml$/)[1]) - parseInt(b.match(/(\d+)\.xml$/)[1]));
-  if (!names.length) throw new Error('スライドが見つかりませんでした。');
-  const pres = zip.file('ppt/presentation.xml') ? await zip.file('ppt/presentation.xml').async('string') : '';
-  const w = +((pres.match(/<p:sldSz[^>]*\bcx="(\d+)"/) || [])[1] || 12192000);
-  const slides = await Promise.all(names.map(n => zip.file(n).async('string')));
-  const text = pptxToText(slides, w);
-  if (!text.replace(/\u0001|\s/g, '')) throw new Error('スライドから文字を読み取れませんでした（画像だけのスライドは読み取れません）。');
-  return parseSheetText(text, { hard: true });
-}
-
-async function handleFiles(files) {
-  for (const f of files) {
-    const ext = (f.name.split('.').pop() || '').toLowerCase();
-    try {
-      if (ext === 'pdf' || f.type === 'application/pdf') { toast(`${f.name} を読み取り中…`); addReview(await readPdf(f), f.name); }
-      else if (ext === 'docx') { toast(`${f.name} を読み取り中…`); addReview(await readDocx(f), f.name); }
-      else if (ext === 'pptx') { toast(`${f.name} を読み取り中…`); addReview(await readPptx(f), f.name); }
-      else if (ext === 'doc' || ext === 'ppt') alert(`${f.name}\n古い形式のファイル（.${ext}）は読み取れません。${ext === 'doc' ? 'Word' : 'PowerPoint'}で開いて「名前を付けて保存」から .${ext}x 形式かPDFで保存し直してから取り込んでください。`);
-      else if (TS_EXT.has(ext)) { show('import'); await handleTranscripts([f]); }
-      else toast(`${f.name} はPDF・Word・PowerPointではありません`);
-    } catch (e) { console.error(e); alert(`${f.name}\n${e.message || e}`); }
-  }
 }
 document.addEventListener('dragover', e => e.preventDefault());
 document.addEventListener('drop', e => {
@@ -1229,7 +1171,7 @@ $('aiSheetGemini').onclick = () => window.open('https://gemini.google.com/', '_b
 $('aiSheetPaste').addEventListener('paste', () => setTimeout(() => {
   const text = $('aiSheetPaste').value.trim(); if (!text) return;
   const data = parseAiSheet(text, AI_SHEET_FIELDS);
-  if (Object.keys(data).length < 2) { alert('AIの返答から項目を読み取れませんでした。\n「AI用の指示文をコピー」から貼り付けてGeminiに送ったか、Geminiがシートを読めたか（「読み取れません」と返ってきていないか）、返答を全部コピーしたかを確認してください。'); return; }
+  if (Object.keys(data).length < 2) { alert('AIの返答から項目を読み取れませんでした。\n「指示文をコピー」から貼り付けてGeminiに送ったか、Geminiがシートを読めたか（「読み取れません」と返ってきていないか）、返答を全部コピーしたかを確認してください。'); return; }
   data.category = 'BNI';
   const u = $('webUrl').value.trim(); if (aiKind() === 'web' && /^https?:\/\//i.test(u)) data.sheetUrl = u;
   addReview(data, 'Geminiで読み取り');
@@ -1856,10 +1798,8 @@ const Wizard = (() => {
 $('setupAgain').onclick = () => Wizard.open(true);
 $('guideSetup').onclick = () => Wizard.open(true);
 
-$('privacyOk').onclick = async () => { await Store.set('privacyAck', '1.0.0'); $('privacyFirst').classList.add('hidden'); };
 (async () => {
   await Store.init();
-  if (!(await Store.get('privacyAck'))) $('privacyFirst').classList.remove('hidden');
   myChapter = (await Store.get('myChapter')) || '';
   viewMode = (await Store.get('viewMode')) || (innerWidth < 640 ? 'list' : 'card');
   const gb = await Store.get('groupBy'); groupBy = gb === undefined ? true : !!gb;
@@ -1868,7 +1808,7 @@ $('privacyOk').onclick = async () => { await Store.set('privacyAck', '1.0.0'); $
   await AutoSave.init();
   await seedAuthor();
   updateSaveState();
-  if (await Wizard.autoStart()) $('privacyFirst').classList.add('hidden');
+  await Wizard.autoStart();
 })();
 </script>
 </body>

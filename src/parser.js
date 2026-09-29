@@ -1,8 +1,8 @@
 // ===== 1to1シート パーサー（ブラウザ／Node共通） =====
 // 対応様式：
-//  A: 「メンバー略歴シート」＋「G.A.I.N.S.ワークシート」
-//  B: 「Power 1to1 SHEET」＋「GAINs work SHEET」＋「Referral SHEET」
-// Wordファイル・様式不明のものはテキストのラベル（「〇〇：」）で読み取る
+//  ・BNIの名簿ページ（メンバー略歴シート）の貼り付け
+//  ・Geminiの返答（指示文どおりの「項目名：値」形式）
+//  ・1to1の文字起こし
 
 // NFKCで直らない部首補助文字（PDFでよく混ざる）を通常の漢字に
 const RADICALS = { '⻑': '長', '⻄': '西', '⻉': '青', '⻝': '食', '⻤': '鬼', '⻩': '黄', '⻭': '歯', '⻲': '亀', '⻨': '麦', '⻆': '角', '⻢': '馬', '⻌': '辶' };
@@ -306,44 +306,6 @@ function docxXmlToText(xml) {
   return lines.join('\n');
 }
 
-// PowerPoint slide.xml → 図形ごとのテキスト（位置つき）
-function pptxSlideShapes(xml) {
-  const shapes = [], st = []; let para = null, cell = null, row = null, inText = false;
-  const SHAPE = /^p:(sp|graphicFrame|cxnSp|pic)$/;
-  for (const t of xmlTokens(xml)) {
-    const top = st[st.length - 1];
-    if (SHAPE.test(t.name || '')) {
-      if (t.type === 'open') st.push({ x: null, y: null, cx: null, paras: [] });
-      else if (t.type === 'close') { const s = st.pop(); if (s && s.paras.some(p => p.trim())) shapes.push(s); }
-      continue;
-    }
-    if (!top) continue;
-    if (t.name === 'a:off' && top.x === null) { top.x = +attr(t.attrs, 'x'); top.y = +attr(t.attrs, 'y'); }
-    else if (t.name === 'a:ext' && top.cx === null && t.type !== 'close') top.cx = +attr(t.attrs, 'cx');
-    else if (t.name === 'a:tr') { if (t.type === 'open') row = []; else if (t.type === 'close') { if (row && row.some(c => c)) top.paras.push(row.join(' | ')); row = null; } }
-    else if (t.name === 'a:tc') { if (t.type === 'open') cell = []; else if (t.type === 'close') { if (row) row.push(cell.join(' ').trim()); cell = null; } }
-    else if (t.name === 'a:p') {
-      if (t.type === 'open') para = '';
-      else if (t.type === 'close') { if (cell) cell.push(para); else top.paras.push(para); para = null; }
-    }
-    else if (t.name === 'a:t') inText = t.type === 'open';
-    else if (t.name === 'a:br' && para !== null) para += '\n';
-    else if (t.type === 'text' && inText && para !== null) para += t.text;
-  }
-  return shapes;
-}
-// スライド群 → 読み順のテキスト（2段組みは左列→右列）
-function pptxToText(slides, slideW) {
-  const out = [];
-  for (const xml of slides) {
-    const shapes = pptxSlideShapes(xml).map(s => ({ ...s, y: s.y ?? -1, x: s.x ?? 0 }));
-    const col = s => (s.x > slideW * 0.45 && (s.cx || 0) < slideW * 0.6) ? 1 : 0;
-    shapes.sort((a, b) => col(a) - col(b) || a.y - b.y || a.x - b.x);
-    for (const s of shapes) { out.push(...s.paras.flatMap(p => p.split('\n'))); out.push(SHAPE_BREAK); }
-  }
-  return out.join('\n');
-}
-
 // ---- PDF：位置情報つきテキスト → 行 ----
 function buildLines(items, tol) {
   const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
@@ -368,191 +330,6 @@ function buildLines(items, tol) {
   return lines.filter(l => l.text);
 }
 const clean = items => items.filter(i => i.str && i.str.trim()).map(i => ({ ...i, t: norm(i.str).trim() }));
-const pageText = p => p.items.map(i => norm(i.str)).join('');
-
-// ---- A様式 ----
-function linesA(page) {
-  let items = clean(page.items);
-  const all = pageText(page);
-  if (/G\.A\.I\.N\.S/.test(all) && /Accomplishments/.test(all)) {
-    const stop = items.find(i => /人脈に加えたい/.test(i.t));
-    const stopY = stop ? stop.y + 3 : -Infinity;
-    items = items.filter(i => i.x >= page.w * 0.55 && i.y > stopY);
-  }
-  return buildLines(items, 4).map(l => l.text);
-}
-
-// ---- B様式：1ページ目（Private / Business information / My taste） ----
-function parseBProfile(page) {
-  let items = clean(page.items).filter(i => !/^作成日/.test(i.t) && !/SHEET$/i.test(i.t) && !/^\d{4}\s*年$/.test(i.t));
-  // 左端の見出し（コロンなし）は除く
-  items = items.filter(i => !(i.x < page.w * 0.18 && !i.t.includes(':')));
-  const isAnchor = i => /^[^:]{1,30}:\s*$/.test(i.t);
-  const anchors = items.filter(isAnchor).map(a => ({ ...a, add: [] }));
-  const lines = buildLines(items.filter(i => !isAnchor(i)), 3);
-  const keep = [];
-  for (const l of lines) {
-    if (!/[^\d\s]\s*:/.test(l.text)) {
-      const cand = anchors.filter(a => a.x < l.minX && Math.abs(a.y - l.y) <= 30)
-        .sort((a, b) => Math.abs(a.y - l.y) - Math.abs(b.y - l.y))[0];
-      if (cand) { cand.add.push(l); continue; }
-    }
-    keep.push({ y: l.y, x: l.minX, text: l.text });
-  }
-  for (const a of anchors) {
-    a.add.sort((p, q) => q.y - p.y);
-    keep.push({ y: a.y, x: a.x, text: a.t + ' ' + smartJoin(a.add.map(l => l.text)) });
-  }
-  keep.sort((a, b) => b.y - a.y || a.x - b.x);
-  return keep.map(k => k.text).join('\n');
-}
-
-// 左列の見出しで行（帯）を作り、右側の値を一番近い帯に割り当てる
-function rowBands(labelItems, defs) {
-  const sorted = [...labelItems].sort((a, b) => b.y - a.y);
-  const rows = [];
-  for (const it of sorted) {
-    const d = defs.find(([, r]) => r.test(it.t));
-    if (d) rows.push({ key: d[0], top: it.y, bottom: it.y });
-    else if (rows.length && rows[rows.length - 1].bottom - it.y < 45) rows[rows.length - 1].bottom = it.y;
-  }
-  return rows;
-}
-const nearestRow = (rows, y) => rows.map(r => ({ r, d: y > r.top ? y - r.top : (y < r.bottom ? r.bottom - y : 0) }))
-  .sort((a, b) => a.d - b.d)[0]?.r;
-
-// ---- B様式：GAINs work SHEET ----
-function parseBGains(page) {
-  const items = clean(page.items).filter(i => !/SHEET$/i.test(i.t));
-  const labelX = page.w * 0.195;
-  const defs = [['goals', /^Goals$/], ['accomplishments', /^Accomplishments$/], ['interests', /^Interests$/], ['networks', /^Networks$/], ['skills', /^Skills$/]];
-  const rows = rowBands(items.filter(i => i.x < labelX), defs);
-  const personalHead = items.find(i => /^Personal$/.test(i.t));
-  const businessHead = items.find(i => /^Business$/.test(i.t));
-  const split = personalHead ? personalHead.x - 15 : page.w * 0.57;
-  const headY = Math.min(...[personalHead, businessHead].filter(Boolean).map(h => h.y - 3), Infinity);
-  const subs = items.filter(i => i.x >= labelX && /^(短期|長期)$/.test(i.t));
-  const vals = items.filter(i => i.x >= labelX && i.y < headY && !subs.includes(i));
-  const out = {};
-  for (const row of rows) {
-    const rowSubs = subs.filter(s => nearestRow(rows, s.y) === row);
-    const parts = [];
-    for (const [colName, inCol] of [['仕事', i => i.x < split], ['個人', i => i.x >= split]]) {
-      const lines = buildLines(vals.filter(inCol), 3).filter(l => nearestRow(rows, l.y) === row);
-      if (!lines.length) continue;
-      if (rowSubs.length) {
-        for (const s of [...rowSubs].sort((a, b) => b.y - a.y)) {
-          const g = lines.filter(l => [...rowSubs].sort((a, b) => Math.abs(a.y - l.y) - Math.abs(b.y - l.y))[0] === s);
-          if (g.length) parts.push(`【${colName}・${s.t}】\n` + smartJoin(g.map(l => l.text)));
-        }
-      } else parts.push(`【${colName}】\n` + smartJoin(lines.map(l => l.text)));
-    }
-    if (parts.length) out[row.key] = parts.join('\n');
-  }
-  return out;
-}
-
-// ---- B様式：Referral SHEET ----
-const REFERRAL_DEFS = [['_goldenEggs', /Golden Eggs/i], ['_best', /The Golden$/i], ['mismatch', /Not TARGET|Miss Match/i],
-  ['story', /^Share story/i], ['usp', /Unique Selling|USP/], ['closing', /^Closing word/i], ['_connect', /^Please Connect/i],
-  ['introTemplate', /^Introduction essay/i], ['collaborators', /^Provide referrals/i]];
-function parseBReferral(page) {
-  const items = clean(page.items).filter(i => !/SHEET$/i.test(i.t));
-  const labelX = page.w * 0.285;
-  const rows = rowBands(items.filter(i => i.x < labelX), REFERRAL_DEFS);
-  const lines = buildLines(items.filter(i => i.x >= labelX), 6);
-  const buckets = {};
-  for (const l of lines) {
-    const r = nearestRow(rows, l.y); if (!r) continue;
-    (buckets[r.key] = buckets[r.key] || []).push(l.text);
-  }
-  const out = {};
-  for (const [k, ls] of Object.entries(buckets)) {
-    const v = stripBoilerplate(ls.join('\n')).split('\n').filter(Boolean);
-    if (v.length) out[k] = smartJoin(v);
-  }
-  return out;
-}
-
-function parsePdfPages(pages) {
-  const texts = pages.map(pageText);
-  const isB = texts.some(t => /Power\s*1to1|GAINs\s*work\s*SHEET|Referral\s*SHEET/i.test(t));
-  if (!isB) return parseLabeledText(pages.map(p => linesA(p).join('\n')).join('\n\u0000PAGE\u0000\n'));
-  let out = {};
-  pages.forEach((p, i) => {
-    const t = texts[i];
-    let part = {};
-    if (/GAINs\s*work/i.test(t)) part = parseBGains(p);
-    else if (/Referral\s*SHEET/i.test(t)) part = parseBReferral(p);
-    else part = parseLabeledText(parseBProfile(p));
-    for (const [k, v] of Object.entries(part)) out[k] = out[k] && k.startsWith('_') ? out[k] + '\n' + v : (out[k] || v);
-  });
-  return finalize(out);
-}
-
-
-// ---- Webページ（Canva等）からコピーしたテキスト ----
-// Canvaは見た目と文字の並び順が一致しないことが多いため、段落（空行区切り）単位で
-// 「見出しだけの段落」と「内容の段落」を結びつける
-const WEB_HEAD_EN = [
-  ['goals', /^Goals?$/i], ['accomplishments', /^Accomplishments?(\s*(過去|現在|past|now))?$/i], ['interests', /^Interests?$/i],
-  ['networks', /^Networks?(\s*[・/]\s*求める人物)?$/i], ['skills', /^Skills?$/i],
-];
-const WEB_HEAD_JA = [
-  ['wantReferrals', /(ご?紹介(頂|いただ)?き?たい|紹介してほしい|紹介して欲しい).{0,12}$|^(ターゲット|求める人物|こんな人を探して)/], ['introTemplate', /(お?繋ぎ方|紹介.{0,4}(方法|テンプレート)|紹介の仕方)/],
-  ['collaborators', /(協業|パートナー|コンタクトサークル|パワーチーム)/], ['usp', /(強み|USP)/i], ['story', /(経緯|ストーリー|想い|思い)$/],
-  ['mismatch', /ミスマッチ/], ['businessContents', /(事業内容|サービス内容|商品・サービス)/],
-];
-const WEB_JUNK = /^(規約とサポート|プライバシーポリシー|を使用してデザイン|To Contact|Contact|お問い合わせ|\d{1,2})$/i;
-function parseWebText(raw) {
-  if (isRosterText(raw)) return parseRosterText(raw);
-  const blocks = norm(raw).replace(/\r/g, '').split(/\n\s*\n/).map(b => b.split('\n').map(s => s.trim()).filter(s => s && !WEB_JUNK.test(s)).join('\n')).filter(Boolean);
-  const n = blocks.length, claimed = new Array(n).fill(false), out = {};
-  const put = (k, v, head) => {
-    if (!v) return;
-    if (MULTI.has(k)) v = v.replace(/[ \t]+・/g, '\n・').replace(/^\n/, '');
-    if (!out[k]) out[k] = v;
-    else if (MULTI.has(k) && !out[k].includes(v)) out[k] += '\n' + (head ? `【${head}】\n` : '') + v;
-  };
-  const isShort = b => !b.includes('\n') && b.length <= 24;
-  const enHead = b => isShort(b) && WEB_HEAD_EN.find(([, r]) => r.test(b));
-  const jaHead = b => isShort(b) && !/[をで。]/.test(b.replace(/ください$/, '')) && WEB_HEAD_JA.find(([, r]) => r.test(b));
-  const isHead = i => enHead(blocks[i]) || jaHead(blocks[i]);
-  // (a) ラベル付きの段落（「〇〇：」「【】」「＜＞」）はその段落の中だけで読む
-  blocks.forEach((b, i) => {
-    if (isHead(i)) return;
-    const r = parseLabeledText(b);
-    const keys = Object.keys(r).filter(k => k !== 'otherInfo');
-    if (!keys.length) return;
-    claimed[i] = true;
-    for (const [k, v] of Object.entries(r)) put(k, v);
-  });
-  // (b) 英語の見出し（GAINS）：直前の段落が空いていればそれ、なければ直後
-  blocks.forEach((b, i) => {
-    const h = enHead(b); if (!h) return;
-    claimed[i] = true;
-    const j = (i > 0 && !claimed[i - 1] && !isHead(i - 1)) ? i - 1 : (i + 1 < n && !claimed[i + 1] && !isHead(i + 1)) ? i + 1 : -1;
-    if (j >= 0) { claimed[j] = true; put(h[0], blocks[j], b); }
-  });
-  // (c) 日本語の見出し：直後に続く空き段落をまとめて
-  blocks.forEach((b, i) => {
-    const h = jaHead(b); if (!h) return;
-    claimed[i] = true;
-    const got = [];
-    for (let j = i + 1; j < n && !claimed[j] && !isHead(j); j++) { claimed[j] = true; got.push(blocks[j]); }
-    put(h[0], got.join('\n'), b);
-  });
-  // (d) 名前：先頭付近の「姓 名」だけの段落
-  if (!out.name) {
-    const k = blocks.slice(0, 4).findIndex(b => /^[一-鿿々ヶ]{1,4}\s+[一-鿿々ヶ぀-ヿ]{1,5}$/.test(b));
-    if (k >= 0) { out.name = blocks[k]; claimed[k] = true; }
-  }
-  // (e) どこにも入らなかった段落は「その他の情報」へ（取りこぼし防止）
-  const rest = blocks.filter((b, i) => !claimed[i] && !/^[A-Z\s&＆]+$/.test(b));
-  if (rest.length) put('otherInfo', rest.join('\n'));
-  return finalize(out);
-}
-
 
 // ---- 1to1の文字起こし ----
 // 各種書き出し形式（txt/md/vtt/srt/csv/json、Word/PDFはテキスト化後）→ 「話者: 発言」の読みやすいテキスト
@@ -785,4 +562,4 @@ function parseAiAnswer(raw) {
 // Word等のテキスト（行の配列）用
 function parseSheetText(raw, opts) { return parseLabeledText(raw, opts); }
 
-if (typeof module !== 'undefined') module.exports = { parseSheetText, parsePdfPages, smartJoin, docxXmlToText, pptxToText, parseWebText, cleanTranscript, guessDate, buildAiPrompt, parseAiAnswer, buildSheetPrompt, parseAiSheet, isRosterText, parseRosterText };
+if (typeof module !== 'undefined') module.exports = { parseSheetText, smartJoin, docxXmlToText, cleanTranscript, guessDate, buildAiPrompt, parseAiAnswer, buildSheetPrompt, parseAiSheet, isRosterText, parseRosterText };
