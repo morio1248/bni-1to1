@@ -259,7 +259,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.10.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.11.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -342,6 +342,12 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       </div></div>
       <div class="note">※Geminiはアクティビティ（学習）をオフにしてから使ってください。設定方法は「使い方」または「かんたんセットアップ」で案内しています。</div>
     </div>
+    <div class="web" id="bcPanel">
+      <div class="web-t">BNIコネクトの1to1レポートを取り込む</div>
+      <p class="howto" style="margin:4px 0 8px">BNIコネクトからダウンロードした1to1のレポート（「one-to-one-report」という名前のExcelファイル）を選ぶと、これまでBNIコネクトに登録した1to1を、各メンバーの「1to1の記録」にまとめて入れます（「BNIコネクト登録済み」になります）。同じファイルを何度読み込んでも、二重には登録されません。</p>
+      <div class="row"><label class="btn primary">レポートファイルを選ぶ<input type="file" id="bcFile" accept=".xls,.xml,.xlsx" hidden></label></div>
+      <div id="bcPreview"></div>
+    </div>
     <div class="row" style="margin-top:10px;justify-content:flex-end">
       <button class="btn" id="manualBtn">白紙から手入力する</button>
     </div>
@@ -398,6 +404,11 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <li>「指示文をコピー」→「Geminiを開く」→ 入力欄に <kbd>Ctrl</kbd>＋<kbd>V</kbd> します。</li>
       <li>入力欄の左の「＋」→「ファイルをアップロード」でシートのファイルを選び、送信します。</li>
       <li>返答の下にあるコピーのアイコンを押し、手順3の枠に貼り付けます。</li></ol></div>
+
+    <div class="card-g"><b>BNIコネクトに登録済みの1to1をまとめて取り込む</b>
+      <ol><li>BNIコネクトから、1to1のレポート（「one-to-one-report」という名前のExcelファイル）をダウンロードします。</li>
+      <li>「取り込み」画面の「BNIコネクトの1to1レポートを取り込む」で、そのファイルを選びます。</li>
+      <li>件数を確認して「取り込む」を押すと、各メンバーの「1to1の記録」に日付・場所・会話のトピックが入り、「BNIコネクト登録済み」になります。何度読み込んでも二重にはなりません。</li></ol></div>
 
     <h3 id="g3">③ 1to1を記録する</h3>
     <div class="card-g"><b>メンバー一覧の見方</b><ul>
@@ -1547,7 +1558,7 @@ function quickMatch(m) {
   switch (quick) {
     case 'fav': return !!m.fav;
     case 'mine': return catOf(m) === 'BNI' && myChapter && chapKey(m.chapter) === chapKey(myChapter);
-    case 'other': return catOf(m) === 'BNI' && (!myChapter || chapKey(m.chapter) !== chapKey(myChapter));
+    case 'other': return catOf(m) === 'BNI' && !!m.chapter && (!myChapter || chapKey(m.chapter) !== chapKey(myChapter));
     case 'nonbni': return catOf(m) === 'BNI以外';
     case 'bnitodo': return catOf(m) !== 'BNI以外' && (m.meetings || []).some(x => !x.bniDone && !isPlanned(x));
     case 'recent': return daysSince(lastContact(m)) <= 30;
@@ -1963,6 +1974,7 @@ async function handleFiles(files) {
 document.addEventListener('dragover', e => e.preventDefault());
 document.addEventListener('drop', e => {
   e.preventDefault(); const fs = [...e.dataTransfer.files]; if (!fs.length) return;
+  const rep = fs.find(f => /one-to-one|\.xls$/i.test(f.name)); if (rep) { show('import'); const dt = new DataTransfer(); dt.items.add(rep); $('bcFile').files = dt.files; $('bcFile').dispatchEvent(new Event('change')); return; }
   const ts = fs.filter(f => TS_EXT.has((f.name.split('.').pop() || '').toLowerCase()));
   if (ts.length) { show('import'); handleTranscripts(ts); }
   if (ts.length < fs.length) { show('import'); document.querySelector('input[name=aiKind][value=file]').click(); toast('1to1シートは、Geminiに添付して読み取ります（手順2）'); }
@@ -2015,6 +2027,85 @@ $('aiSheetPaste').addEventListener('paste', () => setTimeout(() => {
   addReview(data, 'Geminiで読み取り');
   $('aiSheetPaste').value = ''; $('webPaste').value = ''; $('webUrl').value = ''; updateWebInfo();
 }, 0));
+
+// ===== BNIコネクトの1to1レポート（Excel 2003 XML形式の .xls）を取り込む =====
+function parseBniConnectReport(text) {
+  const doc = new DOMParser().parseFromString(text.replace(/^\uFEFF/, ''), 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) throw new Error('ファイルを読み取れませんでした。BNIコネクトからダウンロードした1to1のレポートをそのまま選んでください。');
+  const rows = [...doc.getElementsByTagNameNS('*', 'Row')].map(r => {
+    const out = []; let i = 0;
+    for (const c of r.getElementsByTagNameNS('*', 'Cell')) {
+      const idx = c.getAttribute('ss:Index') || c.getAttributeNS('urn:schemas-microsoft-com:office:spreadsheet', 'Index');
+      if (idx) i = +idx - 1;
+      const d = c.getElementsByTagNameNS('*', 'Data')[0];
+      out[i++] = d ? (d.textContent || '').trim() : '';
+    }
+    return out;
+  });
+  const hi = rows.findIndex(r => r.some(v => /相手の氏名/.test(v || '')) && r.some(v => /^日付$/.test(v || '')));
+  if (hi < 0) throw new Error('1to1のレポートではないようです（「日付」「相手の氏名」の列が見つかりません）。');
+  const h = rows[hi], col = re => h.findIndex(v => re.test(v || ''));
+  const cD = col(/^日付$/), cN = col(/相手の氏名/), cI = col(/提案/), cP = col(/場所/), cT = col(/トピック/);
+  return rows.slice(hi + 1).map(r => ({
+    date: (r[cD] || '').slice(0, 10), name: (r[cN] || '').trim(), initiator: (r[cI] || '').trim(), place: (r[cP] || '').trim(), topic: (r[cT] || '').trim(),
+  })).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x.date) && x.name);
+}
+function planBniConnect(list) {
+  let add = 0, mark = 0, same = 0; const newPeople = new Set();
+  for (const x of list) {
+    const m = members.find(y => nameKey(y.name) === nameKey(x.name));
+    if (!m) { newPeople.add(x.name); add++; continue; }
+    const mt = (m.meetings || []).find(y => y.date === x.date);
+    if (!mt) add++; else if (!mt.bniDone) mark++; else same++;
+  }
+  return { add, mark, same, newPeople: [...newPeople] };
+}
+async function importBniConnect(list, createNew) {
+  const byName = new Map();
+  for (const x of list) { const k = nameKey(x.name); if (!byName.has(k)) byName.set(k, []); byName.get(k).push(x); }
+  let n = 0, created = 0;
+  for (const [k, rows] of byName) {
+    let m = members.find(y => nameKey(y.name) === k);
+    if (!m) { if (!createNew) continue; m = { id: uid(), createdAt: Date.now(), name: rows[0].name, category: 'BNI', meetings: [], source: 'BNIコネクト', sources: [{ name: 'BNIコネクト', at: today() }] }; created++; }
+    const meetings = [...(m.meetings || [])];
+    const seen = new Set();
+    for (const x of rows) {
+      if (seen.has(x.date)) continue; seen.add(x.date);
+      const info = { bniDone: true, bniDoneAt: x.date, place: normPlace(x.place), initiator: nameKey(x.initiator) === k ? 'them' : 'me', bniTopic: x.topic };
+      const i = meetings.findIndex(y => y.date === x.date);
+      if (i >= 0) { const y = meetings[i]; meetings[i] = { ...y, ...info, place: y.place || info.place, bniTopic: y.bniTopic || info.bniTopic, title: y.title || '1to1' }; }
+      else meetings.push({ id: uid(), createdAt: Date.now(), date: x.date, title: '1to1', source: 'BNIコネクト', text: x.topic ? `会話のトピック：${x.topic}` : '', ...info });
+      n++;
+    }
+    meetings.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const last = meetings.filter(y => y.date && y.date <= today()).map(y => y.date).sort().pop();
+    await Store.put({ ...m, meetings, date1to1: (!m.date1to1 || (last && last > m.date1to1)) ? last : m.date1to1, updatedAt: Date.now() });
+  }
+  await changed();
+  return { n, created };
+}
+$('bcFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const list = parseBniConnectReport(await readTextFile(f));
+    if (!list.length) { alert('1to1の記録が見つかりませんでした。'); return; }
+    const pl = planBniConnect(list.filter((x, i) => list.findIndex(y => y.date === x.date && nameKey(y.name) === nameKey(x.name)) === i));
+    const uniq = list.filter((x, i) => list.findIndex(y => y.date === x.date && nameKey(y.name) === nameKey(x.name)) === i).length;
+    const range = `${list.map(x => x.date).sort()[0]} 〜 ${list.map(x => x.date).sort().pop()}`;
+    $('bcPreview').innerHTML = `<div class="ok-box" style="font-weight:400;color:var(--ink);background:#f6f8ff;border-color:#d7e0f5">
+      <b>${uniq}件の1to1</b>（${range}）が見つかりました。${uniq < list.length ? `<span style="color:var(--sub)">（同じ日・同じ相手の重複${list.length - uniq}件は1件にまとめます）</span>` : ''}<br>
+      ・新しく記録に追加：${pl.add}件　・既存の記録を「BNIコネクト登録済み」に：${pl.mark}件　・取り込み済み：${pl.same}件<br>
+      ${pl.newPeople.length ? `・1to1 Naviにまだいない人：${pl.newPeople.length}人（${esc(pl.newPeople.slice(0, 8).join('、'))}${pl.newPeople.length > 8 ? ' ほか' : ''}）<br>
+      <label style="display:inline-flex;gap:6px;align-items:center;margin-top:4px;font-weight:700"><input type="checkbox" id="bcCreate" checked> まだいない人も、名前だけで新しく登録する</label><br>` : ''}
+      <div class="row" style="margin-top:8px"><button class="btn primary" id="bcGo">取り込む</button><button class="btn" id="bcCancel">やめる</button></div></div>`;
+    $('bcCancel').onclick = () => { $('bcPreview').innerHTML = ''; };
+    $('bcGo').onclick = async () => {
+      const r = await importBniConnect(list, !$('bcCreate') || $('bcCreate').checked);
+      $('bcPreview').innerHTML = '';
+      toast(`${r.n}件の1to1を取り込みました${r.created ? `（新しく登録：${r.created}人）` : ''}`); show('list');
+    };
+  } catch (err) { console.error(err); alert(err.message || err); }
+};
 
 // ===== 1to1の文字起こし =====
 const TS_EXT = new Set(['txt','md','vtt','srt','csv','tsv','json']);
