@@ -117,6 +117,13 @@ mark{background:#ffe58a;padding:0 1px}
 .drop .big{font-size:17px;font-weight:700}
 .drop small{color:var(--sub)}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ok-box{background:#eaf6ee;border:1px solid #bfe3ca;color:#1d6b35;border-radius:8px;padding:8px 12px;font-weight:700;margin-top:6px}
+.ai-flow{padding:6px 16px 14px}
+.ai-step{display:flex;gap:12px;padding:14px 0;border-bottom:1px dashed var(--line)}
+.ai-no{flex:none;width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
+.kind{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.kind label{border:1px solid var(--line);border-radius:99px;padding:6px 14px;cursor:pointer;font-weight:700;font-size:14px;display:flex;gap:6px;align-items:center}
+.kind label:has(input:checked){border-color:var(--red);background:var(--red-soft);color:var(--red)}
 .web{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
 .web-t{font-weight:700;margin-bottom:8px}
 .web input[type=url]{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--line);border-radius:8px}
@@ -248,7 +255,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.8.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.9.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -295,38 +302,41 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
   <!-- 取り込み -->
   <section id="view-import" class="hidden">
     <h2>1to1シートを取り込む</h2>
-    <div class="drop" id="drop">
-      <div class="big">PDF・Word・PowerPointをここにドラッグ＆ドロップ</div>
-      <small>またはクリックしてファイルを選択（複数まとめてOK）<br>「メンバー略歴シート／G.A.I.N.S.ワークシート」「Power 1to1 SHEET」のほか、自作の資料も見出しから読み取ります</small>
-    </div>
-    <input type="file" id="file" accept=".pdf,.docx,.pptx" multiple hidden>
-    <div class="web">
-      <div class="web-t">Webページ（BNIの名簿・Canvaなど）で届いた場合</div>
-      <p class="howto" style="margin:0 0 6px">BNIの名簿（メンバー略歴シート）のページは、この方法で全項目がそのまま入ります。</p>
-      <div class="row">
-        <input type="url" id="webUrl" placeholder="https://〇〇.my.canva.site/…　のURLを貼り付け">
-        <button class="btn primary" id="webOpen">ページを開く</button>
-      </div>
-      <ol class="steps">
-        <li>「ページを開く」で別タブにページが開きます</li>
-        <li>開いたページで <kbd>Ctrl</kbd>＋<kbd>A</kbd>（全選択）→ <kbd>Ctrl</kbd>＋<kbd>C</kbd>（コピー）<span class="mac">Macは ⌘</span></li>
-        <li>このタブに戻り、下の枠をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd>（貼り付け）→ 自動で読み取ります</li>
-      </ol>
-      <textarea id="webPaste" placeholder="ここをクリックして Ctrl＋V で貼り付け"></textarea>
-      <div class="note">※ブラウザの安全上の制限により、URLだけで直接読み込むことはできないため、この手順になります。</div>
-    </div>
-    <div class="web" id="aiSheetPanel">
-      <div class="web-t">Gemini（Googleの無料AI）で読み取る　<span style="font-weight:400;font-size:13px;color:var(--sub)">いちばん確実な方法です</span></div>
-      <p class="howto" style="margin:4px 0 8px">画像で作られたPDF、Canvaのページ、独自の様式など、上の方法でうまく項目に入らないときに使います。手入力はほとんど要りません。</p>
-      <ol class="steps" style="color:var(--ink)">
-        <li><button class="btn small primary" id="aiSheetCopy">AI用の指示文をコピー</button> → <button class="btn small" id="aiSheetGemini">Geminiを開く</button></li>
-        <li>Geminiの入力欄をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd>（Macは <kbd>⌘</kbd>＋<kbd>V</kbd>）で指示文を貼り付ける</li>
-        <li>入力欄の左の <b>「＋」→「ファイルをアップロード」</b>で、1to1シートのPDFや画像を選んで送信する<br>
-          <span style="font-size:13px;color:var(--sub)">Webページのシートは、ページのスクリーンショット（Windowsは <kbd>Win</kbd>＋<kbd>Shift</kbd>＋<kbd>S</kbd>、Macは <kbd>⌘</kbd>＋<kbd>Shift</kbd>＋<kbd>4</kbd>）を撮って、入力欄に貼り付けてください。</span></li>
-        <li>Geminiの返答の下にある<b>コピーのアイコン</b>（四角が2つ重なった形）を押し、下の枠をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd> → 確認画面が開きます</li>
-      </ol>
-      <input type="url" id="aiSheetUrl" placeholder="（任意）シートのURL：記録用に残したいときだけ" style="margin-bottom:6px;width:100%;box-sizing:border-box">
-      <textarea id="aiSheetPaste" placeholder="ここをクリックして、Geminiの返答を Ctrl＋V で貼り付け"></textarea>
+    <p class="howto" style="margin-top:-4px">Googleの無料AI「Gemini」がシートを読み取り、各項目に振り分けます。手入力はほとんど要りません。</p>
+    <div class="web ai-flow" id="aiSheetPanel">
+      <div class="ai-step"><span class="ai-no">1</span><div style="flex:1">
+        <b>シートの届き方を選ぶ</b>
+        <div class="kind"><label><input type="radio" name="aiKind" value="web" checked> Webページ（URL）</label><label><input type="radio" name="aiKind" value="file"> PDF・画像・Word・PowerPoint</label></div>
+        <div id="aiWebBox">
+          <div class="row" style="margin-top:8px"><input type="url" id="webUrl" placeholder="シートのURLを貼り付け（https://…）"><button class="btn" id="webOpen">ページを開く</button></div>
+          <ol class="steps">
+            <li>「ページを開く」で別タブにシートが開きます</li>
+            <li>開いたページで <kbd>Ctrl</kbd>＋<kbd>A</kbd>（全選択）→ <kbd>Ctrl</kbd>＋<kbd>C</kbd>（コピー）<span class="mac">Macは ⌘</span>　※スマホは長押し→「すべて選択」→「コピー」</li>
+            <li>このタブに戻り、下の枠をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd>（貼り付け）</li>
+          </ol>
+          <textarea id="webPaste" placeholder="ここにシートのページの内容を Ctrl＋V で貼り付け"></textarea>
+          <div id="webPasteInfo" class="howto"></div>
+        </div>
+        <div id="aiFileBox" class="hidden"><p class="howto" style="margin:8px 0 0">シートのファイルは、手順2でGeminiに添付します。先にパソコン（スマホ）に保存しておいてください。</p></div>
+      </div></div>
+      <div class="ai-step"><span class="ai-no">2</span><div style="flex:1">
+        <b>Geminiに読み取ってもらう</b>
+        <div class="row" style="margin:8px 0"><button class="btn primary" id="aiSheetCopy">指示文をコピー</button><button class="btn" id="aiSheetGemini">Geminiを開く</button></div>
+        <ol class="steps" id="aiStepsWeb">
+          <li>「指示文をコピー」を押す（貼り付けたページの内容も一緒にコピーされます）</li>
+          <li>「Geminiを開く」→ 入力欄をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd> → 送信</li>
+        </ol>
+        <ol class="steps hidden" id="aiStepsFile">
+          <li>「指示文をコピー」を押す</li>
+          <li>「Geminiを開く」→ 入力欄をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd></li>
+          <li>入力欄の左の <b>「＋」→「ファイルをアップロード」</b>でシートのファイルを選び、送信<br><span style="font-size:13px;color:var(--sub)">添付できない形式のときは、PDFで保存し直してから添付してください。</span></li>
+        </ol>
+      </div></div>
+      <div class="ai-step"><span class="ai-no">3</span><div style="flex:1">
+        <b>Geminiの返答を貼り付ける</b>
+        <p class="howto" style="margin:6px 0">返答の下にある<b>コピーのアイコン</b>（四角が2つ重なった形）を押し、下の枠をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd> → 確認画面が開きます。</p>
+        <textarea id="aiSheetPaste" placeholder="ここに、Geminiの返答を Ctrl＋V で貼り付け"></textarea>
+      </div></div>
       <div class="note">※Geminiはアクティビティ（学習）をオフにしてから使ってください。設定方法は「使い方」または「かんたんセットアップ」で案内しています。</div>
     </div>
     <div class="row" style="margin-top:10px;justify-content:flex-end">
@@ -366,20 +376,18 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     </ol><p>この4つは「かんたんセットアップ」で順番に案内します。</p></div>
 
     <h3 id="g2">② 1to1シートを取り込む</h3>
-    <p>「取り込み」画面で、シートの届き方に合わせて選びます。どの方法でも、最後に確認画面が出るので、内容を見て「登録」を押します。</p>
-    <div class="card-g"><b>PDF・Word・PowerPointで届いたとき</b>
-      <ol><li>ファイルを「取り込み」画面の枠にドラッグ＆ドロップします。</li>
-      <li>確認画面で項目が少ししか入っていない（画像のPDFなど）ときは、下の「Geminiで読み取る」を使います。</li></ol></div>
-    <div class="card-g"><b>Geminiで読み取る（いちばん確実）</b>
-      <ol><li>「取り込み」画面の「AI用の指示文をコピー」を押します。</li>
-      <li>「Geminiを開く」を押し、入力欄をクリックして <kbd>Ctrl</kbd>＋<kbd>V</kbd>（Macは <kbd>⌘</kbd>＋<kbd>V</kbd>）で貼り付けます。</li>
-      <li>入力欄の左の「＋」→「ファイルをアップロード」で、1to1シートのPDFや画像を選び、送信します。</li>
-      <li>返答の下にあるコピーのアイコン（四角が2つ重なった形）を押し、1to1 Naviの枠に貼り付けます。</li></ol></div>
-    <div class="card-g"><b>BNIの名簿のページ・Webページ（Canvaなど）で届いたとき</b>
-      <p>BNIの名簿（メンバー略歴シート）のページは、この方法で<b>全項目がそのまま正しく入ります</b>。いちばん確実です。</p>
-      <ol><li>「Webページで届いた場合」の欄にURLを貼って「ページを開く」を押します。</li>
-      <li>開いたページで <kbd>Ctrl</kbd>＋<kbd>A</kbd> → <kbd>Ctrl</kbd>＋<kbd>C</kbd>、1to1 Naviに戻って枠に <kbd>Ctrl</kbd>＋<kbd>V</kbd> します。</li>
-      <li>うまく入らないときは、ページのスクリーンショット（Windowsは <kbd>Win</kbd>＋<kbd>Shift</kbd>＋<kbd>S</kbd>、Macは <kbd>⌘</kbd>＋<kbd>Shift</kbd>＋<kbd>4</kbd>）を撮り、Geminiに貼り付けて読み取ります。</li></ol></div>
+    <p>「取り込み」画面で、Googleの無料AI「Gemini」にシートを読み取ってもらいます。最後に確認画面が出るので、内容を見て「登録」を押します。</p>
+    <div class="card-g"><b>Webページ（URL）で届いたとき</b>
+      <ol><li>「Webページ（URL）」を選び、URLを貼って「ページを開く」を押します。</li>
+      <li>開いたページで <kbd>Ctrl</kbd>＋<kbd>A</kbd> → <kbd>Ctrl</kbd>＋<kbd>C</kbd>（Macは <kbd>⌘</kbd>）でコピーし、1to1 Naviに戻って枠に <kbd>Ctrl</kbd>＋<kbd>V</kbd> で貼り付けます。</li>
+      <li>「指示文をコピー」→「Geminiを開く」→ 入力欄に <kbd>Ctrl</kbd>＋<kbd>V</kbd> して送信します（ページの内容も一緒に貼り付けられます）。</li>
+      <li>返答の下にあるコピーのアイコン（四角が2つ重なった形）を押し、手順3の枠に貼り付けます。</li></ol>
+      <p>BNIの名簿（メンバー略歴シート）のページを貼り付けた場合は、「このまま取り込む」ボタンが出ます。Geminiを使わずに、全項目が正確に入ります。</p></div>
+    <div class="card-g"><b>PDF・画像・Word・PowerPointで届いたとき</b>
+      <ol><li>「PDF・画像・Word・PowerPoint」を選びます。</li>
+      <li>「指示文をコピー」→「Geminiを開く」→ 入力欄に <kbd>Ctrl</kbd>＋<kbd>V</kbd> します。</li>
+      <li>入力欄の左の「＋」→「ファイルをアップロード」でシートのファイルを選び、送信します。</li>
+      <li>返答の下にあるコピーのアイコンを押し、手順3の枠に貼り付けます。</li></ol></div>
 
     <h3 id="g3">③ 1to1を記録する</h3>
     <div class="card-g"><b>メンバー一覧の見方</b><ul>
@@ -408,7 +416,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     <div class="card-g"><ul>
       <li><b>画面の上に「自動保存 一時停止中」と出る：</b>ブラウザの安全のための仕組みです。「自動保存を再開」を押し、「許可」を選べば元に戻ります。</li>
       <li><b>画面右上が「⚠ 未バックアップ」になっている：</b>保存ファイルが設定されていません。「保存・バックアップ」から設定してください。</li>
-      <li><b>Geminiが「読み取れません」と答える：</b>PDFの代わりに、シートのスクリーンショットを添付してみてください。</li>
+      <li><b>Geminiが「読み取れません」と答える：</b>Webページの場合は、ページ全体をコピーできているか（<kbd>Ctrl</kbd>＋<kbd>A</kbd> を押してから <kbd>Ctrl</kbd>＋<kbd>C</kbd>）確認してください。ファイルの場合は、PDFで保存し直して添付してみてください。</li>
       <li><b>Geminiの返答を貼っても項目に入らない：</b>「AI用の指示文をコピー」から貼り付けたか確認し、返答を最初から最後まで全部コピーしてください。</li>
       <li><b>データを消してしまった：</b>保存ファイルがマイドライブにあれば、「作成済みの保存ファイルを開く」で戻せます。Googleドライブのゴミ箱や「版の管理」から、以前の状態に戻せる場合もあります。</li>
     </ul></div>
@@ -505,7 +513,7 @@ const SECTIONS = [
   { title: 'コンタクトサークル', fields: [['contactTop3','Contact Circle Top3','area'],['contactCircle','コンタクトサークル（紹介し合える・協業しやすい仲間）','area']] },
   { title: '直近10件の顧客リスト', fields: [['recentCustomers','直近10件の顧客','area wide'],['howCame','彼らはどのようにしてあなたの元へやってきましたか？','area'],['servicesProvided','彼らにどのような商品・サービスを提供しましたか？','area'],['averageCustomer','彼らは平均的な顧客でしたか？','area']] },
   { title: 'リファーラルについて', fields: [['otherReferrers','その他のリファーラル提供者にはどんな人がいますか？','area'],['qualityReferral','「質の高い」リファーラルとは？','area'],['mismatch','「不適切な」リファーラルとは？','area']] },
-  { title: '1to1 Navi 独自の項目', fields: [['date1to1','1to1実施日','date'],['sheetUrl','1to1シートのURL'],['industry','業種グループ（空欄なら自動）','select:=|士業|保険・金融|不動産・建築・住まい|美容・健康・医療|飲食・食品|IT・Web・通信|広告・デザイン・印刷|物流・運送・倉庫|教育・子ども・スクール|車・乗り物|冠婚葬祭・イベント・趣味|人材・ビジネスサポート|その他'],['otherInfo','名簿にないその他の項目','area wide']] },
+  { title: '1to1 Navi 独自の項目', fields: [['date1to1','1to1実施日','date'],['sheetUrl','1to1シートのURL'],['industry','業種グループ（空欄なら自動）','select:|士業|保険・金融|不動産・建築・住まい|美容・健康・医療|飲食・食品|IT・Web・通信|広告・デザイン・印刷|物流・運送・倉庫|教育・子ども・スクール|車・乗り物|冠婚葬祭・イベント・趣味|人材・ビジネスサポート|その他'],['otherInfo','名簿にないその他の項目','area wide']] },
   { title: '自分用メモ', fields: [['memo','メモ（紹介できそうな人、話したこと等）','area wide']] },
 ];
 const ALL_FIELDS = SECTIONS.flatMap(s => s.fields);
@@ -516,6 +524,7 @@ const LEGACY_TO = { businessContents: 'servicesProvided', collaborators: 'contac
 const LEGACY_LABEL = { contact: '連絡先', education: '学歴', story: '起業の経緯・思い', specialSkill: '特技', bniCareer: 'BNI歴', lifework: 'ライフワーク', personality: '性格・こだわり', values: '大切にしていること', motto: '座右の銘', bniRoles: '経験した役職', whyBni: 'Why BNI?', birthdayNote: '生年月日のメモ' };
 function migrateLegacy(m) {
   let changed = false;
+  if (m.industry !== undefined && !['士業','保険・金融','不動産・建築・住まい','美容・健康・医療','飲食・食品','IT・Web・通信','広告・デザイン・印刷','物流・運送・倉庫','教育・子ども・スクール','車・乗り物','冠婚葬祭・イベント・趣味','人材・ビジネスサポート','その他'].includes(m.industry)) { delete m.industry; changed = true; }
   if (m.birthday) { // 生年月日は名簿の「名前とプライベート情報」へ
     const d = String(m.birthday).match(/^(\d{4})-(\d{2})-(\d{2})$/);
     const txt = d ? `${d[1]}年${+d[2]}月${+d[3]}日生まれ` : `生年月日：${m.birthday}`;
@@ -825,7 +834,7 @@ const INDUSTRY_GROUPS = [
 ];
 const INDUSTRY_NAMES = INDUSTRY_GROUPS.map(g => g[0]).concat(['その他']);
 function industryOf(m) {
-  if (m.industry) return m.industry;
+  if (m.industry && INDUSTRY_NAMES.includes(m.industry)) return m.industry;
   const hay = [m.business, m.specialty, m.otoSpecialty, m.bizName, m.companyName, m.businessEn].filter(Boolean).join(' ');
   if (!hay) return 'その他';
   const g = INDUSTRY_GROUPS.find(([, r]) => r.test(hay));
@@ -1122,7 +1131,6 @@ function addReview(data, source) {
   let userPicked = false;
   card.innerHTML = `<h3>${esc(data.name || (manual ? '新規メンバー' : '名前が読み取れませんでした'))}</h3>
     <div class="src">${esc(source)}${manual ? '' : `　／　${filled} 項目を読み取りました。内容を確認・修正してから登録してください。`}</div>
-    ${!manual && source !== 'AIで読み取り' && filled < 8 ? `<div class="howto" style="color:#8a6200">うまく読み取れていない場合は、取り込み画面の「Geminiで読み取る」を使うと、ほぼ手入力なしで項目に入れられます。</div>` : ''}
     <div class="target-box">
       <label><b>登録先</b><select data-a="target"></select></label>
       <label class="mode hidden"><b>同じ項目に内容があるとき</b><select data-a="mode">
@@ -1240,43 +1248,60 @@ async function handleFiles(files) {
     } catch (e) { console.error(e); alert(`${f.name}\n${e.message || e}`); }
   }
 }
-const drop = $('drop');
-drop.onclick = () => $('file').click();
-$('file').onchange = e => { handleFiles([...e.target.files]); e.target.value = ''; };
-['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
-['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
-drop.addEventListener('drop', e => handleFiles([...e.dataTransfer.files]));
 document.addEventListener('dragover', e => e.preventDefault());
-document.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length && !drop.contains(e.target)) { show('import'); handleFiles([...e.dataTransfer.files]); } });
+document.addEventListener('drop', e => {
+  e.preventDefault(); const fs = [...e.dataTransfer.files]; if (!fs.length) return;
+  const ts = fs.filter(f => TS_EXT.has((f.name.split('.').pop() || '').toLowerCase()));
+  if (ts.length) { show('import'); handleTranscripts(ts); }
+  if (ts.length < fs.length) { show('import'); document.querySelector('input[name=aiKind][value=file]').click(); toast('1to1シートは、Geminiに添付して読み取ります（手順2）'); }
+});
 $('manualBtn').onclick = () => addReview({}, '手入力');
-// Webページ：URLを開く → コピー → 貼り付けで自動読み取り
 $('webOpen').onclick = () => {
   const u = $('webUrl').value.trim();
   if (!/^https?:\/\/\S+$/i.test(u)) { toast('https:// から始まるURLを入れてください'); return; }
   window.open(u, '_blank', 'noopener');
   setTimeout(() => $('webPaste').focus(), 300);
 };
-$('webPaste').addEventListener('paste', () => setTimeout(() => {
-  const text = $('webPaste').value.trim(); if (!text) return;
-  const u = $('webUrl').value.trim();
-  const data = parseWebText(text);
-  if (/^https?:\/\//i.test(u)) data.sheetUrl = u;
-  addReview(data, u ? 'Webページ（' + u.replace(/^https?:\/\//, '').slice(0, 50) + '）' : 'Webページ');
-  $('webPaste').value = ''; $('webUrl').value = '';
-}, 0));
+const aiKind = () => (document.querySelector('input[name=aiKind]:checked') || {}).value || 'web';
+document.querySelectorAll('input[name=aiKind]').forEach(r => r.onchange = () => {
+  const web = aiKind() === 'web';
+  $('aiWebBox').classList.toggle('hidden', !web); $('aiFileBox').classList.toggle('hidden', web);
+  $('aiStepsWeb').classList.toggle('hidden', !web); $('aiStepsFile').classList.toggle('hidden', web);
+});
+// 貼り付けたページがBNIの名簿なら、AIなしで正確に取り込める
+function updateWebInfo() {
+  const t = $('webPaste').value.trim();
+  if (!t) { $('webPasteInfo').innerHTML = ''; return; }
+  if (isRosterText(t)) {
+    $('webPasteInfo').innerHTML = `<div class="ok-box">BNIの名簿（メンバー略歴シート）のページです。Geminiを使わずに、このまま全項目を正確に取り込めます。<button class="btn small primary" id="rosterDirect" style="margin-left:6px">このまま取り込む</button></div>`;
+    $('rosterDirect').onclick = () => {
+      const data = parseRosterText(t); const u = $('webUrl').value.trim(); if (/^https?:\/\//i.test(u)) data.sheetUrl = u; data.category = 'BNI';
+      addReview(data, 'BNIの名簿'); $('webPaste').value = ''; $('webUrl').value = ''; updateWebInfo();
+    };
+  } else $('webPasteInfo').innerHTML = `✓ ${t.length.toLocaleString()}文字を貼り付けました。手順2の「指示文をコピー」へ進んでください。`;
+}
+$('webPaste').addEventListener('input', updateWebInfo);
+$('webPaste').addEventListener('paste', () => setTimeout(updateWebInfo, 0));
 
 // 無料のAIで読み取る：指示文をコピー → AIの返答を貼り付け
 const AI_SHEET_FIELDS = ALL_FIELDS.filter(([k]) => !['category', 'date1to1', 'memo', 'sheetUrl'].includes(k));
-$('aiSheetCopy').onclick = async () => { await copyText(buildSheetPrompt(AI_SHEET_FIELDS)); toast('指示文をコピーしました。次に「Geminiを開く」を押してください'); };
+$('aiSheetCopy').onclick = async () => {
+  if (aiKind() === 'web') {
+    const t = $('webPaste').value.trim();
+    if (!t) { toast('先に手順1で、シートのページの内容を貼り付けてください'); $('webPaste').focus(); return; }
+    await copyText(buildSheetPrompt(AI_SHEET_FIELDS, t));
+    toast('指示文とページの内容をコピーしました。Geminiに貼り付けて送信してください');
+  } else { await copyText(buildSheetPrompt(AI_SHEET_FIELDS)); toast('指示文をコピーしました。Geminiに貼り付けて、シートを添付して送信してください'); }
+};
 $('aiSheetGemini').onclick = () => window.open('https://gemini.google.com/', '_blank', 'noopener');
 $('aiSheetPaste').addEventListener('paste', () => setTimeout(() => {
   const text = $('aiSheetPaste').value.trim(); if (!text) return;
   const data = parseAiSheet(text, AI_SHEET_FIELDS);
   if (Object.keys(data).length < 2) { alert('AIの返答から項目を読み取れませんでした。\n「AI用の指示文をコピー」から貼り付けてGeminiに送ったか、Geminiがシートを読めたか（「読み取れません」と返ってきていないか）、返答を全部コピーしたかを確認してください。'); return; }
   data.category = 'BNI';
-  const u = $('aiSheetUrl').value.trim(); if (/^https?:\/\//i.test(u)) data.sheetUrl = u;
-  addReview(data, 'AIで読み取り');
-  $('aiSheetPaste').value = ''; $('aiSheetUrl').value = '';
+  const u = $('webUrl').value.trim(); if (aiKind() === 'web' && /^https?:\/\//i.test(u)) data.sheetUrl = u;
+  addReview(data, 'Geminiで読み取り');
+  $('aiSheetPaste').value = ''; $('webPaste').value = ''; $('webUrl').value = ''; updateWebInfo();
 }, 0));
 
 // ===== 1to1の文字起こし =====
@@ -1712,7 +1737,7 @@ const Wizard = (() => {
         ${chk('fsplace', '保存ファイルを<b>Googleドライブの「マイドライブ」の中</b>に作りました（または開きました）')}`;
     }
     if (step === 4) return `<h2>Gemini（無料のAI）の準備</h2>
-      <p>画像のPDFやCanvaのシートなど、うまく読み取れない1to1シートは、Googleの無料AI「Gemini」に読み取ってもらいます。<b>使わない場合は「あとで」で飛ばせます。</b></p>
+      <p>1to1シートは、Googleの無料AI「Gemini」に読み取ってもらいます。シートの内容がほぼ手入力なしで各項目に入ります。<b>Geminiを使わない場合は、手入力になります。</b></p>
       <ol class="big">
         <li><button class="btn primary small" data-w="gemini">Geminiを開く</button><br>右上の「ログイン」から、<b>Googleドライブと同じGoogleアカウント</b>でログインします。</li>
         <li><b>学習に使われないようにします。</b>画面の左下（または左上の「≡」の中）の<b>「設定とヘルプ」→「アクティビティ」</b>を開きます。</li>
@@ -1724,7 +1749,7 @@ const Wizard = (() => {
       <p>おつかれさまでした。これで、登録や修正をするたびに<b>Googleドライブへ自動で保存</b>されます。</p>
       <ol class="big">
         <li><b>画面右上に「✓ 自動保存中」</b>と出ていれば正しく保存されています。</li>
-        <li>さっそく<b>最初の1人</b>を取り込んでみましょう。「取り込み」画面に1to1シートのPDFをドラッグするか、Geminiで読み取ります。</li>
+        <li>さっそく<b>最初の1人</b>を取り込んでみましょう。「取り込み」画面の手順どおりに、Geminiで1to1シートを読み取ります。</li>
         <li>分からないときは、上の<b>「使い方」</b>にいつでも手順があります。</li>
       </ol>`;
   }

@@ -726,9 +726,10 @@ function parseRosterText(raw) {
 
 // ===== 1to1シートを無料のAIで読み取るための指示文と、その返答の読み取り =====
 // fields: [[key, label, type], ...]（アプリの項目定義）
-function buildSheetPrompt(fields) {
+function buildSheetPrompt(fields, pageText) {
   const lines = fields.map(([k, l, t = '']) => (t.includes('area') ? `【${l}】` : `${l}：`)).join('\n');
-  return `添付したBNIメンバーの1to1シート（PDF・画像・スクリーンショット。複数枚ある場合はすべて）を読み取り、書かれている内容を、下の形式に当てはめて書き出してください。
+  const src = pageText ? '一番下に貼り付けた、BNIメンバーの1to1シート（Webページの内容）' : '添付したBNIメンバーの1to1シート（PDF・画像・Word・PowerPoint。複数ある場合はすべて）';
+  const body = `${src}を読み取り、書かれている内容を、下の形式に当てはめて書き出してください。
 
 ルール：
 ・シートに書かれていることだけを書き、推測や一般論は書かないでください
@@ -737,10 +738,12 @@ function buildSheetPrompt(fields) {
 ・「項目名：」の項目は、同じ行の「：」の後に書いてください
 ・【】の項目は、次の行から書いてください。内容はできるだけ省略せず、元の文章を残してください
 ・下の項目に当てはまらない内容は、【名簿にないその他の項目】に「見出し：内容」の形でまとめてください
-・画像の中の文字も読み取ってください。シートが添付されていない場合や、読み取れない場合は、その旨だけを答えてください
+・ページのメニューや広告など、シートと関係ない文字は無視してください。画像の中の文字も読み取ってください
+・シートが見当たらない場合や、読み取れない場合は、その旨だけを答えてください
 ・前置きやまとめは不要です。下の形式だけを出力してください
 
 ${lines}`;
+  return pageText ? `${body}\n\n---- 1to1シート（Webページの内容）ここから ----\n${pageText}\n---- ここまで ----` : body;
 }
 function parseAiSheet(raw, fields) {
   const norm = v => v.normalize('NFKC').replace(/\s/g, '').toLowerCase();
