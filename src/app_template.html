@@ -224,6 +224,9 @@ mark{background:#ffe58a;padding:0 1px}
   .dl dt{margin-top:6px}
   .detail{padding:18px 16px}
 }
+body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer #upcoming,body.viewer .vwhide{display:none!important}
+body.viewer .detail .row{display:none}
+#viewerBar{background:#eef6ff;border-color:#b9d6f5}
 @media print{header,.actions,.close{display:none}.overlay{position:static;background:none;padding:0}}
 .wz{position:fixed;inset:0;background:rgba(20,22,26,.55);z-index:40;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:28px 12px}
 .wz-box{background:#fff;border-radius:16px;max-width:720px;width:100%;padding:26px 28px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
@@ -259,17 +262,21 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.12.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.13.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
     <button data-view="import">取り込み</button>
     <button data-view="backup">保存・バックアップ</button>
     <button data-view="guide">使い方</button>
+    <button id="viewerBtn" class="vwhide" title="スマホなどで、保存ファイルを選ぶだけで見る（編集・保存はしません）">📱 閲覧専用</button>
   </nav>
 </div></header>
 
 <main>
+  <div id="viewerBar" class="notice hidden"><span id="viewerText"></span><button class="btn small" id="viewerExit">閲覧専用を終了</button></div>
+  <div id="viewerIntro" class="notice hidden" style="background:#eef6ff;border-color:#b9d6f5"><span>📱 <b>スマホでは「閲覧専用」で使えます。</b>パソコンで作った保存ファイル（Googleドライブの「1to1Navi_データ.json」）を選ぶだけで、一覧と詳細が見られます。</span><button class="btn primary small" id="viewerStart">保存ファイルを選んで見る</button></div>
+  <input type="file" id="viewerFile" hidden>
   <div id="storageWarn" class="notice hidden">このブラウザではデータを保存できない設定になっています（プライベートモード等）。「保存・バックアップ」で保存先ファイルを設定してください。</div>
   <div id="resumeBar" class="notice hidden"><span id="resumeText"></span><button class="btn primary small" id="resumeBtn">自動保存を再開</button></div>
   <div id="bniBar" class="notice hidden"><span id="bniText"></span><button class="btn primary small" id="bniBtn">確認する</button></div>
@@ -373,7 +380,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     <h2>1to1 Navi の使い方</h2>
     <p>はじめての方は、まず<button class="btn small primary" id="guideSetup">かんたんセットアップ</button>を行ってください（10分ほど）。データが消えないための設定と、AIの準備を1画面ずつ案内します。</p>
     <div class="toc">
-      <a href="#g1">① 最初にやること</a>　<a href="#g2">② 1to1シートを取り込む</a>　<a href="#g3">③ 1to1を記録する</a>　<a href="#g4">④ BNIコネクトに登録する</a>　<a href="#g5">⑤ 別のパソコンで使う</a>　<a href="#g6">⑥ 困ったとき</a>
+      <a href="#g1">① 最初にやること</a>　<a href="#g2">② 1to1シートを取り込む</a>　<a href="#g3">③ 1to1を記録する</a>　<a href="#g4">④ BNIコネクトに登録する</a>　<a href="#g5">⑤ 別のパソコンで使う</a>　<a href="#g7">スマホで見る</a>　<a href="#g6">⑥ 困ったとき</a>
     </div>
 
     <h3 id="g1">① 最初にやること（1回だけ）</h3>
@@ -426,6 +433,14 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <li>1to1 Naviを開き、「かんたんセットアップ」の保存ファイルの手順で<b>「作成済みの保存ファイルを開く」</b>を選び、マイドライブの「1to1Navi_データ.json」を選びます。</li>
       <li>これで、これまでのデータがそのまま使えます。</li>
     </ol></div>
+
+    <h3 id="g7">スマホで見る（閲覧専用）</h3>
+    <div class="card-g"><ol>
+      <li>登録・編集は<b>パソコン</b>で行います。スマホは<b>見るだけ</b>です。</li>
+      <li>スマホのブラウザでこのページを開き、<b>「📱 閲覧専用」</b>（または青い帯の「保存ファイルを選んで見る」）を押します。</li>
+      <li>Googleドライブの<b>「1to1Navi_データ.json」</b>を選びます（Googleドライブアプリ／ファイルアプリから選べます）。</li>
+      <li>パソコンで更新したあとは、もう一度ファイルを選ぶと最新になります。</li>
+    </ol><p>閲覧専用ではデータをスマホに<b>保存しません</b>（ページを閉じると消えます）。紛失時も安心です。ファイルは他の人に共有しないでください。</p></div>
 
     <h3 id="g6">⑥ 困ったとき</h3>
     <div class="card-g"><ul>
@@ -568,6 +583,8 @@ const Store = (() => {
 })();
 
 let members = [];
+let viewerMode = false; // 閲覧専用：保存ファイルを一時的に開くだけで、この端末には何も保存しない
+const isMobileDev = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (/Mac/i.test(navigator.platform || navigator.userAgent) && navigator.maxTouchPoints > 1);
 let tombstones = {}; // 削除記録（別PCとの同期で復活しないように）
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -575,15 +592,16 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const nameKey = s => (s || '').normalize('NFKC').replace(/\s/g, '');
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2400); }
 async function reload() {
+  if (viewerMode) { renderList(); return; }
   members = await Store.all();
   for (const m of members) if (migrateLegacy(m)) await Store.put(m);
   renderList();
 }
 
 // 変更のたびに呼ぶ
-async function saveMember(m) { await Store.put(m); delete tombstones[m.id]; await Store.set('tombstones', tombstones); await changed(); }
-async function deleteMember(id) { await Store.del(id); tombstones[id] = Date.now(); await Store.set('tombstones', tombstones); await changed(); }
-async function changed() { await reload(); await Store.set('lastChangeAt', Date.now()); AutoSave.schedule(); updateSaveState(); }
+async function saveMember(m) { if (viewerMode) return; await Store.put(m); delete tombstones[m.id]; await Store.set('tombstones', tombstones); await changed(); }
+async function deleteMember(id) { if (viewerMode) return; await Store.del(id); tombstones[id] = Date.now(); await Store.set('tombstones', tombstones); await changed(); }
+async function changed() { if (viewerMode) return; await reload(); await Store.set('lastChangeAt', Date.now()); AutoSave.schedule(); updateSaveState(); }
 
 // ===== 自動保存（File System Access API：Chrome / Edge） =====
 const AutoSave = (() => {
@@ -708,11 +726,11 @@ $('fsForget').onclick = () => AutoSave.forget();
 
 // ===== 画面切り替え =====
 function show(view) {
-  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
+  document.querySelectorAll('nav button[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
   ['list','import','backup','guide'].forEach(v => $('view-' + v).classList.toggle('hidden', v !== view));
   window.scrollTo(0, 0);
 }
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.view));
+document.querySelectorAll('nav button[data-view]').forEach(b => b.onclick = () => show(b.dataset.view));
 
 // ===== 一覧 =====
 function hl(text, terms) {
@@ -1681,6 +1699,32 @@ async function seedAuthor() {
   await Store.set('authorSeeded', AUTHOR_VERSION);
 }
 
+// ===== 閲覧専用モード（スマホ向け） =====
+const Viewer = {
+  open() { $('viewerFile').value = ''; $('viewerFile').click(); },
+  async load(file) {
+    if (!file) return;
+    let obj;
+    try { obj = JSON.parse(await file.text()); } catch (e) { alert('このファイルは読み込めませんでした。「1to1Navi_データ.json」（保存ファイル）を選んでください。'); return; }
+    if (!obj || !Array.isArray(obj.members)) { alert('1to1 Naviの保存ファイルではないようです。「1to1Navi_データ.json」を選んでください。'); return; }
+    viewerMode = true;
+    members = obj.members.filter(m => m && m.id);
+    members.forEach(migrateLegacy);
+    document.body.classList.add('viewer');
+    ['resumeBar','bniBar','remindBar','viewerIntro','storageWarn'].forEach(id => $(id).classList.add('hidden'));
+    $('viewerBar').classList.remove('hidden');
+    $('viewerText').innerHTML = `📱 <b>閲覧専用</b>：${esc(file.name)}（${members.length}人）を表示中。編集・保存はできません。ページを閉じるとデータはこの端末から消えます。`;
+    $('saveState').className = 'save-state ok'; $('saveState').textContent = '閲覧専用'; $('saveState').onclick = null;
+    document.querySelectorAll('nav button[data-view]').forEach(b => b.classList.toggle('hidden', !['list','guide'].includes(b.dataset.view)));
+    closeOverlay(); show('list'); renderList();
+  },
+  exit() { location.reload(); },
+};
+$('viewerBtn').onclick = () => Viewer.open();
+$('viewerStart').onclick = () => Viewer.open();
+$('viewerFile').onchange = e => Viewer.load(e.target.files[0]);
+$('viewerExit').onclick = () => Viewer.exit();
+
 // ===== かんたんセットアップ（初回ウィザード） =====
 const Wizard = (() => {
   const isMac = /Mac/i.test(navigator.platform || navigator.userAgent);
@@ -1698,6 +1742,7 @@ const Wizard = (() => {
         ${ok ? `<div class="ok">✓ このパソコン・ブラウザで使えます</div>`
           : `<div class="ng"><b>このままでは、データの自動保存が使えません。</b><br>${isMobile ? 'スマホ・タブレットではなく、<b>パソコン</b>で開いてください。' : '<b>Google Chrome</b>（または Microsoft Edge）で、このページを開き直してください。'}<br>
             下のボタンでこのページのアドレスをコピーし、${isMobile ? 'パソコンに送ってから' : 'Chromeのアドレス欄に貼り付けて'}開いてください。<br>
+            ${isMobile ? '<button class="btn primary small" data-w="viewer" style="margin-top:6px">スマホでは閲覧専用で見る</button> ' : ''}
             <button class="btn small" data-w="copyurl" style="margin-top:6px">このページのアドレスをコピー</button></div>`}`;
     }
     if (step === 1) return `<h2>個人情報の取り扱いについて</h2>
@@ -1770,6 +1815,7 @@ const Wizard = (() => {
   }
   async function save() { await Store.set('setup', { step, checks }); }
   async function act(a) {
+    if (a === 'viewer') { close(); Viewer.open(); return; }
     if (a === 'copyurl') { await copyText(location.href); toast('アドレスをコピーしました'); return; }
     if (a === 'gdl') { window.open('https://www.google.com/intl/ja/drive/download/', '_blank', 'noopener'); return; }
     if (a === 'gemini') { window.open('https://gemini.google.com/', '_blank', 'noopener'); return; }
@@ -1789,6 +1835,7 @@ const Wizard = (() => {
   return {
     async open(fromStart) { const st = (await Store.get('setup')) || {}; checks = st.checks || {}; step = fromStart ? 0 : (st.step || 0); render(); },
     async autoStart() {
+      if (isMobileDev) return false; // スマホは閲覧専用の案内を出す
       if (await Store.get('setupDone')) return false;
       if (AutoSave.state === 'ok' && (await Store.get('privacyAck'))) return false; // すでに使えている人は出さない
       await this.open(false); return true;
@@ -1808,6 +1855,7 @@ $('guideSetup').onclick = () => Wizard.open(true);
   await AutoSave.init();
   await seedAuthor();
   updateSaveState();
+  if (isMobileDev) $('viewerIntro').classList.remove('hidden');
   await Wizard.autoStart();
 })();
 </script>
