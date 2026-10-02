@@ -262,7 +262,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.13.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.13.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -276,7 +276,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 <main>
   <div id="viewerBar" class="notice hidden"><span id="viewerText"></span><button class="btn small" id="viewerExit">閲覧専用を終了</button></div>
   <div id="viewerIntro" class="notice hidden" style="background:#eef6ff;border-color:#b9d6f5"><span>📱 <b>スマホでは「閲覧専用」で使えます。</b>パソコンで作った保存ファイル（Googleドライブの「1to1Navi_データ.json」）を選ぶだけで、一覧と詳細が見られます。</span><button class="btn primary small" id="viewerStart">保存ファイルを選んで見る</button></div>
-  <input type="file" id="viewerFile" hidden>
+  <input type="file" id="viewerFile" accept="application/json,.json" hidden>
   <div id="storageWarn" class="notice hidden">このブラウザではデータを保存できない設定になっています（プライベートモード等）。「保存・バックアップ」で保存先ファイルを設定してください。</div>
   <div id="resumeBar" class="notice hidden"><span id="resumeText"></span><button class="btn primary small" id="resumeBtn">自動保存を再開</button></div>
   <div id="bniBar" class="notice hidden"><span id="bniText"></span><button class="btn primary small" id="bniBtn">確認する</button></div>
