@@ -271,7 +271,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.15.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.15.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2314,7 +2314,7 @@ Aさんです！
 
 ぜひ1to1お願いします☺️`;
 function connectInfo(m) {
-  const pick = [['name','お名前'],['chapter','チャプター'],['companyName','会社名'],['business','カテゴリー'],['specialty','専門分野'],['otoSpecialty','専門分野（1to1シート）'],['usp','他社にない強み'],['servicesProvided','提供している商品・サービス'],['wantReferrals','紹介してほしい人'],['closing','紹介するときの話の切り出し方'],['hobbies','趣味'],['otherInterests','関心事'],['wish','強い願望'],['successKey','成功の鍵']];
+  const pick = [['name','お名前'],['chapter','チャプター'],['companyName','会社名'],['business','カテゴリー'],['specialty','専門分野'],['otoSpecialty','専門分野（1to1シート）'],['usp','他社にない強み'],['servicesProvided','提供している商品・サービス'],['closing','紹介するときの話の切り出し方'],['hobbies','趣味'],['otherInterests','関心事'],['wish','強い願望'],['successKey','成功の鍵']];
   const lines = pick.filter(([k]) => m[k]).map(([k, l]) => `${l}：${String(m[k]).replace(/\n+/g, ' / ').slice(0, 300)}`);
   const mt = (m.meetings || []).filter(x => x.text).sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
   if (mt) lines.push(`1to1で話した内容（${mt.date || ''}）：${mt.text.replace(/\n+/g, ' / ').slice(0, 1200)}`);
