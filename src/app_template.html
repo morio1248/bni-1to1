@@ -271,7 +271,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.14.2</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.14.3</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -537,7 +537,7 @@ const SECTIONS = [
   { title: 'コンタクトサークル', fields: [['contactTop3','Contact Circle Top3','area'],['contactCircle','コンタクトサークル（紹介し合える・協業しやすい仲間）','area']] },
   { title: '直近10件の顧客リスト', fields: [['recentCustomers','直近10件の顧客','area wide'],['howCame','彼らはどのようにしてあなたの元へやってきましたか？','area'],['servicesProvided','彼らにどのような商品・サービスを提供しましたか？','area'],['averageCustomer','彼らは平均的な顧客でしたか？','area']] },
   { title: 'リファーラルについて', fields: [['otherReferrers','その他のリファーラル提供者にはどんな人がいますか？','area'],['qualityReferral','「質の高い」リファーラルとは？','area'],['mismatch','「不適切な」リファーラルとは？','area']] },
-  { title: '1to1 Navi 独自の項目', fields: [['date1to1','1to1実施日','date'],['sheetUrl','1to1シートのURL'],['industry','業種グループ（空欄なら自動）','select:|士業|保険・金融|不動産・建築・住まい|美容・健康・医療|飲食・食品|IT・Web・通信|広告・デザイン・印刷|物流・運送・倉庫|教育・子ども・スクール|車・乗り物|冠婚葬祭・イベント・趣味|人材・ビジネスサポート|その他'],['otherInfo','名簿にないその他の項目','area wide']] },
+  { title: 'その他の情報', fields: [['date1to1','1to1実施日','date'],['sheetUrl','1to1シートのURL'],['industry','業種グループ（空欄なら自動）','select:|士業|保険・金融|不動産・建築・住まい|美容・健康・医療|飲食・食品|IT・Web・通信|広告・デザイン・印刷|物流・運送・倉庫|教育・子ども・スクール|車・乗り物|冠婚葬祭・イベント・趣味|人材・ビジネスサポート|その他'],['otherInfo','名簿にないその他の項目','area wide']] },
   { title: '自分用メモ', fields: [['memo','メモ（紹介できそうな人、話したこと等）','area wide']] },
 ];
 const ALL_FIELDS = SECTIONS.flatMap(s => s.fields);
