@@ -224,9 +224,14 @@ mark{background:#ffe58a;padding:0 1px}
   .dl dt{margin-top:6px}
   .detail{padding:18px 16px}
 }
-body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer #upcoming,body.viewer .vwhide{display:none!important}
+body.viewer .photo-edit,body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer #upcoming,body.viewer .vwhide{display:none!important}
 body.viewer .detail .row{display:none}
 #viewerBar{background:#eef6ff;border-color:#b9d6f5}
+.av{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#e9eaed;color:#8a8f96;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex:none;vertical-align:middle;overflow:hidden}
+.av.xs{width:26px;height:26px;font-size:12px;margin-right:7px}.av.lg{width:76px;height:76px;font-size:28px}
+.ctop{display:flex;gap:10px;align-items:center;padding-right:26px}
+.photo-edit{display:flex;gap:14px;align-items:center;margin:14px 0 4px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fafafa}
+.photo-edit .hint{font-size:12px;color:var(--sub);margin-top:4px}
 @media print{header,.actions,.close{display:none}.overlay{position:static;background:none;padding:0}}
 .wz{position:fixed;inset:0;background:rgba(20,22,26,.55);z-index:40;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:28px 12px}
 .wz-box{background:#fff;border-radius:16px;max-width:720px;width:100%;padding:26px 28px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
@@ -262,7 +267,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.13.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.14.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -1302,6 +1307,16 @@ function hl(text, terms) {
   terms.forEach(t => { if (!t) return; const re = new RegExp(esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'); s = s.replace(re, m => `<mark>${m}</mark>`); });
   return s;
 }
+const av = (m, cls = '') => m.photo ? `<img class="av ${cls}" src="${esc(m.photo)}" alt="">` : `<span class="av ${cls}">${esc([...(m.name || '?').trim()][0] || '?')}</span>`;
+// 顔写真：正方形に切り抜いて小さくし、JPEGの文字列として項目に保存（保存ファイルにそのまま入る）
+async function resizePhoto(file) {
+  const bmp = await createImageBitmap(file);
+  const side = Math.min(bmp.width, bmp.height), SZ = 256;
+  const c = document.createElement('canvas'); c.width = c.height = SZ;
+  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, SZ, SZ);
+  g.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, SZ, SZ);
+  return c.toDataURL('image/jpeg', 0.82);
+}
 const firstLine = s => (s || '').split('\n').map(x => x.trim()).find(x => x && !/^【.*】$/.test(x)) || '';
 // ===== 一覧：業種グループ・表示切替・絞り込みボタン・お気に入り =====
 const INDUSTRY_GROUPS = [
@@ -1410,8 +1425,8 @@ function renderList() {
     }
     const want = firstLine(m.wantReferrals).replace(/^\d位\s*/, '');
     return `<div class="card" data-id="${m.id}">${star(m)}
-      <div class="biz">${hl(m.business || 'カテゴリー未入力', terms)}</div>
-      <div class="nm">${hl(m.name || '(名前未入力)', terms)}</div>
+      <div class="ctop">${av(m)}<div><div class="biz">${hl(m.business || 'カテゴリー未入力', terms)}</div>
+      <div class="nm">${hl(m.name || '(名前未入力)', terms)}</div></div></div>
       <div class="meta">${hl([m.companyName, m.specialty].filter(Boolean).join('／'), terms)}</div>
       ${catOf(m) === 'BNI以外' ? '<div class="meta"><span class="badge plan">BNI以外</span></div>' : m.chapter ? `<div class="meta">${hl(m.chapter, terms)}チャプター</div>` : ''}
       ${want ? `<div class="want"><b>紹介してほしい：</b>${hl(want, terms)}</div>` : ''}
@@ -1423,7 +1438,7 @@ function renderList() {
   const row = m => {
     const lc = lastContact(m), d = daysSince(lc);
     return `<div class="lrow" data-id="${m.id}">${star(m)}
-      <div class="l-nm"><b>${hl(m.name || '(名前未入力)', terms)}</b>${m.kana ? `<small>${esc(m.kana)}</small>` : ''}</div>
+      <div class="l-nm">${av(m, 'xs')}<b>${hl(m.name || '(名前未入力)', terms)}</b>${m.kana ? `<small>${esc(m.kana)}</small>` : ''}</div>
       <div class="l-biz">${hl(m.business || '', terms)}<span class="m-ch">${catOf(m) === 'BNI以外' ? '　BNI以外' : m.chapter ? '　' + esc(m.chapter) : ''}</span></div>
       <div class="l-co">${hl(m.companyName || '', terms)}</div>
       <div class="l-ch">${catOf(m) === 'BNI以外' ? '<span class="badge plan">BNI以外</span>' : esc(m.chapter || '')}</div>
@@ -1478,7 +1493,7 @@ function openDetail(id) {
     return `<div class="sec"><span class="sec-t">${s.title}</span><dl class="dl">${fs.map(([k, l]) => `<dt>${esc(l)}</dt><dd>${val(k)}</dd>`).join('')}</dl></div>`;
   }).join('');
   $('overlay').innerHTML = `<div class="detail">
-    <div class="head"><div><div class="biz">${esc(m.business || '')}</div><div class="nm">${esc(m.name || '(名前未入力)')}</div>${m.kana ? `<div style="color:var(--sub);font-size:13px">${esc(m.kana)}</div>` : ''}</div>
+    <div class="head"><div style="display:flex;gap:14px;align-items:center">${av(m, 'lg')}<div><div class="biz">${esc(m.business || '')}</div><div class="nm">${esc(m.name || '(名前未入力)')}</div>${m.kana ? `<div style="color:var(--sub);font-size:13px">${esc(m.kana)}</div>` : ''}</div></div>
       <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn small" id="dFav">${m.fav ? '★ お気に入り' : '☆ お気に入りに追加'}</button><button class="btn small close" id="dClose">✕ 閉じる</button></div></div>
     ${body}
     ${m.memo ? `<div class="sec"><span class="sec-t">自分用メモ</span><div style="white-space:pre-wrap">${hl(m.memo, terms)}</div></div>` : ''}
@@ -1590,13 +1605,23 @@ function readForm(root) { const o = {}; root.querySelectorAll('[data-k]').forEac
 function openEdit(m, opts = {}) {
   $('overlay').innerHTML = `<div class="detail"><div class="head"><div class="nm" style="font-size:18px">編集：${esc(m.name || '')}</div><button class="btn small close" id="eClose">✕</button></div>
     ${opts.banner ? `<div class="banner">${opts.banner}</div>` : ''}
+    <div class="photo-edit"><span id="ePhotoAv"></span><div><button class="btn small" id="ePhotoBtn">顔写真を選ぶ</button> <button class="btn small danger" id="ePhotoDel">写真を消す</button><input type="file" id="ePhotoFile" accept="image/*" hidden><div class="hint">パソコンの写真やスクリーンショットを選ぶと、顔まわりが正方形に切り抜かれます。</div></div></div>
     <div id="eForm">${formHtml(m, false, opts.changed)}</div>
     <div class="actions"><button class="btn" id="eCancel">キャンセル</button><button class="btn primary" id="eSave">保存</button></div></div>`;
   $('eClose').onclick = $('eCancel').onclick = () => openDetail(m.id);
+  let photo = m.photo || '';
+  const showPhoto = () => { $('ePhotoAv').innerHTML = av({ ...m, photo }, 'lg'); $('ePhotoDel').classList.toggle('hidden', !photo); };
+  showPhoto();
+  $('ePhotoBtn').onclick = () => $('ePhotoFile').click();
+  $('ePhotoDel').onclick = () => { photo = ''; showPhoto(); };
+  $('ePhotoFile').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try { photo = await resizePhoto(f); showPhoto(); } catch (err) { alert('この画像は読み込めませんでした。JPEG・PNGの写真を選んでください。'); }
+  };
   $('eSave').onclick = async () => {
     const data = readForm($('eForm'));
     if (!data.name) { alert('名前を入力してください'); return; }
-    await saveMember({ id: m.id, createdAt: m.createdAt, source: m.source, meetings: m.meetings, ...data, updatedAt: Date.now() });
+    await saveMember({ id: m.id, createdAt: m.createdAt, source: m.source, sources: m.sources, meetings: m.meetings, fav: m.fav, builtin: m.builtin, authorVersion: m.authorVersion, ...(photo ? { photo } : {}), ...data, updatedAt: Date.now() });
     openDetail(m.id); toast('保存しました');
   };
 }
