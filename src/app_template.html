@@ -228,7 +228,7 @@ mark{background:#ffe58a;padding:0 1px}
   .detail{padding:18px 16px}
   .detail .head{flex-wrap:wrap}.detail .head>div:first-child{flex:1 1 100%}.av.lg{width:56px;height:56px;font-size:22px}
 }
-body.viewer #connectBtn,body.viewer #dConnect,body.viewer .photo-edit,body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer #upcoming,body.viewer .vwhide{display:none!important}
+body.viewer #connectBtn,body.viewer #dConnect,body.viewer .photo-edit,body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer .vwhide{display:none!important}
 body.viewer .detail .row{display:none}
 #viewerBar{background:#eef6ff;border-color:#b9d6f5}
 .av{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#e9eaed;color:#8a8f96;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex:none;vertical-align:middle;overflow:hidden}
@@ -271,7 +271,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.15.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.15.2</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -1532,7 +1532,7 @@ function bindPlanPanel(box, m, rec) {
 function renderUpcoming() {
   const now = today();
   const list = members.flatMap(m => (m.meetings || []).filter(x => x.date && x.date >= now && !x.text && !x.bniDone).map(x => ({ m, x })))
-    .sort((a, b) => (a.x.date + (a.x.time || '')).localeCompare(b.x.date + (b.x.time || ''))).slice(0, 6);
+    .sort((a, b) => (a.x.date + (a.x.time || '')).localeCompare(b.x.date + (b.x.time || ''))).slice(0, 10);
   const el = $('upcoming');
   el.classList.toggle('hidden', !list.length);
   const wd = d => '日月火水木金土'[new Date(d + 'T00:00').getDay()];
