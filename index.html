@@ -143,8 +143,8 @@ mark{background:#ffe58a;padding:0 1px}
 .review .src{color:var(--sub);font-size:12px;margin-bottom:6px}
 /* フォーム */
 .sec{margin-top:16px}
-.sec-t{background:var(--red);color:#fff;font-weight:700;font-size:13px;padding:3px 10px;border-radius:6px;display:inline-block;margin-bottom:8px}
-.sec-t.accent{background:#1f2328}
+.sec-t{color:#3d434a;font-weight:700;font-size:14px;padding:1px 0 1px 10px;border-left:4px solid #e3a3aa;display:inline-block;margin-bottom:2px;letter-spacing:.02em}
+.sec-t.accent{border-left-color:#4b5563}
 .fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px 12px}
 .f{display:flex;flex-direction:column}
 .f.wide{grid-column:1/-1}
@@ -200,14 +200,16 @@ mark{background:#ffe58a;padding:0 1px}
 .detail .head .nm{font-size:22px;font-weight:700}
 .detail .head .biz{color:var(--red);font-weight:700}
 .detail .close{margin-left:auto}
-.dl{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:14px}
-.dl dt{color:var(--sub);font-weight:700}
-.dl dd{margin:0;white-space:pre-wrap}
+.dl{display:grid;grid-template-columns:150px 1fr;gap:0 14px;font-size:15px}
+.dl dt,.dl dd{padding:7px 0;border-bottom:1px solid #eef0f2}
+.dl dt{color:#8a9099;font-weight:400;font-size:12.5px;padding-top:9px}
+.dl dd{margin:0;white-space:pre-wrap;color:#1f2328;font-weight:500}
 .boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .gbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .gbox.hot{border-color:#f0a8af;background:#fffafa}
-.gbox b{color:var(--red);display:block;font-size:13px}
-.gbox div{white-space:pre-wrap;font-size:14px}
+.gbox b{color:#8a9099;font-weight:400;display:block;font-size:12.5px;margin-bottom:3px}
+.gbox.hot b{color:#b4505a}
+.gbox div{white-space:pre-wrap;font-size:15px;color:#1f2328;font-weight:500}
 /* バックアップ */
 .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
 .panel p{margin:4px 0 12px;color:var(--sub);font-size:14px}
@@ -221,8 +223,10 @@ mark{background:#ffe58a;padding:0 1px}
   nav{margin-left:0;width:100%}
   nav button{flex:1;padding:8px 2px;font-size:12.5px;white-space:nowrap;letter-spacing:-.02em}
   .dl{grid-template-columns:1fr}
-  .dl dt{margin-top:6px}
+  .dl dt{margin-top:4px;border-bottom:0;padding-bottom:0}
+  .dl dd{padding-top:2px}
   .detail{padding:18px 16px}
+  .detail .head{flex-wrap:wrap}.detail .head>div:first-child{flex:1 1 100%}.av.lg{width:56px;height:56px;font-size:22px}
 }
 body.viewer .photo-edit,body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer #upcoming,body.viewer .vwhide{display:none!important}
 body.viewer .detail .row{display:none}
@@ -267,7 +271,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.14.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.14.2</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
