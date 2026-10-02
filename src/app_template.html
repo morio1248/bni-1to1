@@ -267,7 +267,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.14.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.14.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -279,7 +279,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </div></header>
 
 <main>
-  <div id="viewerBar" class="notice hidden"><span id="viewerText"></span><button class="btn small" id="viewerExit">閲覧専用を終了</button></div>
+  <div id="viewerBar" class="notice hidden"><span id="viewerText"></span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap"><button class="btn small primary hidden" id="viewerRefresh">最新にする（ファイルを選ぶ）</button><button class="btn small" id="viewerExit">閲覧専用を終了</button></span></div>
   <div id="viewerIntro" class="notice hidden" style="background:#eef6ff;border-color:#b9d6f5"><span>📱 <b>スマホでは「閲覧専用」で使えます。</b>パソコンで作った保存ファイル（Googleドライブの「1to1Navi_データ.json」）を選ぶだけで、一覧と詳細が見られます。</span><button class="btn primary small" id="viewerStart">保存ファイルを選んで見る</button></div>
   <input type="file" id="viewerFile" accept="application/json,.json" hidden>
   <div id="storageWarn" class="notice hidden">このブラウザではデータを保存できない設定になっています（プライベートモード等）。「保存・バックアップ」で保存先ファイルを設定してください。</div>
@@ -444,8 +444,9 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <li>登録・編集は<b>パソコン</b>で行います。スマホは<b>見るだけ</b>です。</li>
       <li>スマホのブラウザでこのページを開き、<b>「📱 閲覧専用」</b>（または青い帯の「保存ファイルを選んで見る」）を押します。</li>
       <li>Googleドライブの<b>「1to1Navi_データ.json」</b>を選びます（Googleドライブアプリ／ファイルアプリから選べます）。</li>
-      <li>パソコンで更新したあとは、もう一度ファイルを選ぶと最新になります。</li>
-    </ol><p>閲覧専用ではデータをスマホに<b>保存しません</b>（ページを閉じると消えます）。紛失時も安心です。ファイルは他の人に共有しないでください。</p></div>
+      <li>最初に「このスマホにコピーを保存しますか？」と聞かれます。保存すると、次からは開くだけで表示されます（ファイルを選び直す必要はありません）。</li>
+      <li>パソコンで更新したあとは、「最新にする」でもう一度ファイルを選ぶと最新になります。</li>
+    </ol><p>コピーを保存しない場合、ページを閉じるとデータは消えます。保存した場合は「データを消して終了」でいつでも消せます。どちらもスマホの画面ロックをかけ、ファイルは他の人に共有しないでください。</p></div>
 
     <h3 id="g6">⑥ 困ったとき</h3>
     <div class="card-g"><ul>
@@ -1726,29 +1727,49 @@ async function seedAuthor() {
 
 // ===== 閲覧専用モード（スマホ向け） =====
 const Viewer = {
+  cached: false,
   open() { $('viewerFile').value = ''; $('viewerFile').click(); },
   async load(file) {
     if (!file) return;
     let obj;
     try { obj = JSON.parse(await file.text()); } catch (e) { alert('このファイルは読み込めませんでした。「1to1Navi_データ.json」（保存ファイル）を選んでください。'); return; }
     if (!obj || !Array.isArray(obj.members)) { alert('1to1 Naviの保存ファイルではないようです。「1to1Navi_データ.json」を選んでください。'); return; }
+    const at = Date.now();
+    // スマホでは、更新（ページの読み込み直し）のたびにファイルを選び直さなくて済むよう、この端末に控えを残せる
+    if (isMobileDev && !this.cached) {
+      if (confirm('次に開いたとき、ファイルを選び直さなくて済むように、このスマホに表示用のコピーを保存しますか？\n\n・OK：保存する（あとで「データを消して終了」でいつでも消せます）\n・キャンセル：保存しない（ページを閉じると消えます）\n\n※コピーには個人情報が含まれます。スマホの画面ロックをかけてください。')) this.cached = true;
+    }
+    if (this.cached) await Store.set('viewerCache', { obj: { members: obj.members }, name: file.name, at });
+    this.show(obj, file.name, at);
+  },
+  show(obj, name, at) {
     viewerMode = true;
     members = obj.members.filter(m => m && m.id);
     members.forEach(migrateLegacy);
     document.body.classList.add('viewer');
     ['resumeBar','bniBar','remindBar','viewerIntro','storageWarn'].forEach(id => $(id).classList.add('hidden'));
     $('viewerBar').classList.remove('hidden');
-    $('viewerText').innerHTML = `📱 <b>閲覧専用</b>：${esc(file.name)}（${members.length}人）を表示中。編集・保存はできません。ページを閉じるとデータはこの端末から消えます。`;
+    const d = new Date(at), when = `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+    $('viewerText').innerHTML = `📱 <b>閲覧専用</b>：${esc(name)}（${members.length}人）　読み込み：${when}<br><span style="font-size:12px;color:var(--sub)">編集・保存はできません。パソコンで更新したら「最新にする」でファイルを選び直してください。${this.cached ? 'このスマホに表示用のコピーを保存しています。' : 'ページを閉じるとデータは消えます。'}</span>`;
+    $('viewerRefresh').classList.remove('hidden');
+    $('viewerExit').textContent = this.cached ? 'データを消して終了' : '閲覧専用を終了';
     $('saveState').className = 'save-state ok'; $('saveState').textContent = '閲覧専用'; $('saveState').onclick = null;
     document.querySelectorAll('nav button[data-view]').forEach(b => b.classList.toggle('hidden', !['list','guide'].includes(b.dataset.view)));
     closeOverlay(); show('list'); renderList();
   },
-  exit() { location.reload(); },
+  async exit() { if (this.cached) await Store.set('viewerCache', null); location.reload(); },
+  async autoStart() {
+    if (!isMobileDev) return false;
+    const c = await Store.get('viewerCache');
+    if (!c || !c.obj) return false;
+    this.cached = true; this.show(c.obj, c.name, c.at); return true;
+  },
 };
 $('viewerBtn').onclick = () => Viewer.open();
 $('viewerStart').onclick = () => Viewer.open();
 $('viewerFile').onchange = e => Viewer.load(e.target.files[0]);
 $('viewerExit').onclick = () => Viewer.exit();
+$('viewerRefresh').onclick = () => Viewer.open();
 
 // ===== かんたんセットアップ（初回ウィザード） =====
 const Wizard = (() => {
@@ -1881,7 +1902,7 @@ $('guideSetup').onclick = () => Wizard.open(true);
   await seedAuthor();
   updateSaveState();
   if (isMobileDev) $('viewerIntro').classList.remove('hidden');
-  await Wizard.autoStart();
+  if (!(await Viewer.autoStart())) await Wizard.autoStart();
 })();
 </script>
 </body>
