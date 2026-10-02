@@ -231,12 +231,14 @@ mark{background:#ffe58a;padding:0 1px}
 body.viewer #connectBtn,body.viewer #dConnect,body.viewer .photo-edit,body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer .vwhide{display:none!important}
 body.viewer .detail .row{display:none}
 #viewerBar{background:#eef6ff;border-color:#b9d6f5}
+.fclose{position:fixed;right:16px;bottom:16px;z-index:30;box-shadow:0 3px 12px rgba(0,0,0,.3);border-radius:99px!important;padding:10px 18px!important;font-size:14px;background:#1f2328!important;color:#fff!important;border-color:#1f2328!important}
+.overlay .detail.has-fclose{padding-bottom:72px}
 .av{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#e9eaed;color:#8a8f96;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex:none;vertical-align:middle;overflow:hidden}
 .av.xs{width:26px;height:26px;font-size:12px;margin-right:7px}.av.lg{width:76px;height:76px;font-size:28px}
 .ctop{display:flex;gap:10px;align-items:center;padding-right:26px}
 .photo-edit{display:flex;gap:14px;align-items:center;margin:14px 0 4px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fafafa}
 .photo-edit .hint{font-size:12px;color:var(--sub);margin-top:4px}
-@media print{header,.actions,.close{display:none}.overlay{position:static;background:none;padding:0}}
+@media print{header,.actions,.close,.fclose{display:none}.overlay{position:static;background:none;padding:0}}
 .wz{position:fixed;inset:0;background:rgba(20,22,26,.55);z-index:40;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:28px 12px}
 .wz-box{background:#fff;border-radius:16px;max-width:720px;width:100%;padding:26px 28px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
 .wz-prog{display:flex;gap:6px;margin-bottom:18px}
@@ -271,7 +273,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.15.2</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.16.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -527,7 +529,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 
 // ===== 項目定義 =====
 const SECTIONS = [
-  { title: 'メンバー情報', fields: [['name','名前'],['kana','ふりがな'],['romaji','ローマ字'],['business','カテゴリー'],['businessEn','カテゴリー（英語表記）'],['bniRole','BNIの役職'],['joinDate','入会日（宣誓式の日）','date'],['category','区分','select:BNI|BNI以外'],['chapter','チャプター'],['region','リージョン']] },
+  { title: 'メンバー情報', fields: [['name','名前'],['kana','ふりがな'],['romaji','ローマ字'],['birthday','生年月日','date'],['business','カテゴリー'],['businessEn','カテゴリー（英語表記）'],['bniRole','BNIの役職'],['joinDate','入会日（宣誓式の日）','date'],['category','区分','select:BNI|BNI以外'],['chapter','チャプター'],['region','リージョン']] },
   { title: 'ビジネス情報', fields: [['companyName','会社名'],['title','肩書・部署'],['phone','電話番号'],['location','郵便番号・住所'],['email','メールアドレス'],['homepage','ホームページ'],['facebook','Facebook']] },
   { title: 'ビジネスについて', fields: [['bizName','事業名'],['specialty','専門分野'],['office','所在地'],['experience','現在のビジネスの経験年数'],['pastJobs','過去に経験した職業','area']] },
   { title: '家族について', fields: [['spouse','配偶者'],['family','その他家族'],['pets','ペット'],['hobbies','趣味','area'],['otherInterests','その他関心事'],['hometown','出身地'],['residence','居住地'],['residenceYears','居住年数']] },
@@ -550,12 +552,6 @@ function migrateLegacy(m) {
   let changed = false;
   for (const x of m.meetings || []) if (x.place && !PLACES.includes(x.place)) { x.place = normPlace(x.place); changed = true; }
   if (m.industry !== undefined && !['士業','保険・金融','不動産・建築・住まい','美容・健康・医療','飲食・食品','IT・Web・通信','広告・デザイン・印刷','物流・運送・倉庫','教育・子ども・スクール','車・乗り物','冠婚葬祭・イベント・趣味','人材・ビジネスサポート','その他'].includes(m.industry)) { delete m.industry; changed = true; }
-  if (m.birthday) { // 生年月日は名簿の「名前とプライベート情報」へ
-    const d = String(m.birthday).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    const txt = d ? `${d[1]}年${+d[2]}月${+d[3]}日生まれ` : `生年月日：${m.birthday}`;
-    if (!(m.privateInfo || '').includes(d ? `${+d[2]}月${+d[3]}日` : m.birthday)) m.privateInfo = m.privateInfo ? txt + '\n' + m.privateInfo : txt;
-    delete m.birthday; changed = true;
-  }
   for (const [o, n] of Object.entries(LEGACY_TO)) if (m[o]) { m[n] = m[n] ? (m[n].includes(m[o]) ? m[n] : m[n] + '\n' + m[o]) : m[o]; delete m[o]; changed = true; }
   for (const [o, l] of Object.entries(LEGACY_LABEL)) if (m[o]) { const line = `${l}：${m[o]}`; if (!(m.otherInfo || '').includes(m[o])) m.otherInfo = m.otherInfo ? m.otherInfo + '\n' + line : line; delete m[o]; changed = true; }
   return changed;
@@ -923,7 +919,7 @@ function ageOf(d) { const b = new Date(d), n = new Date(); if (isNaN(b)) return 
 function openDetail(id) {
   const m = members.find(x => x.id === id); if (!m) return;
   const terms = $('q').value.normalize('NFKC').split(/\s+/).filter(Boolean);
-  const val = k => k === 'birthday' ? esc(m.birthday) + ' ' + ageOf(m.birthday) : (k === 'sheetUrl' && /^https?:\/\//i.test(m[k])) ? `<a href="${esc(m[k])}" target="_blank" rel="noopener">${esc(m[k])}</a>` : hl(m[k], terms);
+  const val = k => k === 'birthday' ? (/^\d{4}-\d{2}-\d{2}$/.test(m.birthday) ? esc(`${+m.birthday.slice(0,4)}年${+m.birthday.slice(5,7)}月${+m.birthday.slice(8,10)}日`) + ' ' + ageOf(m.birthday) : esc(m.birthday)) : (k === 'sheetUrl' && /^https?:\/\//i.test(m[k])) ? `<a href="${esc(m[k])}" target="_blank" rel="noopener">${esc(m[k])}</a>` : hl(m[k], terms);
   const body = SECTIONS.map(s => {
     const fs = s.fields.filter(([k]) => m[k] && !['name','kana','memo'].includes(k));
     if (!fs.length) return '';
@@ -969,6 +965,9 @@ function openDetail(id) {
       <button class="btn primary" id="dEdit">編集</button>
     </div></div>`;
   $('overlay').classList.remove('hidden');
+  $('overlay').querySelector('.detail').classList.add('has-fclose');
+  $('overlay').querySelector('.detail').insertAdjacentHTML('beforeend', '<button class="btn fclose" id="dClose2">✕ 閉じる</button>');
+  $('dClose2').onclick = closeOverlay;
   $('dClose').onclick = closeOverlay;
   $('dConnect').onclick = () => openConnect(m.id);
   $('dFav').onclick = async () => { await toggleFav(m.id); openDetail(m.id); };
@@ -1661,12 +1660,13 @@ $('wipe').onclick = async () => {
 };
 
 $('bmkSetupTab').innerHTML = bookmarkletSetup();
-const AUTHOR_VERSION = 5;
+const AUTHOR_VERSION = 6;
 const AUTHOR = {
  "id": "author-saito-masahiro",
  "builtin": "author",
  "category": "BNI",
  "name": "斎藤政宏",
+ "birthday": "1990-06-10",
  "kana": "さいとうまさひろ",
  "chapter": "F×R",
  "region": "東京MS",
