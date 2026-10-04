@@ -273,7 +273,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.16.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.17.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -378,6 +378,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       </div>
       <div class="drop small" id="tsDrop"><b>文字起こしファイルをドラッグ</b>　またはクリックして選択<br><small>.txt .vtt .srt .docx .pdf .csv .json .md（Zoom・Google Meet・Teams・Notion・tl;dv・Otter・スマホアプリ等の書き出し）</small></div>
       <input type="file" id="tsFile" accept=".txt,.md,.vtt,.srt,.docx,.pdf,.csv,.tsv,.json" multiple hidden>
+      <div class="rec-gemini"><b>📝 文字起こしのテキストがある場合</b>：下の枠に貼り付け →「<button class="btn small primary" id="tsTCopy">AI用にコピー</button>」→ Geminiに貼り付けて送信 → 返答をコピーして、<b>同じ枠に貼り直して</b>保存（元の文字起こしも一緒に保存されます）</div>
       <textarea id="tsPaste" placeholder="ここに、Geminiの返答や文字起こし・議事録を貼り付けて「保存」" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px"></textarea>
       <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn primary" id="tsSave">貼り付けた内容を保存</button></div>
       <div class="note">取り込んだ文字起こしは、そのメンバーの「1to1の記録」に保存され、検索の対象になります。記録の「AI用にコピー」から、Geminiで相手の情報を各項目に反映できます。</div>
@@ -431,6 +432,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     <div class="card-g"><ol>
       <li>メンバー一覧でその人を開き、「＋ 1to1を予定する」で日時を入れると、Googleカレンダーにも登録できます。</li>
       <li>1to1が終わったら、その記録の「<b>議事録・録音を追加</b>」を押し、議事録や文字起こしを貼り付けて保存します。あとから入れる分も同じ記録に追記されます（まだ記録がなければ「＋ 1to1を記録」で作ります）。</li>
+      <li><b>文字起こしのテキストがある場合</b>は、枠に貼り付けて「AI用にコピー」→ Geminiに貼り付けて送信 → 返答を同じ枠に貼り直して保存します（要約・相手の事業・紹介の可能性・次のアクションに整理され、元の文字起こしも一緒に残ります）。</li>
       <li><b>録音がある場合</b>は、同じ画面の「文字起こし用の指示文をコピー」→「Geminiを開く」→ 貼り付けて録音ファイルを添付して送信 → 返答をコピーして貼り付けます。要約と文字起こしが入ります。</li>
       <li>記録の「AI用にコピー」→ Geminiに貼り付け → 返答を「AIの返答を貼る」に貼ると、話の中で分かった相手の情報が各項目に反映されます。</li>
     </ol><p>録音・文字起こしは、必ず相手の了承を得てから行ってください。</p></div>
@@ -1511,6 +1513,8 @@ function openDetail(id) {
         <div class="mtg-add hidden">
           <div class="rec-gemini" style="margin-top:0"><b>🎙 録音がある場合</b>：<button class="btn small primary" data-r="copy">文字起こし用の指示文をコピー</button> <button class="btn small" data-r="open">Geminiを開く</button><br>
             <span style="font-size:13px">Geminiに <kbd>Ctrl</kbd>＋<kbd>V</kbd> →「＋」→「ファイルをアップロード」で録音ファイルを添付して送信 → 返答をコピーして下に貼り付け</span></div>
+          <div class="rec-gemini"><b>📝 文字起こしのテキストがある場合</b>：下の枠に貼り付け →「<button class="btn small primary" data-r="tcopy">AI用にコピー</button>」→ Geminiに貼り付けて送信 → 返答をコピーして、<b>同じ枠に貼り直して</b>保存<br>
+            <span style="font-size:12px;color:var(--sub)">元の文字起こしも一緒に保存されます。</span></div>
           <textarea placeholder="Geminiの返答、または文字起こし・議事録（Notion・Zoom・Google Meet など）を貼り付け"></textarea>
           <div class="row" style="justify-content:space-between;margin-top:6px"><label class="btn small">ファイルから<input type="file" accept=".txt,.md,.vtt,.srt,.docx,.pdf,.csv,.tsv,.json" hidden></label><button class="btn small primary" data-r="save">この1to1に${x.text ? '追記' : '保存'}</button></div>
         </div>
@@ -1557,8 +1561,15 @@ function openDetail(id) {
     const addBox = box.querySelector('.mtg-add');
     addBox.querySelector('[data-r=open]').onclick = () => window.open('https://gemini.google.com/', '_blank', 'noopener');
     addBox.querySelector('[data-r=copy]').onclick = async () => { await copyText(buildRecordingPrompt(m.name, rec.date)); toast('指示文をコピーしました。Geminiに貼り付けて、録音ファイルを添付して送信してください'); };
+    addBox.querySelector('[data-r=tcopy]').onclick = async () => {
+      const t = addBox.querySelector('textarea').value.trim(); if (!t) { toast('先に下の枠へ文字起こしを貼り付けてください'); return; }
+      if (!(await ensureAiAck())) return;
+      addBox._orig = t;
+      await copyText(buildTranscriptSummaryPrompt(m.name, rec.date, t)); toast('指示文と文字起こしをコピーしました。Geminiに貼り付けて送信し、返答を同じ枠に貼り直してください');
+    };
     addBox.querySelector('[data-r=save]').onclick = async () => {
-      const raw = addBox.querySelector('textarea').value.trim(); if (!raw) { toast('内容を貼り付けてください'); return; }
+      let raw = addBox.querySelector('textarea').value.trim(); if (!raw) { toast('内容を貼り付けてください'); return; }
+      raw = withOriginal(raw, addBox._orig);
       await appendToMeeting(m.id, rec.id, { text: /【文字起こし】|【要約】/.test(raw) ? raw : cleanTranscript(raw, 'txt'), source: '貼り付け', date: rec.date });
       toast(rec.text ? '追記しました' : '保存しました'); openDetail(m.id);
     };
@@ -1908,9 +1919,7 @@ async function addMeeting(memberId, rec) {
   if (rec.date && (!m.date1to1 || rec.date > m.date1to1)) next.date1to1 = rec.date;
   await saveMember(next);
 }
-function buildRecordingPrompt(name, date) {
-  return `添付した録音は、BNIの1to1ミーティング（${date ? date + '、' : ''}相手：${name || '相手の方'}さん）の音声です。
-次の形式で日本語で書き出してください。前置きや装飾（太字・表）は不要です。
+const SUMMARY_FORMAT = `次の形式で日本語で書き出してください。前置きや装飾（太字・表）は不要です。
 
 【要約】
 ・話した内容を5〜10行の箇条書きで
@@ -1919,9 +1928,29 @@ function buildRecordingPrompt(name, date) {
 【紹介・協業の可能性】
 ・誰を紹介できそうか、相手から何を紹介してもらえそうか
 【次のアクション】
-・約束したこと・宿題（誰が・何を）
+・約束したこと・宿題（誰が・何を）`;
+function buildRecordingPrompt(name, date) {
+  return `添付した録音は、BNIの1to1ミーティング（${date ? date + '、' : ''}相手：${name || '相手の方'}さん）の音声です。
+${SUMMARY_FORMAT}
 【文字起こし】
 話者ごとに「話者名：発言」の形で、省略せずに書き起こしてください。話者名が分からない場合は「自分」「相手」としてください。`;
+}
+// 文字起こしのテキストをAIに渡して、録音と同じ形式（要約・事業・紹介・次のアクション）にしてもらう指示文
+function buildTranscriptSummaryPrompt(name, date, transcript) {
+  return `以下は、BNIの1to1ミーティング（${date ? date + '、' : ''}相手：${name || '相手の方'}さん）の文字起こしです。内容は変えず、書かれていることだけを使ってください。
+${SUMMARY_FORMAT}
+
+【文字起こし】
+${transcript}`;
+}
+// AIの返答が「要約つき」で、文字起こしが含まれていないときは、元の文字起こしを付けて保存する
+function withOriginal(raw, orig) {
+  return orig && /【要約】/.test(raw) && !/【文字起こし】/.test(raw) ? raw + '\n\n【文字起こし】\n' + cleanTranscript(orig, 'txt') : raw;
+}
+async function ensureAiAck() {
+  if (await Store.get('aiAck')) return true;
+  if (!confirm('AIに送る前に確認してください。\n\n・この1to1の録音・文字起こしについて、相手の了承を得ていますか？\n・Geminiのアクティビティ（学習）をオフにしていますか？\n\n両方OKなら「OK」を押してください（次回からは表示しません）。')) return false;
+  await Store.set('aiAck', true); return true;
 }
 // 既存の記録に文字起こし・議事録を追記（空なら入れる）
 async function appendToMeeting(memberId, meetingId, add) {
@@ -1974,9 +2003,19 @@ $('tsFile').onchange = e => { const fs = [...e.target.files]; e.target.value = '
 ['dragenter','dragover'].forEach(ev => $('tsDrop').addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); $('tsDrop').classList.add('over'); }));
 ['dragleave','drop'].forEach(ev => $('tsDrop').addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); $('tsDrop').classList.remove('over'); }));
 $('tsDrop').addEventListener('drop', e => handleTranscripts([...e.dataTransfer.files]));
+let tsOrig = '';
+$('tsTCopy').onclick = async () => {
+  const id = tsTarget(); if (!id) return;
+  const t = $('tsPaste').value.trim(); if (!t) { toast('先に下の枠へ文字起こしを貼り付けてください'); return; }
+  if (!(await ensureAiAck())) return;
+  const m = members.find(x => x.id === id);
+  tsOrig = t;
+  await copyText(buildTranscriptSummaryPrompt(m && m.name, $('tsDate').value, t)); toast('指示文と文字起こしをコピーしました。Geminiに貼り付けて送信し、返答を同じ枠に貼り直してください');
+};
 $('tsSave').onclick = async () => {
   const id = tsTarget(); if (!id) return;
-  const raw = $('tsPaste').value.trim(); if (!raw) { toast('文字起こしを貼り付けてください'); return; }
+  let raw = $('tsPaste').value.trim(); if (!raw) { toast('文字起こしを貼り付けてください'); return; }
+  raw = withOriginal(raw, tsOrig); tsOrig = '';
   await saveTranscriptTo(id, $('tsTarget').value, { date: $('tsDate').value || guessDate(raw.slice(0, 300)) || today(), title: $('tsTitle').value.trim() || '1to1', source: '貼り付け', text: /【文字起こし】|【要約】/.test(raw) ? raw : cleanTranscript(raw, 'txt') });
   $('tsPaste').value = ''; $('tsTitle').value = ''; $('tsDate').value = ''; refreshTsTargets();
   toast('記録しました'); openDetail(id);
