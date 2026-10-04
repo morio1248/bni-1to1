@@ -273,7 +273,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.17.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.17.2</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2405,21 +2405,30 @@ ${connectInfo(b)}`;
 }
 async function openConnect(aId) {
   const list = [...members].sort((x, y) => (x.kana || x.name || '').localeCompare(y.kana || y.name || '', 'ja'));
-  const opts = sel => `<option value="">（選んでください）</option>` + list.map(m => `<option value="${m.id}" ${m.id === sel ? 'selected' : ''}>${esc(m.name || '(名前なし)')}${m.business ? '（' + esc(m.business) + '）' : ''}</option>`).join('');
+  const sel = { A: aId || '', B: '' };
+  const hay = m => [m.name, m.kana, m.romaji, m.business, m.companyName, m.specialty, m.chapter].filter(Boolean).join(' ').normalize('NFKC').toLowerCase();
+  const pickBox = (w, label) => `<div class="f"><label>${label}　<span id="c${w}sel" style="color:var(--red);font-weight:700"></span></label><input type="search" id="c${w}q" placeholder="名前・業種・会社名で検索" style="margin-bottom:4px"><select id="c${w}" size="6" style="width:100%"></select></div>`;
   const sample = (await Store.get('connectSample')) || CONNECT_SAMPLE;
   $('overlay').innerHTML = `<div class="detail">
     <div class="head"><div class="nm" style="font-size:18px">🤝 お繋ぎ文を作る</div><button class="btn small close" id="cClose">✕ 閉じる</button></div>
     <p class="howto" style="margin:10px 0">1to1した2人を、Messengerのグループでつなぐ文章を作ります。2人を選び、指示文をコピーして、Geminiに貼り付けて送信してください。出てきた文章をそのままグループに貼れます。</p>
-    <div class="fields"><div class="f"><label>1人目</label><select id="cA">${opts(aId)}</select></div><div class="f"><label>2人目</label><select id="cB">${opts('')}</select></div>
+    <div class="fields">${pickBox('A', '1人目')}${pickBox('B', '2人目')}
       <div class="f wide"><label>今回の補足（任意。例：金沢の話で盛り上がった、〇〇の悩みを抱えている）</label><input id="cNote" type="text"></div>
       <div class="f wide"><details><summary style="cursor:pointer;color:var(--sub);font-size:13px">お手本の文章（自分の口調）を見る・直す</summary><textarea id="cSample" rows="12" style="width:100%;margin-top:6px;border:1px solid var(--line);border-radius:7px;padding:8px">${esc(sample)}</textarea><div class="howto">普段送っている文章に書き換えると、口調が近づきます（この端末に保存されます）。</div></details></div></div>
     <div class="row" style="margin-top:12px"><button class="btn primary" id="cCopy">指示文をコピー</button><button class="btn" id="cGem">Geminiを開く</button></div>
     <p class="howto">※AIに送る前に：Geminiのアクティビティ（学習）をオフにしていることを確認してください。送られるのは事業・人柄の情報だけで、家族や生年月日は含みません。</p></div>`;
   $('overlay').classList.remove('hidden');
   $('cClose').onclick = closeOverlay;
+  const fill = w => {
+    const terms = $('c' + w + 'q').value.normalize('NFKC').toLowerCase().split(/\s+/).filter(Boolean);
+    const hit = list.filter(m => terms.every(t => hay(m).includes(t)));
+    $('c' + w).innerHTML = hit.length ? hit.map(m => `<option value="${m.id}" ${m.id === sel[w] ? 'selected' : ''}>${esc(m.name || '(名前なし)')}${m.business ? '（' + esc(m.business) + '）' : ''}</option>`).join('') : '<option disabled>該当する人がいません</option>';
+    const cur = members.find(x => x.id === sel[w]); $('c' + w + 'sel').textContent = cur ? '→ ' + (cur.name || '') + ' さん' : '';
+  };
+  ['A', 'B'].forEach(w => { fill(w); $('c' + w + 'q').addEventListener('input', () => fill(w)); $('c' + w).addEventListener('change', e => { sel[w] = e.target.value; fill(w); }); });
   $('cGem').onclick = () => window.open('https://gemini.google.com/', '_blank', 'noopener');
   $('cCopy').onclick = async () => {
-    const a = members.find(x => x.id === $('cA').value), b = members.find(x => x.id === $('cB').value);
+    const a = members.find(x => x.id === sel.A), b = members.find(x => x.id === sel.B);
     if (!a || !b) { toast('2人を選んでください'); return; }
     if (a.id === b.id) { toast('別の2人を選んでください'); return; }
     if (!(await Store.get('aiAck'))) {
