@@ -273,7 +273,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.17.2</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.17.3</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -787,8 +787,8 @@ function lastContact(m) {
 }
 const daysSince = d => d ? Math.floor((new Date(today()) - new Date(d)) / 86400000) : Infinity;
 const QUICK = [
-  ['all', 'すべて'], ['fav', '★お気に入り'], ['mine', '自分のチャプター'], ['other', '他チャプター'], ['nonbni', 'BNI以外'],
-  ['bnitodo', 'BNIコネクト未登録'], ['recent', '最近1to1した人'], ['long', 'しばらく会っていない人'],
+  ['all', 'すべて'], ['long', 'しばらく会っていない人'], ['fav', '★お気に入り'], ['recent', '最近1to1した人'],
+  ['mine', '自分のチャプター'], ['other', '他チャプター'], ['nonbni', 'BNI以外'], ['bnitodo', 'BNIコネクト未登録'],
 ];
 let quick = 'all', viewMode = 'card', groupBy = true;
 const openGroups = new Set();
