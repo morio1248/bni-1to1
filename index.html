@@ -53,9 +53,9 @@ h2{font-size:18px;margin:0 0 12px}
 .tools input[type=search]{flex:1;min-width:200px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}
 .tools select{padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
 .count{color:var(--sub);font-size:13px;margin:-4px 0 12px}
-.quick{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 12px}
-.qchip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink)}
-.qchip span{margin-left:6px;font-weight:400;color:var(--sub);font-size:12px}
+.quick{display:flex;gap:4px;flex-wrap:wrap;margin:-4px 0 12px}
+.qchip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:5px 8px;font-size:12.5px;white-space:nowrap;font-weight:700;cursor:pointer;color:var(--ink)}
+.qchip span{margin-left:4px;font-weight:400;color:var(--sub);font-size:12px}
 .qchip.on{background:var(--red);border-color:var(--red);color:#fff}.qchip.on span{color:#fde}
 .vtoggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .vtoggle button{border:0;background:none;padding:8px 12px;cursor:pointer;font-weight:700;color:var(--sub)}
@@ -1351,8 +1351,8 @@ function lastContact(m) {
 }
 const daysSince = d => d ? Math.floor((new Date(today()) - new Date(d)) / 86400000) : Infinity;
 const QUICK = [
-  ['all', 'すべて'], ['long', 'しばらく会っていない人'], ['fav', '★お気に入り'], ['recent', '最近1to1した人'],
-  ['mine', '自分のチャプター'], ['other', '他チャプター'], ['nonbni', 'BNI以外'], ['bnitodo', 'BNIコネクト未登録'],
+  ['all', 'すべて'], ['fav', '★お気に入り'], ['mine', '自分のチャプター'], ['other', '他チャプター'], ['nonbni', 'BNI以外'],
+  ['bnitodo', 'BNIコネクト未登録'], ['recent', '最近1to1した人'], ['long', 'しばらく会っていない人'],
 ];
 let quick = 'all', viewMode = 'card', groupBy = true;
 const openGroups = new Set();
