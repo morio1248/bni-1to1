@@ -273,7 +273,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.17.3</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.18.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -361,6 +361,24 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     </div>
     <div class="row" style="margin-top:10px;justify-content:flex-end">
       <button class="btn" id="manualBtn">白紙から手入力する</button>
+    </div>
+    <div class="web" id="nmPanel">
+      <div class="web-t">🆕 はじめての方を、打ち合わせの文字起こしから新規登録する</div>
+      <p class="howto" style="margin:4px 0 8px">自己紹介のPDFやシートがない方（BNI以外の方など）を、打ち合わせの文字起こしだけで登録します。AIが会話から名前・事業・家族・趣味などを抜き出し、確認画面で直してから登録できます。文字起こしは、その方の「1to1の記録」にも保存されます。</p>
+      <div class="row">
+        <select id="nmCat"><option value="BNI以外">BNI以外の方</option><option value="BNI">BNIメンバー</option></select>
+        <input type="date" id="nmDate" title="打ち合わせの日付">
+        <label class="btn small">ファイルから読み込む<input type="file" id="nmFile" accept=".txt,.md,.vtt,.srt,.docx,.pdf,.csv,.tsv,.json" hidden></label>
+      </div>
+      <ol class="steps">
+        <li>下の枠① に、打ち合わせの文字起こしを貼り付ける（または上の「ファイルから読み込む」）</li>
+        <li><button class="btn small primary" id="nmCopy">新規登録用の指示文をコピー</button> → <button class="btn small" id="nmGemini">Geminiを開く</button> に <kbd>Ctrl</kbd>＋<kbd>V</kbd> で貼り付けて送信</li>
+        <li>返答をコピーして、下の枠② に貼り付け →「確認画面を開く」</li>
+      </ol>
+      <textarea id="nmPaste" placeholder="① 文字起こしを貼り付け" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px"></textarea>
+      <textarea id="nmReply" placeholder="② Geminiの返答を貼り付け" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:6px"></textarea>
+      <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn primary" id="nmOpen">確認画面を開く</button></div>
+      <div class="caution"><b>録音・文字起こしは、必ず事前に相手の了承を得てください。</b>Geminiのアクティビティ（学習）をオフにしてから使ってください。</div>
     </div>
     <div class="web" id="tsPanel">
       <div class="web-t">1to1ミーティングの文字起こしを取り込む</div>
@@ -1668,7 +1686,7 @@ function mergeInto(base, f, mode, source) {
   }
   return stat;
 }
-function addReview(data, source) {
+function addReview(data, source, extra = {}) {
   data = { ...data }; migrateLegacy(data);
   const manual = source === '手入力';
   const card = document.createElement('div');
@@ -1725,6 +1743,7 @@ function addReview(data, source) {
     base.source = source; base.updatedAt = Date.now();
     await saveMember(base);
     lastImportTarget = base.id;
+    if (extra.meeting) await addMeeting(base.id, { ...extra.meeting });
     const plan = readPlan(card.querySelector('.plan-box'));
     if (plan.date) {
       const rec = { id: uid(), createdAt: Date.now(), title: '1to1', source: '予定', text: '', ...plan };
@@ -2025,6 +2044,53 @@ function renderTsMembers() {
   const list = [...members].sort((a, b) => (a.kana || a.name || '').localeCompare(b.kana || b.name || '', 'ja'));
   $('tsMember').innerHTML = `<option value="">${members.length ? '誰との1to1ですか？（メンバーを選択）' : '先にメンバーを登録してください'}</option>` + list.map(m => `<option value="${m.id}" ${m.id === cur ? 'selected' : ''}>${esc(m.name || '(名前なし)')}${m.business ? '（' + esc(m.business) + '）' : ''}</option>`).join('');
 }
+
+// ===== 文字起こしから新規メンバーを登録 =====
+const nmFields = () => [['name', '名前'], ['kana', 'ふりがな']].concat(trFields().filter(([k]) => !['bniTopic', 'chapter', 'region', 'bniRole', 'businessEn'].includes(k)));
+function buildNewMemberPrompt(transcript) {
+  const lines = nmFields().map(([k, l, t = '']) => (t.includes('area') ? `【${l}】` : `${l}：`)).join('\n');
+  return `以下は、はじめて会った方との打ち合わせ（BNIの1to1など）の議事録・文字起こしです。
+記録した本人ではなく、相手の方について、会話の中で実際に話された情報だけを、下の項目に当てはめて書き出してください。
+
+ルール：
+・会話に出てこなかった項目は、項目名ごと省略してください
+・推測や一般論は書かないでください。書かれていることを盛らないでください
+・名前は、会話に出てくる相手の方のフルネームを書いてください（分からなければ省略）
+・「カテゴリー」には、相手の方の業種・職種を短く書いてください（例：税理士、美容室）
+・項目名は下の表記のまま変えないでください（言い換え・番号・太字・表・コードブロックは使わない）
+・「項目名：」の項目は、同じ行の「：」の後に書いてください
+・【】の項目は、次の行から「・」の箇条書きで書いてください
+・【1to1のメモ】には、次にやること・約束したこと・紹介できそうな人を書いてください
+・前置きやまとめは不要です。下の形式だけを出力してください
+
+${lines}
+
+---- 議事録・文字起こし ここから ----
+${transcript}
+---- 議事録・文字起こし ここまで ----`;
+}
+$('nmGemini').onclick = () => window.open('https://gemini.google.com/', '_blank', 'noopener');
+$('nmFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { const r = await readTranscript(f); $('nmPaste').value = r.text; if (!$('nmDate').value) $('nmDate').value = r.date; toast(`${f.name} を読み込みました`); }
+  catch (err) { alert(`${f.name}\n${err.message || err}`); }
+};
+$('nmCopy').onclick = async () => {
+  const t = $('nmPaste').value.trim(); if (!t) { toast('先に枠①へ文字起こしを貼り付けてください'); return; }
+  if (!(await ensureAiAck())) return;
+  await copyText(buildNewMemberPrompt(t)); toast('指示文と文字起こしをコピーしました。Geminiに貼り付けて送信し、返答を枠②に貼り付けてください');
+};
+$('nmOpen').onclick = () => {
+  const reply = $('nmReply').value.trim(), t = $('nmPaste').value.trim();
+  if (!reply) { toast('枠②にGeminiの返答を貼り付けてください'); return; }
+  const r = parseAiSheet(reply, nmFields());
+  if (Object.keys(r).length < 2) { alert('AIの返答から項目を読み取れませんでした。「新規登録用の指示文」をコピーしてAIに送ったか確認してください。'); return; }
+  const date = $('nmDate').value || guessDate(t.slice(0, 300)) || today();
+  const data = { ...r, category: $('nmCat').value, date1to1: date };
+  const meeting = t ? { date, title: '1to1', source: '貼り付け', text: cleanTranscript(t, 'txt') } : null;
+  addReview(data, '文字起こしから', { meeting });
+  $('nmReply').value = ''; $('nmPaste').value = ''; $('nmDate').value = '';
+};
 async function copyText(s) {
   try { await navigator.clipboard.writeText(s); }
   catch (e) { const ta = document.createElement('textarea'); ta.value = s; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
