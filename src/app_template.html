@@ -228,7 +228,7 @@ mark{background:#ffe58a;padding:0 1px}
   .detail{padding:18px 16px}
   .detail .head{flex-wrap:wrap}.detail .head>div:first-child{flex:1 1 100%}.av.lg{width:56px;height:56px;font-size:22px}
 }
-body.viewer #connectBtn,body.viewer #dConnect,body.viewer .photo-edit,body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer .vwhide{display:none!important}
+body.viewer #connectBtn,body.viewer #dConnect,body.viewer #slotBtn,body.viewer #dSlot,body.viewer .photo-edit,body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer .vwhide{display:none!important}
 body.viewer .detail .row{display:none}
 #viewerBar{background:#eef6ff;border-color:#b9d6f5}
 .fclose{position:fixed;right:16px;bottom:16px;z-index:30;box-shadow:0 3px 12px rgba(0,0,0,.3);border-radius:99px!important;padding:10px 18px!important;font-size:14px;background:#1f2328!important;color:#fff!important;border-color:#1f2328!important}
@@ -273,7 +273,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.18.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.19.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -309,7 +309,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     </div>
     <div class="quick" id="quick"></div>
     <div class="upcoming hidden" id="upcoming"></div>
-    <div class="row" style="margin:-4px 0 10px"><button class="btn small" id="connectBtn" title="1to1した2人をMessengerのグループでつなぐ文章を、AI用の指示文として作ります">🤝 お繋ぎ文を作る</button><span class="count" id="count" style="margin:0 0 0 8px"></span></div>
+    <div class="row" style="margin:-4px 0 10px"><button class="btn small" id="connectBtn" title="1to1した2人をMessengerのグループでつなぐ文章を、AI用の指示文として作ります">🤝 お繋ぎ文を作る</button><button class="btn small" id="slotBtn" style="margin-left:6px" title="空いている日時から、1to1の候補日の文章を作ります">📅 候補日を作る</button><span class="count" id="count" style="margin:0 0 0 8px"></span></div>
     <div class="grid" id="grid"></div>
   </section>
 
@@ -951,7 +951,7 @@ function openDetail(id) {
   }).join('');
   $('overlay').innerHTML = `<div class="detail">
     <div class="head"><div style="display:flex;gap:14px;align-items:center">${av(m, 'lg')}<div><div class="biz">${esc(m.business || '')}</div><div class="nm">${esc(m.name || '(名前未入力)')}</div>${m.kana ? `<div style="color:var(--sub);font-size:13px">${esc(m.kana)}</div>` : ''}</div></div>
-      <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn small" id="dFav">${m.fav ? '★ お気に入り' : '☆ お気に入りに追加'}</button><button class="btn small" id="dConnect">🤝 お繋ぎ文</button><button class="btn small close" id="dClose">✕ 閉じる</button></div></div>
+      <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn small" id="dFav">${m.fav ? '★ お気に入り' : '☆ お気に入りに追加'}</button><button class="btn small" id="dConnect">🤝 お繋ぎ文</button><button class="btn small" id="dSlot">📅 候補日</button><button class="btn small close" id="dClose">✕ 閉じる</button></div></div>
     ${body}
     ${m.memo ? `<div class="sec"><span class="sec-t">自分用メモ</span><div style="white-space:pre-wrap">${hl(m.memo, terms)}</div></div>` : ''}
     <div class="sec"><span class="sec-t accent">1to1の記録</span>
@@ -992,6 +992,7 @@ function openDetail(id) {
   $('dClose2').onclick = closeOverlay;
   $('dClose').onclick = closeOverlay;
   $('dConnect').onclick = () => openConnect(m.id);
+  $('dSlot').onclick = () => openSlots(m.id);
   $('dFav').onclick = async () => { await toggleFav(m.id); openDetail(m.id); };
   $('dDel').onclick = async () => { if (!confirm(`${m.name || 'このメンバー'} を削除しますか？`)) return; await deleteMember(m.id); closeOverlay(); toast('削除しました'); };
   $('dEdit').onclick = () => openEdit(m);
@@ -1944,6 +1945,183 @@ async function openConnect(aId) {
   };
 }
 $('connectBtn').onclick = () => openConnect('');
+
+// ===== 1to1の候補日を作る（空き時間から候補を出して、Messenger等に貼る文章にする） =====
+let slotBusy = [];       // 読み込んだ予定ファイル（.ics）の「埋まっている時間」。この画面を閉じるまでの間だけ保持（予定のタイトル等は読みません）
+let slotBusyN = 0;
+const WD = ['日', '月', '火', '水', '木', '金', '土'];
+function icsDate(val, params) {
+  const m = (val || '').match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/);
+  if (!m) return null;
+  const [, y, mo, d, hh, mi, , z] = m;
+  if (hh === undefined) return { allDay: true, date: new Date(+y, +mo - 1, +d) };
+  if (z) return { date: new Date(Date.UTC(+y, +mo - 1, +d, +hh, +mi)) };
+  const tz = (params.match(/TZID=([^;:]+)/) || [])[1];
+  if (tz && tz !== 'Asia/Tokyo' && tz !== 'Tokyo Standard Time') {
+    try {
+      const guess = Date.UTC(+y, +mo - 1, +d, +hh, +mi);
+      const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(new Date(guess)).map(p => [p.type, p.value]));
+      const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
+      return { date: new Date(guess - (asUtc - guess)) };
+    } catch (e) { /* 不明なタイムゾーンは、この端末の時刻として扱う */ }
+  }
+  return { date: new Date(+y, +mo - 1, +d, +hh, +mi) };
+}
+// .ics（Googleカレンダー等の書き出し）から、from〜to の間で埋まっている時間 [{s,e}] を取り出す（終日の予定は除く）
+function parseIcsBusy(text, from, to) {
+  const lines = text.replace(/\r/g, '').replace(/\n[ \t]/g, '').split('\n');
+  const evs = []; let cur = null;
+  for (const l of lines) {
+    if (l === 'BEGIN:VEVENT') cur = { ex: [] };
+    else if (l === 'END:VEVENT') { if (cur) evs.push(cur); cur = null; }
+    else if (cur) {
+      const i = l.indexOf(':'); if (i < 0) continue;
+      const head = l.slice(0, i), val = l.slice(i + 1), name = head.split(';')[0].toUpperCase(), params = head.slice(name.length);
+      if (name === 'DTSTART') cur.s = icsDate(val, params);
+      else if (name === 'DTEND') cur.e = icsDate(val, params);
+      else if (name === 'DURATION') cur.dur = val;
+      else if (name === 'RRULE') cur.rr = Object.fromEntries(val.split(';').map(x => x.split('=')));
+      else if (name === 'EXDATE') val.split(',').forEach(v => { const d = icsDate(v, params); if (d) cur.ex.push(d.date.getTime()); });
+      else if (name === 'RECURRENCE-ID') { const d = icsDate(val, params); if (d) cur.rid = d.date.getTime(); }
+      else if (name === 'UID') cur.uid = val;
+      else if (name === 'STATUS') cur.status = val;
+      else if (name === 'TRANSP') cur.transp = val;
+    }
+  }
+  const skipInst = new Set(evs.filter(e => e.rid && e.uid).map(e => e.uid + '|' + e.rid));
+  const out = [], lo = from.getTime() - 86400000, hi = to.getTime() + 86400000;
+  for (const ev of evs) {
+    if (!ev.s || ev.s.allDay || ev.status === 'CANCELLED' || ev.transp === 'TRANSPARENT') continue;
+    let len = ev.e && !ev.e.allDay ? ev.e.date - ev.s.date : 3600000;
+    if (!ev.e && ev.dur) { const d = ev.dur.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?$/); if (d) len = ((+d[1] || 0) * 1440 + (+d[2] || 0) * 60 + (+d[3] || 0)) * 60000; }
+    if (!(len > 0)) len = 3600000;
+    const add = st => { const t = st.getTime(); if (t + len < lo || t > hi || ev.ex.includes(t) || (ev.uid && !ev.rid && skipInst.has(ev.uid + '|' + t))) return; out.push({ s: new Date(t), e: new Date(t + len) }); };
+    const st = ev.s.date;
+    if (!ev.rr) { add(st); continue; }
+    const r = ev.rr, iv = Math.max(1, +r.INTERVAL || 1), until = r.UNTIL ? (icsDate(r.UNTIL, '') || {}).date : null, maxN = +r.COUNT || Infinity;
+    const wk = r.BYDAY ? r.BYDAY.split(',').map(x => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].indexOf(x.slice(-2))).filter(x => x >= 0) : [st.getDay()];
+    let n = 0;
+    const lim = t => !until || t <= until.getTime() + 86400000;
+    const base = new Date(st.getFullYear(), st.getMonth(), st.getDate()), H = st.getHours(), M = st.getMinutes();
+    const inst = (y, mo, d) => new Date(y, mo, d, H, M);
+    for (let k = 0; k < 4000 && n < maxN; k++) {
+      let cands = [];
+      if (r.FREQ === 'DAILY') cands = [inst(base.getFullYear(), base.getMonth(), base.getDate() + k * iv)];
+      else if (r.FREQ === 'WEEKLY') { const w0 = new Date(base.getFullYear(), base.getMonth(), base.getDate() - base.getDay() + k * 7 * iv); cands = wk.map(w => inst(w0.getFullYear(), w0.getMonth(), w0.getDate() + w)); }
+      else if (r.FREQ === 'MONTHLY') cands = [inst(base.getFullYear(), base.getMonth() + k * iv, base.getDate())];
+      else if (r.FREQ === 'YEARLY') cands = [inst(base.getFullYear() + k * iv, base.getMonth(), base.getDate())];
+      else break;
+      cands.sort((a, b) => a - b);
+      let stop = false;
+      for (const c of cands) {
+        if (c < st) continue;
+        if (!lim(c.getTime())) { stop = true; break; }
+        if (++n > maxN) { stop = true; break; }
+        add(c);
+      }
+      if (stop || (cands.length && cands[0].getTime() > hi)) break;
+    }
+  }
+  return out;
+}
+// 候補日時：条件に合う空き時間を全部出す
+function genSlots(o) {
+  const out = [], now = Date.now() + 3 * 3600000;
+  for (let d = new Date(o.from.getFullYear(), o.from.getMonth(), o.from.getDate()); d <= o.to; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
+    if (!o.days.includes(d.getDay())) continue;
+    for (let t = o.tStart; t + o.dur <= o.tEnd; t += o.step) {
+      const s = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, t), e = new Date(s.getTime() + o.dur * 60000);
+      if (s.getTime() < now) continue;
+      if (o.busy.some(b => s.getTime() < b.e.getTime() + o.buffer * 60000 && e.getTime() + o.buffer * 60000 > b.s.getTime())) continue;
+      out.push({ s, e, day: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` });
+    }
+  }
+  return out;
+}
+// 自動で選ぶ：日にちをばらけさせ、時間帯も変える
+function autoPick(slots, n) {
+  const byDay = new Map(); slots.forEach(x => { if (!byDay.has(x.day)) byDay.set(x.day, []); byDay.get(x.day).push(x); });
+  const days = [...byDay.values()], pick = [];
+  days.forEach((arr, k) => { if (pick.length < n) pick.push(arr[Math.min(arr.length - 1, Math.floor(arr.length * ((k % 3) / 3)))]); });
+  for (const arr of days) { if (pick.length >= n) break; const x = arr[arr.length - 1]; if (!pick.includes(x)) pick.push(x); }
+  return new Set(pick);
+}
+const fmtSlot = x => `${x.s.getMonth() + 1}/${x.s.getDate()}(${WD[x.s.getDay()]}) ${pad(x.s.getHours())}:${pad(x.s.getMinutes())}〜${pad(x.e.getHours())}:${pad(x.e.getMinutes())}`;
+const toMin = v => { const [h, m] = (v || '0:0').split(':').map(Number); return h * 60 + (m || 0); };
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+async function openSlots(mId) {
+  const saved = (await Store.get('slotSettings')) || {};
+  const st = { days: [1, 2, 3, 4, 5], tStart: '10:00', tEnd: '18:00', dur: 60, step: 60, buffer: 30, count: 5, place: '', ...saved };
+  const today0 = new Date(), tomorrow = new Date(today0.getFullYear(), today0.getMonth(), today0.getDate() + 1), end = new Date(today0.getFullYear(), today0.getMonth(), today0.getDate() + 15);
+  const m0 = members.find(x => x.id === mId);
+  const opt = (arr, cur) => arr.map(([v, l]) => `<option value="${v}" ${String(v) === String(cur) ? 'selected' : ''}>${l}</option>`).join('');
+  $('overlay').innerHTML = `<div class="detail">
+    <div class="head"><div class="nm" style="font-size:18px">📅 1to1の候補日を作る</div><button class="btn small close" id="sClose">✕ 閉じる</button></div>
+    <p class="howto" style="margin:10px 0">条件に合う空き時間から候補を出し、Messengerなどに貼る文章にします。自分のGoogleカレンダーの予定ファイル（.ics）を読み込むと、予定が入っている時間は自動で外れます（読み込まなくても使えます）。</p>
+    <div class="fields">
+      <div class="f"><label>宛名（会員名。空欄でも可）</label><input id="sName" list="sNames" value="${esc(m0 ? m0.name : '')}"><datalist id="sNames">${members.map(m => `<option value="${esc(m.name || '')}">`).join('')}</datalist></div>
+      <div class="f"><label>期間</label><div class="row" style="gap:4px"><input type="date" id="sFrom" value="${ymd(tomorrow)}"> 〜 <input type="date" id="sTo" value="${ymd(end)}"></div></div>
+      <div class="f"><label>曜日</label><div class="row" id="sDays" style="gap:4px">${[1, 2, 3, 4, 5, 6, 0].map(w => `<button type="button" class="qchip ${st.days.includes(w) ? 'on' : ''}" data-w="${w}">${WD[w]}</button>`).join('')}</div></div>
+      <div class="f"><label>時間帯</label><div class="row" style="gap:4px"><input type="time" id="sTs" value="${st.tStart}" step="900"> 〜 <input type="time" id="sTe" value="${st.tEnd}" step="900"></div></div>
+      <div class="f"><label>所要時間</label><select id="sDur">${opt([[30, '30分'], [45, '45分'], [60, '60分'], [90, '90分'], [120, '120分']], st.dur)}</select></div>
+      <div class="f"><label>候補の間隔</label><select id="sStep">${opt([[30, '30分ごと'], [60, '1時間ごと']], st.step)}</select></div>
+      <div class="f"><label>前後の余裕（移動など）</label><select id="sBuf">${opt([[0, 'なし'], [15, '15分'], [30, '30分'], [60, '60分']], st.buffer)}</select></div>
+      <div class="f"><label>候補の数</label><select id="sCnt">${opt([3, 4, 5, 6, 8].map(n => [n, n + '個']), st.count)}</select></div>
+      <div class="f"><label>場所</label><select id="sPlace">${opt([['', 'どちらでも'], ['オンライン', 'オンライン'], ['対面', '対面']], st.place)}</select></div>
+      <div class="f wide"><label>自分のカレンダーの予定ファイル（.ics）　<span id="sIcsInfo" style="color:var(--red);font-weight:700"></span></label>
+        <div class="row"><label class="btn small">予定ファイルを選ぶ<input type="file" id="sIcs" accept=".ics,text/calendar" multiple hidden></label><button class="btn small" id="sIcsClr">読み込みを消す</button></div>
+        <div class="howto">Googleカレンダー →「設定」→「インポートとエクスポート」→「エクスポート」で、ZIPの中の.icsファイルが手に入ります。読み込んだ内容は、この画面を閉じるまでの間だけ使い、保存しません（予定のタイトルも読みません）。終日の予定は「空いている」扱いです。この画面で登録済みの1to1の予定は、自動で外します。</div></div>
+    </div>
+    <div class="web-t" style="margin-top:14px">空いている候補（選んだものが文章に入ります）</div>
+    <div id="sList" style="margin:6px 0"></div>
+    <div class="f wide"><label>文章（そのまま直せます）</label><textarea id="sMsg" rows="9" style="width:100%;border:1px solid var(--line);border-radius:7px;padding:8px"></textarea></div>
+    <div class="row" style="margin-top:10px"><button class="btn primary" id="sCopy">文章をコピー</button></div>
+    <p class="howto">相手から日時の返事が来たら、その方の詳細画面の「1to1の予定」に入れてください（Googleカレンダーにも追加できます）。祝日は自動では外れないので、候補から外してください。</p></div>`;
+  $('overlay').classList.remove('hidden');
+  $('sClose').onclick = closeOverlay;
+  let slots = [], chosen = new Set(), msgEdited = false;
+  const plannedBusy = () => members.flatMap(m => (m.meetings || []).filter(x => x.date && x.time && !x.text && x.date >= today()).map(x => { const [y, mo, d] = x.date.split('-').map(Number), [hh, mm] = x.time.split(':').map(Number), s = new Date(y, mo - 1, d, hh, mm); return { s, e: new Date(s.getTime() + (+x.duration || 60) * 60000) }; }));
+  const days = () => [...$('sDays').querySelectorAll('.on')].map(b => +b.dataset.w);
+  const message = () => {
+    const sel = slots.filter(x => chosen.has(x)).sort((a, b) => a.s - b.s);
+    if (!sel.length) return '';
+    const nm = $('sName').value.trim(), pl = $('sPlace').value;
+    return `${nm ? nm + 'さん\n' : ''}お世話になっております。\n1to1の日程ですが、下記のあたりはいかがでしょうか。\n\n${sel.map(x => '・' + fmtSlot(x)).join('\n')}\n\n${pl ? `（${pl}を想定しています）\n` : ''}ご都合のよいものを教えてください。難しければ、他の日程も調整します。`;
+  };
+  const drawMsg = () => { if (!msgEdited) $('sMsg').value = message(); };
+  const drawList = () => {
+    const byDay = new Map(); slots.forEach(x => { if (!byDay.has(x.day)) byDay.set(x.day, []); byDay.get(x.day).push(x); });
+    $('sList').innerHTML = slots.length ? [...byDay.entries()].map(([d, arr]) => { const dt = arr[0].s; return `<div class="row" style="gap:4px;margin:3px 0"><b style="min-width:84px">${dt.getMonth() + 1}/${dt.getDate()}(${WD[dt.getDay()]})</b>${arr.map(x => `<button type="button" class="qchip ${chosen.has(x) ? 'on' : ''}" data-i="${slots.indexOf(x)}">${pad(x.s.getHours())}:${pad(x.s.getMinutes())}〜${pad(x.e.getHours())}:${pad(x.e.getMinutes())}</button>`).join('')}</div>`; }).join('') : '<div class="howto">この条件では空きがありません。期間や曜日・時間帯を広げてください。</div>';
+    $('sList').querySelectorAll('[data-i]').forEach(b => b.onclick = () => { const x = slots[+b.dataset.i]; chosen.has(x) ? chosen.delete(x) : chosen.add(x); msgEdited = false; drawList(); drawMsg(); });
+  };
+  const recalc = async (keepSettings) => {
+    const o = { from: new Date($('sFrom').value + 'T00:00'), to: new Date($('sTo').value + 'T23:59'), days: days(), tStart: toMin($('sTs').value), tEnd: toMin($('sTe').value), dur: +$('sDur').value, step: +$('sStep').value, buffer: +$('sBuf').value, count: +$('sCnt').value, place: $('sPlace').value };
+    if (isNaN(o.from) || isNaN(o.to)) return;
+    await Store.set('slotSettings', { days: o.days, tStart: $('sTs').value, tEnd: $('sTe').value, dur: o.dur, step: o.step, buffer: o.buffer, count: o.count, place: o.place });
+    o.busy = [...slotBusy.filter(b => b.e >= o.from && b.s <= o.to), ...plannedBusy()];
+    slots = genSlots(o); chosen = autoPick(slots, o.count); msgEdited = false; drawList(); drawMsg();
+  };
+  $('sIcsInfo').textContent = slotBusyN ? `読み込み済み：予定${slotBusyN}件` : '';
+  ['sFrom', 'sTo', 'sTs', 'sTe', 'sDur', 'sStep', 'sBuf', 'sCnt', 'sPlace'].forEach(id => $(id).addEventListener('change', () => recalc()));
+  $('sName').addEventListener('input', drawMsg);
+  $('sPlace').addEventListener('change', drawMsg);
+  $('sDays').querySelectorAll('[data-w]').forEach(b => b.onclick = () => { b.classList.toggle('on'); recalc(); });
+  $('sMsg').addEventListener('input', () => { msgEdited = true; });
+  $('sIcs').onchange = async e => {
+    const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return;
+    const from = new Date($('sFrom').value + 'T00:00'), to = new Date($('sTo').value + 'T23:59');
+    try {
+      for (const f of fs) { const b = parseIcsBusy(await f.text(), from, to); slotBusy = slotBusy.concat(b); slotBusyN += b.length; }
+      $('sIcsInfo').textContent = `読み込み済み：予定${slotBusyN}件`; toast(`予定を読み込みました（${slotBusyN}件）`);
+    } catch (err) { alert('予定ファイルを読み込めませんでした。.ics形式のファイルを選んでください。'); }
+    recalc();
+  };
+  $('sIcsClr').onclick = () => { slotBusy = []; slotBusyN = 0; $('sIcsInfo').textContent = ''; recalc(); };
+  $('sCopy').onclick = async () => { const t = $('sMsg').value.trim(); if (!t) { toast('候補が選ばれていません'); return; } await copyText(t); toast('コピーしました。Messengerなどに貼り付けてください'); };
+  recalc();
+}
+$('slotBtn').onclick = () => openSlots('');
+
 
 // ===== 閲覧専用モード（スマホ向け） =====
 const Viewer = {
