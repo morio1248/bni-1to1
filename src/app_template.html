@@ -273,7 +273,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.19.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.20.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2076,6 +2076,9 @@ async function openSlots(mId) {
     <div id="sList" style="margin:6px 0"></div>
     <div class="f wide"><label>文章（そのまま直せます）</label><textarea id="sMsg" rows="9" style="width:100%;border:1px solid var(--line);border-radius:7px;padding:8px"></textarea></div>
     <div class="row" style="margin-top:10px"><button class="btn primary" id="sCopy">文章をコピー</button></div>
+    <div class="web" style="margin-top:14px"><div class="web-t">🤖 Googleカレンダーの空きをAI（Gemini）に調べてもらう</div>
+      <p class="howto" style="margin:4px 0 8px">上の条件をもとにした指示文をコピーして、Geminiに貼り付けます。GeminiがあなたのGoogleカレンダーを見て、空いている日時から候補の文章を作ります。スマホでも使えます。<br>※Geminiの設定で「Googleカレンダー」との連携（拡張機能）をオンにしておいてください。</p>
+      <div class="row"><button class="btn small primary" id="sAiCopy">指示文をコピー</button><button class="btn small" id="sAiGem">Geminiを開く</button></div></div>
     <p class="howto">相手から日時の返事が来たら、その方の詳細画面の「1to1の予定」に入れてください（Googleカレンダーにも追加できます）。祝日は自動では外れないので、候補から外してください。</p></div>`;
   $('overlay').classList.remove('hidden');
   $('sClose').onclick = closeOverlay;
@@ -2117,6 +2120,40 @@ async function openSlots(mId) {
     recalc();
   };
   $('sIcsClr').onclick = () => { slotBusy = []; slotBusyN = 0; $('sIcsInfo').textContent = ''; recalc(); };
+  $('sAiGem').onclick = () => window.open('https://gemini.google.com/', '_blank', 'noopener');
+  $('sAiCopy').onclick = async () => {
+    const f = new Date($('sFrom').value + 'T00:00'), t = new Date($('sTo').value + 'T00:00');
+    if (isNaN(f) || isNaN(t)) { toast('期間を入れてください'); return; }
+    const ds = days(); if (!ds.length) { toast('曜日を選んでください'); return; }
+    const nm = $('sName').value.trim(), pl = $('sPlace').value, dur = +$('sDur').value, buf = +$('sBuf').value, n = +$('sCnt').value;
+    const md = d => `${d.getMonth() + 1}月${d.getDate()}日(${WD[d.getDay()]})`;
+    await copyText(`私のGoogleカレンダーを見て、空いている時間から、1to1ミーティングの候補日時を${n}個選び、相手に送る文章を作ってください。
+
+【条件】
+・期間：${md(f)}〜${md(t)}
+・曜日：${[1, 2, 3, 4, 5, 6, 0].filter(w => ds.includes(w)).map(w => WD[w]).join('・')}
+・時間帯：${$('sTs').value}〜${$('sTe').value}の間に、開始から終了まで収まること
+・所要時間：${dur}分
+・前後の予定との間に${buf}分以上の余裕をあけること
+${pl ? `・場所：${pl}\n` : ''}・日本の祝日は除くこと
+・日にちはばらけさせ、午前と午後を混ぜること
+・今から3時間以内の時間は除くこと
+・終日の予定は、空き時間を埋めないものとして扱うこと
+
+【出力】
+・次の形の文章だけを出力してください。前置き・説明・見出し・記号（**や#）は付けないでください
+・予定のタイトルや内容は、文章に書かないでください
+・カレンダーを読み取れない場合は、その旨だけを答えてください
+
+${nm ? nm + 'さん\n' : ''}お世話になっております。
+1to1の日程ですが、下記のあたりはいかがでしょうか。
+
+・10/14(火) 10:00〜11:00
+・（候補を${n}個、日時の順に）
+
+${pl ? `（${pl}を想定しています）\n` : ''}ご都合のよいものを教えてください。難しければ、他の日程も調整します。`);
+    toast('指示文をコピーしました。Geminiに貼り付けて送信してください');
+  };
   $('sCopy').onclick = async () => { const t = $('sMsg').value.trim(); if (!t) { toast('候補が選ばれていません'); return; } await copyText(t); toast('コピーしました。Messengerなどに貼り付けてください'); };
   recalc();
 }
