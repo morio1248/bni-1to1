@@ -228,7 +228,7 @@ mark{background:#ffe58a;padding:0 1px}
   .detail{padding:18px 16px}
   .detail .head{flex-wrap:wrap}.detail .head>div:first-child{flex:1 1 100%}.av.lg{width:56px;height:56px;font-size:22px}
 }
-body.viewer #connectBtn,body.viewer #dConnect,body.viewer #slotBtn,body.viewer #dSlot,body.viewer .photo-edit,body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer .vwhide{display:none!important}
+body.viewer #connectBtn,body.viewer #dConnect,body.viewer .photo-edit,body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer .vwhide{display:none!important}
 body.viewer .detail .row{display:none}
 #viewerBar{background:#eef6ff;border-color:#b9d6f5}
 .fclose{position:fixed;right:16px;bottom:16px;z-index:30;box-shadow:0 3px 12px rgba(0,0,0,.3);border-radius:99px!important;padding:10px 18px!important;font-size:14px;background:#1f2328!important;color:#fff!important;border-color:#1f2328!important}
@@ -273,7 +273,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.19.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.19.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2661,7 +2661,7 @@ async function openSlots(mId) {
   const recalc = async (keepSettings) => {
     const o = { from: new Date($('sFrom').value + 'T00:00'), to: new Date($('sTo').value + 'T23:59'), days: days(), tStart: toMin($('sTs').value), tEnd: toMin($('sTe').value), dur: +$('sDur').value, step: +$('sStep').value, buffer: +$('sBuf').value, count: +$('sCnt').value, place: $('sPlace').value };
     if (isNaN(o.from) || isNaN(o.to)) return;
-    await Store.set('slotSettings', { days: o.days, tStart: $('sTs').value, tEnd: $('sTe').value, dur: o.dur, step: o.step, buffer: o.buffer, count: o.count, place: o.place });
+    if (!viewerMode) await Store.set('slotSettings', { days: o.days, tStart: $('sTs').value, tEnd: $('sTe').value, dur: o.dur, step: o.step, buffer: o.buffer, count: o.count, place: o.place });
     o.busy = [...slotBusy.filter(b => b.e >= o.from && b.s <= o.to), ...plannedBusy()];
     slots = genSlots(o); chosen = autoPick(slots, o.count); msgEdited = false; drawList(); drawMsg();
   };
