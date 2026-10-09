@@ -273,7 +273,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.20.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.20.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2076,9 +2076,9 @@ async function openSlots(mId) {
     <div id="sList" style="margin:6px 0"></div>
     <div class="f wide"><label>文章（そのまま直せます）</label><textarea id="sMsg" rows="9" style="width:100%;border:1px solid var(--line);border-radius:7px;padding:8px"></textarea></div>
     <div class="row" style="margin-top:10px"><button class="btn primary" id="sCopy">文章をコピー</button></div>
-    <div class="web" style="margin-top:14px"><div class="web-t">🤖 Googleカレンダーの空きをAI（Gemini）に調べてもらう</div>
-      <p class="howto" style="margin:4px 0 8px">上の条件をもとにした指示文をコピーして、Geminiに貼り付けます。GeminiがあなたのGoogleカレンダーを見て、空いている日時から候補の文章を作ります。スマホでも使えます。<br>※Geminiの設定で「Googleカレンダー」との連携（拡張機能）をオンにしておいてください。</p>
-      <div class="row"><button class="btn small primary" id="sAiCopy">指示文をコピー</button><button class="btn small" id="sAiGem">Geminiを開く</button></div></div>
+    <div class="web" style="margin-top:14px"><div class="web-t">🤖 Googleカレンダーの空きを、普段使っているAIに調べてもらう</div>
+      <p class="howto" style="margin:4px 0 8px">上の条件をもとにした指示文をコピーして、普段使っているAI（Claude・ChatGPT・Geminiなど）に貼り付けます。AIがあなたのGoogleカレンダーを見て、空いている日時から候補の文章を作ります。スマホでも使えます。<br>※使うAIで、Googleカレンダーとの連携をオンにしておいてください（連携していないAIは、カレンダーを読めません）。</p>
+      <div class="row"><button class="btn small primary" id="sAiCopy">指示文をコピー</button></div></div>
     <p class="howto">相手から日時の返事が来たら、その方の詳細画面の「1to1の予定」に入れてください（Googleカレンダーにも追加できます）。祝日は自動では外れないので、候補から外してください。</p></div>`;
   $('overlay').classList.remove('hidden');
   $('sClose').onclick = closeOverlay;
@@ -2120,7 +2120,6 @@ async function openSlots(mId) {
     recalc();
   };
   $('sIcsClr').onclick = () => { slotBusy = []; slotBusyN = 0; $('sIcsInfo').textContent = ''; recalc(); };
-  $('sAiGem').onclick = () => window.open('https://gemini.google.com/', '_blank', 'noopener');
   $('sAiCopy').onclick = async () => {
     const f = new Date($('sFrom').value + 'T00:00'), t = new Date($('sTo').value + 'T00:00');
     if (isNaN(f) || isNaN(t)) { toast('期間を入れてください'); return; }
@@ -2152,7 +2151,7 @@ ${nm ? nm + 'さん\n' : ''}お世話になっております。
 ・（候補を${n}個、日時の順に）
 
 ${pl ? `（${pl}を想定しています）\n` : ''}ご都合のよいものを教えてください。難しければ、他の日程も調整します。`);
-    toast('指示文をコピーしました。Geminiに貼り付けて送信してください');
+    toast('指示文をコピーしました。普段使っているAIに貼り付けて送信してください');
   };
   $('sCopy').onclick = async () => { const t = $('sMsg').value.trim(); if (!t) { toast('候補が選ばれていません'); return; } await copyText(t); toast('コピーしました。Messengerなどに貼り付けてください'); };
   recalc();
