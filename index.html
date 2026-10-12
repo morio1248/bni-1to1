@@ -230,6 +230,7 @@ mark{background:#ffe58a;padding:0 1px}
 }
 body.viewer .photo-edit,body.viewer .star,body.viewer #dFav,body.viewer #dDel,body.viewer #dEdit,body.viewer #dAddMtg,body.viewer #dAddPlan,body.viewer .mtg-h .btn:not([data-a=toggle]),body.viewer .mtg-add,body.viewer .mtg-plan,body.viewer .mtg-bni,body.viewer .mtg-ai,body.viewer .howto,body.viewer .notice:not(#viewerBar),body.viewer .vwhide{display:none!important}
 body.viewer .detail .row{display:none}
+body.viewer .detail.vok .row{display:flex}body.viewer .detail.vok .howto{display:block!important}
 #viewerBar{background:#eef6ff;border-color:#b9d6f5}
 .fclose{position:fixed;right:16px;bottom:16px;z-index:30;box-shadow:0 3px 12px rgba(0,0,0,.3);border-radius:99px!important;padding:10px 18px!important;font-size:14px;background:#1f2328!important;color:#fff!important;border-color:#1f2328!important}
 .overlay .detail.has-fclose{padding-bottom:72px}
@@ -273,7 +274,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.20.2</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.20.3</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2476,7 +2477,7 @@ async function openConnect(aId) {
   const hay = m => [m.name, m.kana, m.romaji, m.business, m.companyName, m.specialty, m.chapter].filter(Boolean).join(' ').normalize('NFKC').toLowerCase();
   const pickBox = (w, label) => `<div class="f"><label>${label}　<span id="c${w}sel" style="color:var(--red);font-weight:700"></span></label><input type="search" id="c${w}q" placeholder="名前・業種・会社名で検索" style="margin-bottom:4px"><select id="c${w}" size="6" style="width:100%"></select></div>`;
   const sample = (await Store.get('connectSample')) || CONNECT_SAMPLE;
-  $('overlay').innerHTML = `<div class="detail">
+  $('overlay').innerHTML = `<div class="detail vok">
     <div class="head"><div class="nm" style="font-size:18px">🤝 お繋ぎ文を作る</div><button class="btn small close" id="cClose">✕ 閉じる</button></div>
     <p class="howto" style="margin:10px 0">1to1した2人を、Messengerのグループでつなぐ文章を作ります。2人を選び、指示文をコピーして、Geminiに貼り付けて送信してください。出てきた文章をそのままグループに貼れます。</p>
     <div class="fields">${pickBox('A', '1人目')}${pickBox('B', '2人目')}
@@ -2619,7 +2620,7 @@ async function openSlots(mId) {
   const today0 = new Date(), tomorrow = new Date(today0.getFullYear(), today0.getMonth(), today0.getDate() + 1), end = new Date(today0.getFullYear(), today0.getMonth(), today0.getDate() + 15);
   const m0 = members.find(x => x.id === mId);
   const opt = (arr, cur) => arr.map(([v, l]) => `<option value="${v}" ${String(v) === String(cur) ? 'selected' : ''}>${l}</option>`).join('');
-  $('overlay').innerHTML = `<div class="detail">
+  $('overlay').innerHTML = `<div class="detail vok">
     <div class="head"><div class="nm" style="font-size:18px">📅 1to1の候補日を作る</div><button class="btn small close" id="sClose">✕ 閉じる</button></div>
     <p class="howto" style="margin:10px 0">条件に合う空き時間から候補を出し、Messengerなどに貼る文章にします。自分のGoogleカレンダーの予定ファイル（.ics）を読み込むと、予定が入っている時間は自動で外れます（読み込まなくても使えます）。</p>
     <div class="fields">
