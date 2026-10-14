@@ -175,6 +175,7 @@ mark{background:#ffe58a;padding:0 1px}
 .plan-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .plan-grid label{font-size:12px;font-weight:700;color:var(--sub);display:flex;flex-direction:column;gap:2px}
 .plan-grid input,.plan-grid select{border:1px solid var(--line);border-radius:7px;padding:6px 9px;background:#fff}
+.tk-item{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-top:1px solid #eef2fb;font-size:14px}.tk-item.done .tk-t{text-decoration:line-through;color:var(--sub)}.tk-t{flex:1;line-height:1.5}.tk-who{font-size:12px;color:var(--sub);cursor:pointer;text-decoration:underline}.tk-k{font-size:11px;background:#e8f1ff;color:#1b4fa8;border-radius:5px;padding:1px 6px;white-space:nowrap}.tk-k.c{background:#ffe9d6;color:#a4510a}.dup-pair{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}body.viewer .tk-del,body.viewer .tk-add,body.viewer #dupBtn{display:none!important}
 .upcoming{background:#fff;border:1px solid #c9dafb;border-radius:12px;padding:10px 14px;margin-bottom:14px}
 .upcoming b{color:#1a5fd0;font-size:13px}
 .up-item{display:flex;gap:10px;align-items:center;padding:5px 0;border-top:1px solid #eef2fb;cursor:pointer;font-size:14px}
@@ -275,7 +276,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.21.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.22.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -311,7 +312,8 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     </div>
     <div class="quick" id="quick"></div>
     <div class="upcoming hidden" id="upcoming"></div>
-    <div class="row" style="margin:-4px 0 10px"><button class="btn small" id="slotBtn" style="margin-left:6px" title="空いている日時から、1to1の候補日の文章を作ります">📅 候補日を作る</button><span class="count" id="count" style="margin:0 0 0 8px"></span></div>
+    <div class="upcoming hidden" id="taskPanel"></div>
+    <div class="row" style="margin:-4px 0 10px"><button class="btn small" id="dupBtn" style="margin-left:6px">重複を探す</button><button class="btn small" id="slotBtn" style="margin-left:6px" title="空いている日時から、1to1の候補日の文章を作ります">📅 候補日を作る</button><span class="count" id="count" style="margin:0 0 0 8px"></span></div>
     <div class="grid" id="grid"></div>
   </section>
 
@@ -374,11 +376,11 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       </div>
       <ol class="steps">
         <li>下の枠① に、打ち合わせの文字起こしを貼り付ける（または上の「ファイルから読み込む」）</li>
-        <li><button class="btn small primary" id="nmCopy">新規登録用の指示文をコピー</button> → <button class="btn small" id="nmGemini">Geminiを開く</button> に <kbd>Ctrl</kbd>＋<kbd>V</kbd> で貼り付けて送信</li>
+        <li><button class="btn small primary" id="nmCopy">AIへの指示文をコピー</button> → <button class="btn small" id="nmGemini">Geminiを開く</button> に <kbd>Ctrl</kbd>＋<kbd>V</kbd> で貼り付けて送信</li>
         <li>返答をコピーして、下の枠② に貼り付け →「確認画面を開く」</li>
       </ol>
       <textarea id="nmPaste" placeholder="① 文字起こしを貼り付け" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px"></textarea>
-      <textarea id="nmReply" placeholder="② Geminiの返答を貼り付け" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:6px"></textarea>
+      <textarea id="nmReply" placeholder="② AIの返答を貼り付け" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:6px"></textarea>
       <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn primary" id="nmOpen">確認画面を開く</button></div>
       <div class="caution"><b>録音・文字起こしは、必ず事前に相手の了承を得てください。</b>Geminiのアクティビティ（学習）をオフにしてから使ってください。</div>
     </div>
@@ -398,8 +400,8 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       </div>
       <div class="drop small" id="tsDrop"><b>文字起こしファイルをドラッグ</b>　またはクリックして選択<br><small>.txt .vtt .srt .docx .pdf .csv .json .md（Zoom・Google Meet・Teams・Notion・tl;dv・Otter・スマホアプリ等の書き出し）</small></div>
       <input type="file" id="tsFile" accept=".txt,.md,.vtt,.srt,.docx,.pdf,.csv,.tsv,.json" multiple hidden>
-      <div class="rec-gemini"><b>📝 文字起こしのテキストがある場合</b>：下の枠に貼り付け →「<button class="btn small primary" id="tsTCopy">要約をAIで作る（コピー）</button>」→ Geminiに貼り付けて送信 → 返答をコピーして、<b>同じ枠に貼り直して</b>保存（元の文字起こしも一緒に保存されます）</div>
-      <textarea id="tsPaste" placeholder="ここに、Geminiの返答や文字起こし・議事録を貼り付けて「保存」" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px"></textarea>
+      <div class="rec-gemini"><b>📝 文字起こしのテキストがある場合</b>：下の枠に貼り付け →「<button class="btn small primary" id="tsTCopy">AIで整理する（コピー）</button>」→ Geminiに貼り付けて送信 → 返答をコピーして、<b>同じ枠に貼り直して</b>保存（元の文字起こしも一緒に保存されます）</div>
+      <textarea id="tsPaste" placeholder="ここに、AIの返答や文字起こし・議事録を貼り付けて「保存」" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px"></textarea>
       <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn primary" id="tsSave">貼り付けた内容を保存</button></div>
       <div class="note">取り込んだ文字起こしは、そのメンバーの「1to1の記録」に保存され、検索の対象になります。記録の「項目をAIで抽出（コピー）」から、Geminiで相手の情報を各項目に反映できます。</div>
       <div class="caution"><b>録音・文字起こしは、必ず事前に相手の了承を得てください。</b><br>Geminiに録音や文字起こしを渡すと、会話の内容がGoogleに送られます。Geminiのアクティビティ（学習）をオフにしてから使ってください。</div>
@@ -452,7 +454,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     <div class="card-g"><ol>
       <li>メンバー一覧でその人を開き、「＋ 1to1を予定する」で日時を入れると、Googleカレンダーにも登録できます。</li>
       <li>1to1が終わったら、その記録の「<b>議事録・録音を追加</b>」を押し、議事録や文字起こしを貼り付けて保存します。あとから入れる分も同じ記録に追記されます（まだ記録がなければ「＋ 1to1を記録」で作ります）。</li>
-      <li><b>文字起こしのテキストがある場合</b>は、枠に貼り付けて「要約をAIで作る（コピー）」→ Geminiに貼り付けて送信 → 返答を同じ枠に貼り直して保存します（要約・相手の事業・紹介の可能性・次のアクションに整理され、元の文字起こしも一緒に残ります）。</li>
+      <li><b>文字起こしのテキストがある場合</b>は、枠に貼り付けて「AIで整理する（コピー）」→ Geminiに貼り付けて送信 → 返答を同じ枠に貼り直して保存します（要約・相手の事業・紹介の可能性・次のアクションに整理され、元の文字起こしも一緒に残ります）。</li>
       <li><b>録音がある場合</b>は、同じ画面の「文字起こし用の指示文をコピー」→「Geminiを開く」→ 貼り付けて録音ファイルを添付して送信 → 返答をコピーして貼り付けます。要約と文字起こしが入ります。</li>
       <li>記録の「項目をAIで抽出（コピー）」→ Geminiに貼り付け → 返答を「AIの返答を項目に反映」に貼ると、話の中で分かった相手の情報が各項目に反映されます。</li>
     </ol><p>録音・文字起こしは、必ず相手の了承を得てから行ってください。</p></div>
@@ -1305,8 +1307,11 @@ async function updateSaveState() {
   else { b.className = 'save-state warn'; b.textContent = unsaved ? '⚠ 未バックアップ' : 'バックアップ未設定'; }
   // 自動保存なしで、未バックアップの変更があれば促す
   const showRemind = AutoSave.state !== 'ok' && AutoSave.state !== 'needPermission' && unsaved;
-  $('remindBar').classList.toggle('hidden', !showRemind);
-  if (showRemind) $('remindText').textContent = AutoSave.supported
+  const days = last ? Math.floor((Date.now() - last) / 86400000) : 0;
+  const stale = AutoSave.state !== 'ok' && members.length && last && days >= 14;
+  $('remindBar').classList.toggle('hidden', !(showRemind || stale));
+  if (stale && !showRemind) $('remindText').textContent = `最後のバックアップから ${days}日たっています。「保存・バックアップ」で保存しておくと安心です。`;
+  else if (showRemind) $('remindText').textContent = AutoSave.supported
     ? 'まだバックアップされていない変更があります。保存先ファイルを設定すると、以後は自動で保存されます。'
     : 'まだバックアップされていない変更があります。「保存・バックアップ」からJSONを書き出してください。';
 }
@@ -1518,8 +1523,9 @@ function openDetail(id) {
   }).join('');
   $('overlay').innerHTML = `<div class="detail">
     <div class="head"><div style="display:flex;gap:14px;align-items:center">${av(m, 'lg')}<div><div class="biz">${esc(m.business || '')}</div><div class="nm">${esc(m.name || '(名前未入力)')}</div>${m.kana ? `<div style="color:var(--sub);font-size:13px">${esc(m.kana)}</div>` : ''}</div></div>
-      <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn small" id="dFav">${m.fav ? '★ お気に入り' : '☆ お気に入りに追加'}</button><button class="btn small" id="dSlot">📅 候補日</button><button class="btn small close" id="dClose">✕ 閉じる</button></div></div>
+      <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn small" id="dFav">${m.fav ? '★ お気に入り' : '☆ お気に入りに追加'}</button><button class="btn small" id="dSlot">📅 候補日</button><button class="btn small" id="dPre">📝 事前メモ</button><button class="btn small close" id="dClose">✕ 閉じる</button></div></div>
     <div class="intro-box"><div class="intro-h"><b>紹介文</b><span><button class="btn small" id="dIntroMake">${m.introText ? '作り直す・直す' : '＋ 紹介文を作る'}</button>${m.introText ? '<button class="btn small primary" id="dIntroCopy">コピー</button>' : ''}</span></div>${m.introText ? `<div class="intro-t">${hl(m.introText, terms)}</div>` : '<div class="howto" style="margin:0">まだありません。1to1シートの取り込み時にAIが作るか、ここから作れます。</div>'}</div>
+    <div class="intro-box" id="dTasks"><div class="intro-h"><b>やること・つなぐ約束</b><span><button class="btn small tk-add" id="dTaskAdd">＋ 追加</button></span></div><div id="dTaskList"></div></div>
     ${body}
     ${m.memo ? `<div class="sec"><span class="sec-t">自分用メモ</span><div style="white-space:pre-wrap">${hl(m.memo, terms)}</div></div>` : ''}
     <div class="sec"><span class="sec-t accent">1to1の記録</span>
@@ -1529,13 +1535,13 @@ function openDetail(id) {
           ${x.text ? `<span class="len">${x.text.length.toLocaleString()}文字</span>` : ''}
           <button class="btn small ${isPlanned(x) ? 'primary' : ''}" data-a="plan">予定・カレンダー</button>
           ${isPlanned(x) || catOf(m) === 'BNI以外' ? '' : `<button class="btn small ${x.bniDone ? '' : 'primary'}" data-a="bni">BNIコネクトに登録</button>`}
-          ${x.text ? '<button class="btn small" data-a="toggle">全文</button><button class="btn small" data-a="copy">項目をAIで抽出（コピー）</button><button class="btn small" data-a="ai">AIの返答を項目に反映</button>' : ''}
+          ${x.text ? '<button class="btn small" data-a="toggle">全文</button><button class="btn small" data-a="copy">AIで整理（コピー）</button><button class="btn small" data-a="ai">AIの返答を反映</button>' : ''}
           <button class="btn small ${!x.text && !isPlanned(x) ? 'primary' : ''}" data-a="add">${x.text ? '議事録を追記' : '議事録・録音を追加'}</button>
           <button class="btn small danger" data-a="del">削除</button></div>
         <div class="mtg-add hidden">
           <div class="rec-gemini" style="margin-top:0"><b>🎙 録音がある場合</b>：<button class="btn small primary" data-r="copy">文字起こし用の指示文をコピー</button> <button class="btn small" data-r="open">Geminiを開く</button><br>
             <span style="font-size:13px">Geminiに <kbd>Ctrl</kbd>＋<kbd>V</kbd> →「＋」→「ファイルをアップロード」で録音ファイルを添付して送信 → 返答をコピーして下に貼り付け</span></div>
-          <div class="rec-gemini"><b>📝 文字起こしのテキストがある場合</b>：下の枠に貼り付け →「<button class="btn small primary" data-r="tcopy">要約をAIで作る（コピー）</button>」→ Geminiに貼り付けて送信 → 返答をコピーして、<b>同じ枠に貼り直して</b>保存<br>
+          <div class="rec-gemini"><b>📝 文字起こしのテキストがある場合</b>：下の枠に貼り付け →「<button class="btn small primary" data-r="tcopy">AIで整理する（コピー）</button>」→ Geminiに貼り付けて送信 → 返答をコピーして、<b>同じ枠に貼り直して</b>保存<br>
             <span style="font-size:12px;color:var(--sub)">元の文字起こしも一緒に保存されます。</span></div>
           <textarea placeholder="Geminiの返答、または文字起こし・議事録（Notion・Zoom・Google Meet など）を貼り付け"></textarea>
           <div class="row" style="justify-content:space-between;margin-top:6px"><label class="btn small">ファイルから<input type="file" accept=".txt,.md,.vtt,.srt,.docx,.pdf,.csv,.tsv,.json" hidden></label><button class="btn small primary" data-r="save">この1to1に${x.text ? '追記' : '保存'}</button></div>
@@ -1546,7 +1552,7 @@ function openDetail(id) {
         <div class="mtg-ai hidden"><textarea placeholder="AIの返答をここに貼り付け（Ctrl＋V）→ 自動で反映画面が開きます"></textarea></div>
       </div>`).join('') || '<div class="howto">まだ記録はありません。</div>'}
       <div class="row" style="margin-top:8px"><button class="btn small primary" id="dAddPlan">＋ 1to1を予定する</button><button class="btn small" id="dAddMtg">＋ 1to1を記録（BNIコネクト登録用）</button></div>
-      ${(m.meetings || []).some(x => x.text) ? '<p class="howto">議事録から相手の情報を各項目に反映：①「項目をAIで抽出（コピー）」→ ② Geminiに貼り付けて送信 → ③ 返答をコピーして「AIの返答を項目に反映」に貼り付け<br>※AIに送る前に：録音・文字起こしは相手の了承を得ていること、AIの学習への利用をオフにしていることを確認してください。</p>' : ''}
+      ${(m.meetings || []).some(x => x.text) ? '<p class="howto">議事録から相手の情報を各項目に反映：①「AIで整理（コピー）」→ ② AIに貼り付けて送信 → ③ 返答をコピーして「AIの返答を反映」に貼り付け（要約・項目・やること・会話のトピックがまとめて入ります）<br>※AIに送る前に：録音・文字起こしは相手の了承を得ていること、AIの学習への利用をオフにしていることを確認してください。</p>' : ''}
     </div>
     <div class="actions">
       <span style="margin-right:auto;color:var(--sub);font-size:12px">${(m.sources && m.sources.length) ? '取り込んだシート：' + esc(m.sources.map(s => s.name).join('、')) + '　' : m.source ? '取り込み元：' + esc(m.source) + '　' : ''}更新：${new Date(m.updatedAt).toLocaleDateString('ja-JP')}</span>
@@ -1560,7 +1566,19 @@ function openDetail(id) {
   $('dClose2').onclick = closeOverlay;
   $('dClose').onclick = closeOverlay;
   $('dIntroCopy') && ($('dIntroCopy').onclick = async () => { await copyText(m.introText); toast('紹介文をコピーしました'); });
+  $('dPre').onclick = () => openPreMemo(m.id);
   $('dIntroMake').onclick = () => openIntro(m.id);
+  const drawTasks = () => {
+    const cur = members.find(x => x.id === m.id) || m, ts = cur.tasks || [];
+    $('dTaskList').innerHTML = ts.length ? ts.map(t => taskHtml(t, false, cur)).join('') : '<div class="howto" style="margin:0;display:block">まだありません。文字起こしをAIで整理すると、「つなぐ約束」や次のアクションが自動で入ります。</div>';
+    bindTasks($('dTaskList'), drawTasks);
+  };
+  drawTasks();
+  $('dTaskAdd').onclick = async () => {
+    const t = (prompt('やること・つなぐ約束を入力してください（例：山田さんと佐藤さんをつなぐ）') || '').trim(); if (!t) return;
+    await setTasks(m.id, a => mergeTasks({ tasks: a }, [{ text: t, kind: /つなぐ|紹介/.test(t) ? 'connect' : 'todo' }], today()));
+    drawTasks();
+  };
   $('dSlot').onclick = () => openSlots(m.id);
   $('dFav').onclick = async () => { await toggleFav(m.id); openDetail(m.id); };
   $('dDel').onclick = async () => { if (!confirm(`${m.name || 'このメンバー'} を削除しますか？`)) return; await deleteMember(m.id); closeOverlay(); toast('削除しました'); };
@@ -1589,11 +1607,19 @@ function openDetail(id) {
       const t = addBox.querySelector('textarea').value.trim(); if (!t) { toast('先に下の枠へ文字起こしを貼り付けてください'); return; }
       if (!(await ensureAiAck())) return;
       addBox._orig = t;
-      await copyText(buildTranscriptSummaryPrompt(m.name, rec.date, t)); toast('指示文と文字起こしをコピーしました。Geminiに貼り付けて送信し、返答を同じ枠に貼り直してください');
+      await copyText(buildAllPrompt(m.name, rec.date, t, false)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を同じ枠に貼り直してください');
     };
     addBox.querySelector('[data-r=save]').onclick = async () => {
-      let raw = addBox.querySelector('textarea').value.trim(); if (!raw) { toast('内容を貼り付けてください'); return; }
-      raw = withOriginal(raw, addBox._orig);
+      const raw = addBox.querySelector('textarea').value.trim(); if (!raw) { toast('内容を貼り付けてください'); return; }
+      const p = parseAll(raw);
+      if (isUnified(p) && (p.summary || addBox._orig)) {
+        const text = (p.summary || '') + (addBox._orig ? (p.summary ? '\n\n【文字起こし】\n' : '') + cleanTranscript(addBox._orig, 'txt') : '');
+        await appendToMeeting(m.id, rec.id, { text, source: '貼り付け', date: rec.date });
+        const m2 = members.find(x => x.id === m.id), rec2 = m2 && (m2.meetings || []).find(x => x.id === rec.id);
+        toast('記録しました。続けて、項目の反映画面を開きます');
+        if (!(m2 && rec2 && applyAll(m2, raw, rec2, { summaryDone: true }))) openDetail(m.id);
+        return;
+      }
       await appendToMeeting(m.id, rec.id, { text: /【文字起こし】|【要約】/.test(raw) ? raw : cleanTranscript(raw, 'txt'), source: '貼り付け', date: rec.date });
       toast(rec.text ? '追記しました' : '保存しました'); openDetail(m.id);
     };
@@ -1607,12 +1633,12 @@ function openDetail(id) {
         if (!confirm('AIに送る前に確認してください。\n\n・この1to1の録音・文字起こしについて、相手の了承を得ていますか？\n・Geminiのアクティビティ（学習）をオフにしていますか？\n\n両方OKなら「OK」を押してください（次回からは表示しません）。')) return;
         await Store.set('aiAck', true);
       }
-      await copyText(buildTranscriptFieldsPrompt(m.name, rec.text)); toast('指示文と議事録をコピーしました。Geminiに貼り付けて送信してください'); });
+      await copyText(buildAllPrompt(m.name, rec.date, rec.text, false)); toast('指示文と議事録をコピーしました。AIに貼り付けて送信してください'); });
     on('ai', () => { const a = box.querySelector('.mtg-ai'); a.classList.toggle('hidden'); a.querySelector('textarea').focus(); });
     on('bni', () => box.querySelector('.mtg-bni').classList.toggle('hidden'));
     on('plan', () => box.querySelector('.mtg-plan').classList.toggle('hidden'));
     bindPlanPanel(box, m, rec);
-    box.querySelector('.mtg-ai textarea').addEventListener('paste', e => setTimeout(() => applyAi(m, e.target.value, rec), 0));
+    box.querySelector('.mtg-ai textarea').addEventListener('paste', e => setTimeout(() => applyAll(m, e.target.value, rec), 0));
     bindBniPanel(box, m, rec);
     box.querySelector('[data-a=del]').onclick = async () => {
       if (!confirm(`${rec.date || ''} の記録を削除しますか？`)) return;
@@ -1661,7 +1687,7 @@ function openEdit(m, opts = {}) {
   $('eSave').onclick = async () => {
     const data = readForm($('eForm'));
     if (!data.name) { alert('名前を入力してください'); return; }
-    await saveMember({ id: m.id, createdAt: m.createdAt, source: m.source, sources: m.sources, meetings: m.meetings, fav: m.fav, builtin: m.builtin, authorVersion: m.authorVersion, ...(photo ? { photo } : {}), ...data, updatedAt: Date.now() });
+    await saveMember({ id: m.id, createdAt: m.createdAt, source: m.source, sources: m.sources, meetings: m.meetings, tasks: m.tasks, fav: m.fav, builtin: m.builtin, authorVersion: m.authorVersion, ...(photo ? { photo } : {}), ...data, updatedAt: Date.now() });
     openDetail(m.id); toast('保存しました');
   };
 }
@@ -1751,6 +1777,7 @@ function addReview(data, source, extra = {}) {
     await saveMember(base);
     lastImportTarget = base.id;
     if (extra.meeting) await addMeeting(base.id, { ...extra.meeting });
+    if (extra.tasks && extra.tasks.length) { const mm = members.find(x => x.id === base.id); if (mm) await saveMember({ ...mm, tasks: mergeTasks(mm, extra.tasks, extra.taskFrom), updatedAt: Date.now() }); }
     const plan = readPlan(card.querySelector('.plan-box'));
     if (plan.date) {
       const rec = { id: uid(), createdAt: Date.now(), title: '1to1', source: '予定', text: '', ...plan };
@@ -1940,10 +1967,12 @@ async function readTranscript(file) {
 }
 async function addMeeting(memberId, rec) {
   const m = members.find(x => x.id === memberId); if (!m) return;
-  const meetings = [...(m.meetings || []), { id: uid(), createdAt: Date.now(), ...rec }].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const nid = rec.id || uid();
+  const meetings = [...(m.meetings || []), { id: nid, createdAt: Date.now(), ...rec }].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   const next = { ...m, meetings, updatedAt: Date.now() };
   if (rec.date && (!m.date1to1 || rec.date > m.date1to1)) next.date1to1 = rec.date;
   await saveMember(next);
+  return nid;
 }
 const SUMMARY_FORMAT = `次の形式で日本語で書き出してください。前置きや装飾（太字・表）は不要です。
 
@@ -1961,18 +1990,6 @@ ${SUMMARY_FORMAT}
 【文字起こし】
 話者ごとに「話者名：発言」の形で、省略せずに書き起こしてください。話者名が分からない場合は「自分」「相手」としてください。`;
 }
-// 文字起こしのテキストをAIに渡して、録音と同じ形式（要約・事業・紹介・次のアクション）にしてもらう指示文
-function buildTranscriptSummaryPrompt(name, date, transcript) {
-  return `以下は、BNIの1to1ミーティング（${date ? date + '、' : ''}相手：${name || '相手の方'}さん）の文字起こしです。内容は変えず、書かれていることだけを使ってください。
-${SUMMARY_FORMAT}
-
-【文字起こし】
-${transcript}`;
-}
-// AIの返答が「要約つき」で、文字起こしが含まれていないときは、元の文字起こしを付けて保存する
-function withOriginal(raw, orig) {
-  return orig && /【要約】/.test(raw) && !/【文字起こし】/.test(raw) ? raw + '\n\n【文字起こし】\n' + cleanTranscript(orig, 'txt') : raw;
-}
 async function ensureAiAck() {
   if (await Store.get('aiAck')) return true;
   if (!confirm('AIに送る前に確認してください。\n\n・この1to1の録音・文字起こしについて、相手の了承を得ていますか？\n・Geminiのアクティビティ（学習）をオフにしていますか？\n\n両方OKなら「OK」を押してください（次回からは表示しません）。')) return false;
@@ -1989,7 +2006,8 @@ async function appendToMeeting(memberId, meetingId, add) {
   await saveMember({ ...m, meetings, updatedAt: Date.now() });
 }
 async function saveTranscriptTo(memberId, targetId, rec) {
-  if (targetId) await appendToMeeting(memberId, targetId, rec); else await addMeeting(memberId, rec);
+  if (targetId) { await appendToMeeting(memberId, targetId, rec); return targetId; }
+  return await addMeeting(memberId, rec);
 }
 function refreshTsTargets() {
   const id = $('tsMember').value, m = members.find(x => x.id === id), sel = $('tsTarget');
@@ -2036,15 +2054,24 @@ $('tsTCopy').onclick = async () => {
   if (!(await ensureAiAck())) return;
   const m = members.find(x => x.id === id);
   tsOrig = t;
-  await copyText(buildTranscriptSummaryPrompt(m && m.name, $('tsDate').value, t)); toast('指示文と文字起こしをコピーしました。Geminiに貼り付けて送信し、返答を同じ枠に貼り直してください');
+  await copyText(buildAllPrompt(m && m.name, $('tsDate').value, t, false)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を同じ枠に貼り直してください');
 };
 $('tsSave').onclick = async () => {
   const id = tsTarget(); if (!id) return;
-  let raw = $('tsPaste').value.trim(); if (!raw) { toast('文字起こしを貼り付けてください'); return; }
-  raw = withOriginal(raw, tsOrig); tsOrig = '';
-  await saveTranscriptTo(id, $('tsTarget').value, { date: $('tsDate').value || guessDate(raw.slice(0, 300)) || today(), title: $('tsTitle').value.trim() || '1to1', source: '貼り付け', text: /【文字起こし】|【要約】/.test(raw) ? raw : cleanTranscript(raw, 'txt') });
-  $('tsPaste').value = ''; $('tsTitle').value = ''; $('tsDate').value = ''; refreshTsTargets();
-  toast('記録しました'); openDetail(id);
+  const raw = $('tsPaste').value.trim(); if (!raw) { toast('文字起こしを貼り付けてください'); return; }
+  const p = parseAll(raw), date = $('tsDate').value || guessDate(raw.slice(0, 300)) || today(), title = $('tsTitle').value.trim() || '1to1';
+  const reset = () => { $('tsPaste').value = ''; $('tsTitle').value = ''; $('tsDate').value = ''; tsOrig = ''; refreshTsTargets(); };
+  if (isUnified(p) && (p.summary || tsOrig)) {
+    const text = (p.summary || '') + (tsOrig ? (p.summary ? '\n\n【文字起こし】\n' : '') + cleanTranscript(tsOrig, 'txt') : '');
+    const rid = await saveTranscriptTo(id, $('tsTarget').value, { date, title, source: '貼り付け', text });
+    reset();
+    const m2 = members.find(x => x.id === id), rec2 = m2 && (m2.meetings || []).find(x => x.id === rid);
+    toast('記録しました。続けて、項目の反映画面を開きます');
+    if (!(m2 && rec2 && applyAll(m2, raw, rec2, { summaryDone: true }))) openDetail(id);
+    return;
+  }
+  await saveTranscriptTo(id, $('tsTarget').value, { date, title, source: '貼り付け', text: /【文字起こし】|【要約】/.test(raw) ? raw : cleanTranscript(raw, 'txt') });
+  reset(); toast('記録しました'); openDetail(id);
 };
 function renderTsMembers() {
   const cur = $('tsMember').value;
@@ -2052,29 +2079,93 @@ function renderTsMembers() {
   $('tsMember').innerHTML = `<option value="">${members.length ? '誰との1to1ですか？（メンバーを選択）' : '先にメンバーを登録してください'}</option>` + list.map(m => `<option value="${m.id}" ${m.id === cur ? 'selected' : ''}>${esc(m.name || '(名前なし)')}${m.business ? '（' + esc(m.business) + '）' : ''}</option>`).join('');
 }
 
-// ===== 文字起こしから新規メンバーを登録 =====
-const nmFields = () => [['name', '名前'], ['kana', 'ふりがな']].concat(trFields().filter(([k]) => !['bniTopic', 'chapter', 'region', 'bniRole', 'businessEn'].includes(k)));
-function buildNewMemberPrompt(transcript) {
-  const lines = nmFields().map(([k, l, t = '']) => (t.includes('area') ? `【${l}】` : `${l}：`)).join('\n');
-  return `以下は、はじめて会った方との打ち合わせ（BNIの1to1など）の議事録・文字起こしです。
+// ===== 文字起こしをAIで整理（要約・項目・紹介文・トピック・やること を1回で） =====
+async function copyText(s) {
+  try { await navigator.clipboard.writeText(s); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = s; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+}
+const TR_EXTRA = [['bniTopic', 'BNIコネクト登録用の会話のトピック'], ['memo', '1to1のメモ', 'area']];
+const trFields = () => AI_SHEET_FIELDS.filter(([k]) => !['name', 'kana', 'romaji', 'joinDate', 'industry', 'otherInfo', 'introText'].includes(k)).concat(TR_EXTRA);
+const SUM_KEYS = [['_sum', '要約', 'area'], ['_biz', '相手の事業・強み', 'area'], ['_ref', '紹介・協業の可能性', 'area'], ['_act', '次のアクション', 'area'], ['_connect', 'つなぐ約束', 'area']];
+const allAiFields = isNew => SUM_KEYS.concat(isNew ? [['name', '名前'], ['kana', 'ふりがな'], ['introText', '紹介文', 'area']] : [], trFields().filter(([k]) => !isNew || !['chapter', 'region', 'bniRole', 'businessEn'].includes(k)));
+function buildAllPrompt(name, date, transcript, isNew) {
+  const lines = allAiFields(isNew).map(([k, l, t = '']) => (t.includes('area') ? `【${l}】` : `${l}：`)).join('\n');
+  return `以下は、BNIの1to1ミーティング（${date ? date + '、' : ''}${isNew ? 'はじめて会った方との打ち合わせ' : '相手：' + (name || '相手の方') + 'さん'}）の議事録・文字起こしです。
 記録した本人ではなく、相手の方について、会話の中で実際に話された情報だけを、下の項目に当てはめて書き出してください。
 
 ルール：
 ・会話に出てこなかった項目は、項目名ごと省略してください
 ・推測や一般論は書かないでください。書かれていることを盛らないでください
-・名前は、会話に出てくる相手の方のフルネームを書いてください（分からなければ省略）
-・「カテゴリー」には、相手の方の業種・職種を短く書いてください（例：税理士、美容室）
 ・項目名は下の表記のまま変えないでください（言い換え・番号・太字・表・コードブロックは使わない）
 ・「項目名：」の項目は、同じ行の「：」の後に書いてください
 ・【】の項目は、次の行から「・」の箇条書きで書いてください
+・【要約】は5〜10行の箇条書きで書いてください
+・【つなぐ約束】には、会話の中で「誰かと誰かをつなぐ・紹介する」という話や約束が出ていれば、「・Aさんと、Bさんをつなぐ：理由や状況」の形で書いてください（私が誰かを紹介する話も、相手が私に誰かを紹介してくれる話も含みます）。出ていなければ項目ごと省略してください
+・【次のアクション】には、約束したこと・宿題を「・誰が・何を」の形で書いてください
 ・【1to1のメモ】には、次にやること・約束したこと・紹介できそうな人を書いてください
-・前置きやまとめは不要です。下の形式だけを出力してください
+${isNew ? '・「名前」には、相手の方のフルネームを書いてください（分からなければ省略）\n・「カテゴリー」には、相手の方の業種・職種を短く書いてください（例：税理士、美容室）\n・【紹介文】は、あなたが書いてください。この方を他のBNIメンバーや知人に紹介するための文章で、3〜5文、「○○さんは…」で始めます。会話に出た事業・強み・人柄だけを使い、家族・生年月日・住所などのプライベートな情報は入れないでください\n' : ''}・前置きやまとめは不要です。下の形式だけを出力してください
 
 ${lines}
 
 ---- 議事録・文字起こし ここから ----
 ${transcript}
 ---- 議事録・文字起こし ここまで ----`;
+}
+// AIの返答を、要約・項目・やること に分ける
+function parseAll(reply) {
+  const r = parseAiSheet(reply, allAiFields(true));
+  const lab = Object.fromEntries(SUM_KEYS.map(([k, l]) => [k, l]));
+  const summary = ['_sum', '_biz', '_ref', '_act'].filter(k => r[k]).map(k => `【${lab[k]}】\n${r[k]}`).join('\n');
+  const lines = v => (v || '').split('\n').map(x => x.replace(/^\s*[・\-*•]\s*/, '').trim()).filter(Boolean);
+  const tasks = [...lines(r._connect).map(text => ({ text, kind: 'connect' })), ...lines(r._act).map(text => ({ text, kind: 'todo' }))];
+  SUM_KEYS.forEach(([k]) => delete r[k]);
+  return { fields: r, summary, tasks };
+}
+const isUnified = p => !!(p.summary || p.tasks.length || Object.keys(p.fields).length >= 3);
+const normT = t => (t || '').normalize('NFKC').replace(/\s/g, '').toLowerCase();
+function mergeTasks(m, list, from) {
+  const cur = m.tasks || [], keys = new Set(cur.map(t => normT(t.text)));
+  const add = [];
+  for (const t of list) { const k = normT(t.text); if (!k || keys.has(k)) continue; keys.add(k); add.push({ id: uid(), text: t.text, kind: t.kind || 'todo', done: false, createdAt: Date.now(), from: from || '' }); }
+  return [...cur, ...add];
+}
+async function setTasks(id, fn) {
+  const m = members.find(x => x.id === id); if (!m || viewerMode) return;
+  await saveMember({ ...m, tasks: fn([...(m.tasks || [])]), updatedAt: Date.now() });
+}
+// 既存メンバーに反映：空欄は埋める／複数行の項目は追記／1行項目で既に値があるものは変えない。確認画面で保存
+function applyAll(m, reply, rec, opts = {}) {
+  const p = parseAll(reply), r = p.fields;
+  ['name', 'kana', 'introText'].forEach(k => delete r[k]);
+  const date = rec && rec.date;
+  const topic = r.bniTopic; delete r.bniTopic;
+  const keys = Object.keys(r);
+  if (!keys.length && !topic && !p.summary && !p.tasks.length) { alert('AIの返答から項目を読み取れませんでした。指示文ごとコピーしてAIに送ったか確認してください。'); return false; }
+  let meetings = m.meetings || [], sumAdded = false;
+  if (rec) meetings = meetings.map(x => {
+    if (x.id !== rec.id) return x;
+    const y = { ...x };
+    if (topic) y.bniTopic = topic;
+    if (p.summary && !opts.summaryDone && !/【要約】/.test(y.text || '')) { y.text = p.summary + (y.text ? '\n\n【文字起こし】\n' + y.text : ''); sumAdded = true; }
+    return y;
+  });
+  const next = { ...m, meetings, tasks: mergeTasks(m, p.tasks, date) };
+  const newTasks = next.tasks.length - (m.tasks || []).length;
+  const changed = new Set(), kept = [];
+  const areaKeys = new Set(ALL_FIELDS.filter(f => (f[2] || '').includes('area')).map(f => f[0]));
+  for (const k of keys) {
+    if (!LABEL[k]) continue;
+    if (!next[k]) { next[k] = r[k]; changed.add(k); }
+    else if (next[k].includes(r[k])) continue;
+    else if (areaKeys.has(k)) { next[k] += `\n【${date || ''} 1to1より】\n` + r[k]; changed.add(k); }
+    else kept.push(`${LABEL[k]}（AI：${r[k]}）`);
+  }
+  openEdit(next, { changed, banner: `AIの返答から <b>${changed.size}項目</b> を反映しました（緑色の欄）。内容を確認して「保存」を押してください。`
+    + (topic ? '<br>BNIコネクト登録用の「会話のトピック」も記録に入れました。' : '')
+    + (sumAdded ? '<br>1to1の記録に「要約」を付けました。' : '')
+    + (newTasks ? `<br><b>やること ${newTasks}件</b>（つなぐ約束・次のアクション）を追加しました。` : '')
+    + (kept.length ? `<br>既に入力済みのため変えなかった項目：${esc(kept.join('、'))}` : '') });
+  return true;
 }
 $('nmGemini').onclick = () => window.open('https://gemini.google.com/', '_blank', 'noopener');
 $('nmFile').onchange = async e => {
@@ -2085,68 +2176,73 @@ $('nmFile').onchange = async e => {
 $('nmCopy').onclick = async () => {
   const t = $('nmPaste').value.trim(); if (!t) { toast('先に枠①へ文字起こしを貼り付けてください'); return; }
   if (!(await ensureAiAck())) return;
-  await copyText(buildNewMemberPrompt(t)); toast('指示文と文字起こしをコピーしました。Geminiに貼り付けて送信し、返答を枠②に貼り付けてください');
+  await copyText(buildAllPrompt(null, $('nmDate').value, t, true)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を枠②に貼り付けてください');
 };
 $('nmOpen').onclick = () => {
   const reply = $('nmReply').value.trim(), t = $('nmPaste').value.trim();
-  if (!reply) { toast('枠②にGeminiの返答を貼り付けてください'); return; }
-  const r = parseAiSheet(reply, nmFields());
-  if (Object.keys(r).length < 2) { alert('AIの返答から項目を読み取れませんでした。「新規登録用の指示文」をコピーしてAIに送ったか確認してください。'); return; }
+  if (!reply) { toast('枠②にAIの返答を貼り付けてください'); return; }
+  const p = parseAll(reply);
+  if (!isUnified(p)) { alert('AIの返答から項目を読み取れませんでした。「新規登録用の指示文」をコピーしてAIに送ったか確認してください。'); return; }
   const date = $('nmDate').value || guessDate(t.slice(0, 300)) || today();
-  const data = { ...r, category: $('nmCat').value, date1to1: date };
-  const meeting = t ? { date, title: '1to1', source: '貼り付け', text: cleanTranscript(t, 'txt') } : null;
-  addReview(data, '文字起こしから', { meeting });
+  const data = { ...p.fields, category: $('nmCat').value, date1to1: date };
+  const topic = data.bniTopic; delete data.bniTopic;
+  const text = (p.summary ? p.summary + (t ? '\n\n【文字起こし】\n' : '') : '') + (t ? cleanTranscript(t, 'txt') : '');
+  const meeting = text ? { date, title: '1to1', source: '貼り付け', text, ...(topic ? { bniTopic: topic } : {}) } : null;
+  addReview(data, '文字起こしから', { meeting, tasks: p.tasks, taskFrom: date });
   $('nmReply').value = ''; $('nmPaste').value = ''; $('nmDate').value = '';
 };
-async function copyText(s) {
-  try { await navigator.clipboard.writeText(s); }
-  catch (e) { const ta = document.createElement('textarea'); ta.value = s; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
-}
-// 議事録・文字起こしから、名簿と同じ項目に当てはまる内容をAIに抜き出してもらう
-const TR_EXTRA = [['bniTopic', 'BNIコネクト登録用の会話のトピック'], ['memo', '1to1のメモ', 'area']];
-const trFields = () => AI_SHEET_FIELDS.filter(([k]) => !['name', 'kana', 'romaji', 'joinDate', 'industry', 'otherInfo', 'introText'].includes(k)).concat(TR_EXTRA);
-function buildTranscriptFieldsPrompt(name, transcript) {
-  const lines = trFields().map(([k, l, t = '']) => (t.includes('area') ? `【${l}】` : `${l}：`)).join('\n');
-  return `以下は、BNIの1to1ミーティングの議事録・文字起こしです。
-記録した本人ではなく、相手の「${name || '相手の方'}」さんについて、会話の中で実際に話された情報だけを、下の項目に当てはめて書き出してください。
 
-ルール：
-・会話に出てこなかった項目は、項目名ごと省略してください
-・推測や一般論は書かないでください。書かれていることを盛らないでください
-・項目名は下の表記のまま変えないでください（言い換え・番号・太字・表・コードブロックは使わない）
-・「項目名：」の項目は、同じ行の「：」の後に書いてください
-・【】の項目は、次の行から「・」の箇条書きで書いてください
-・【1to1のメモ】には、次にやること・約束したこと・紹介できそうな人を書いてください
-・前置きやまとめは不要です。下の形式だけを出力してください
-
-${lines}
-
----- 議事録・文字起こし ここから ----
-${transcript}
----- 議事録・文字起こし ここまで ----`;
+// ===== 事前メモ（会う前に見返す1枚） =====
+function openPreMemo(id) {
+  const m = members.find(x => x.id === id); if (!m) return;
+  const last = (m.meetings || []).filter(x => x.text).sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+  const sum = last ? (((last.text || '').match(/【要約】\n([\s\S]*?)(?=\n【|$)/) || [])[1] || (last.text || '').slice(0, 300)).trim() : '';
+  const open = (m.tasks || []).filter(t => !t.done);
+  const parts = [
+    [`${m.name || ''}さん${m.business ? '（' + m.business + '）' : ''}`, ''],
+    ['紹介文', m.introText], ['この方が求める紹介', m.wantReferrals],
+    [last ? `前回（${last.date || ''}）の要約` : '', sum],
+    ['未完了のやること', open.map(t => '・' + t.text).join('\n')], ['自分用メモ', m.memo]
+  ].filter(([l, v], i) => i === 0 || (l && v));
+  const text = parts.map(([l, v], i) => i === 0 ? '■ ' + l : `【${l}】\n${v}`).join('\n\n');
+  $('overlay').innerHTML = `<div class="detail vok"><div class="head"><div class="nm" style="font-size:18px">事前メモ</div><button class="btn small close" id="pClose">✕ 閉じる</button></div>
+    <p class="howto" style="margin:10px 0;display:block">会う前に見返すための1枚です。</p>
+    <div class="intro-t" style="white-space:pre-wrap">${esc(text)}</div>
+    <div class="actions"><button class="btn primary" id="pCopy">コピー</button></div></div>`;
+  $('pClose').onclick = () => openDetail(id);
+  $('pCopy').onclick = async () => { await copyText(text); toast('コピーしました'); };
 }
-// AIの返答を項目に反映（空欄は埋める／複数行の項目は追記／1行項目で既に値があるものは変えない）
-function applyAi(m, text, rec) {
-  const date = rec && rec.date;
-  let r = parseAiSheet(text, trFields());
-  if (Object.keys(r).length < 2) r = parseAiAnswer(text); // 以前の指示文の返答にも対応
-  delete r.name;
-  let topicSaved = false;
-  if (r.bniTopic && rec) { m = { ...m, meetings: (m.meetings || []).map(x => x.id === rec.id ? { ...x, bniTopic: r.bniTopic } : x) }; topicSaved = true; }
-  delete r.bniTopic;
-  const keys = Object.keys(r);
-  if (!keys.length && !topicSaved) { alert('AIの返答から項目を読み取れませんでした。指示文ごとコピーしてAIに送ったか確認してください。'); return; }
-  const next = { ...m }, changed = new Set(), kept = [];
-  const areaKeys = new Set(ALL_FIELDS.filter(f => (f[2] || '').includes('area')).map(f => f[0]));
-  for (const k of keys) {
-    if (!LABEL[k]) continue;
-    if (!next[k]) { next[k] = r[k]; changed.add(k); }
-    else if (next[k].includes(r[k])) continue;
-    else if (areaKeys.has(k)) { next[k] += `\n【${date || ''} 1to1より】\n` + r[k]; changed.add(k); }
-    else kept.push(`${LABEL[k]}（AI：${r[k]}）`);
-  }
-  openEdit(next, { changed, banner: `AIの要約から <b>${changed.size}項目</b> を反映しました（緑色の欄）。内容を確認して「保存」を押してください。` + (topicSaved ? '<br>BNIコネクト登録用の「会話のトピック」も記録に入れました。' : '') + (kept.length ? `<br>既に入力済みのため変えなかった項目：${esc(kept.join('、'))}` : '') });
+// ===== 重複の検出と統合 =====
+function findDups() {
+  const key = m => (m.name || '').normalize('NFKC').replace(/[\s　]/g, '').toLowerCase();
+  const g = {}; members.forEach(m => { const k = key(m); if (k) (g[k] = g[k] || []).push(m); });
+  return Object.values(g).filter(a => a.length > 1);
 }
+async function mergePair(keepId, dropId) {
+  const a = members.find(x => x.id === keepId), b = members.find(x => x.id === dropId); if (!a || !b) return;
+  const n = { ...a };
+  for (const f of ALL_FIELDS) { const k = f[0]; if (!n[k] && b[k]) n[k] = b[k]; }
+  if (!n.photo && b.photo) n.photo = b.photo;
+  const seen = new Set((a.meetings || []).map(x => x.id));
+  n.meetings = [...(a.meetings || []), ...(b.meetings || []).filter(x => !seen.has(x.id))].sort((x, y) => (x.date || '').localeCompare(y.date || ''));
+  n.tasks = mergeTasks(a, (b.tasks || []).map(t => ({ text: t.text, kind: t.kind })), '');
+  n.fav = a.fav || b.fav; n.updatedAt = Date.now();
+  await saveMember(n); await deleteMember(dropId);
+}
+function openDups() {
+  const groups = findDups();
+  $('overlay').innerHTML = `<div class="detail vok"><div class="head"><div class="nm" style="font-size:18px">重複の確認</div><button class="btn small close" id="dClose2">✕ 閉じる</button></div>
+    ${groups.length ? '<p class="howto" style="display:block;margin:10px 0">同じ名前のメンバーです。「こちらに統合」を押すと、もう一方の空欄を埋めて記録を引き継ぎ、もう一方は削除されます。</p>' : '<p class="howto" style="display:block;margin:10px 0">同じ名前のメンバーはいませんでした。</p>'}
+    ${groups.map((g, i) => `<div class="dup-pair"><b>${esc(g[0].name)}</b>${g.map(m => `<div class="row" style="margin-top:6px;gap:8px"><span style="flex:1;font-size:13px">${esc(m.business || '')} ${esc(m.chapter || '')} ／ 1to1記録${(m.meetings || []).length}件</span><button class="btn small" data-keep="${m.id}" data-g="${i}">こちらに統合</button></div>`).join('')}</div>`).join('')}</div>`;
+  $('dClose2').onclick = closeOverlay;
+  $('overlay').querySelectorAll('[data-keep]').forEach(b => b.onclick = async () => {
+    const g = groups[+b.dataset.g]; if (!confirm('他の重複を統合して削除します。よろしいですか？')) return;
+    for (const m of g) if (m.id !== b.dataset.keep) await mergePair(b.dataset.keep, m.id);
+    toast('統合しました'); openDups();
+  });
+  $('overlay').classList.remove('hidden');
+}
+$('dupBtn').onclick = openDups;
 
 // ===== 1to1の予定とカレンダー連携 =====
 const PLACES = ['オンライン', '対面'];
@@ -2228,7 +2324,26 @@ function bindPlanPanel(box, m, rec) {
   p.querySelector('[data-pb=ics]').onclick = async () => { const r = await persist(); downloadIcs(m, r); };
 }
 // 今後の予定（一覧の上）
+const taskHtml = (t, withWho, m) => `<div class="tk-item ${t.done ? 'done' : ''}" data-tid="${t.id}" data-mid="${m.id}"><input type="checkbox" ${t.done ? 'checked' : ''} class="tk-c" ${viewerMode ? 'disabled' : ''}><span class="tk-k ${t.kind === 'connect' ? 'c' : ''}">${t.kind === 'connect' ? 'つなぐ' : 'やること'}</span><span class="tk-t">${esc(t.text)}${withWho ? ` <span class="tk-who" data-open="${m.id}">（${esc(m.name || '')}さんとの1to1）</span>` : ''}</span><button class="btn small tk-del" title="削除">✕</button></div>`;
+function bindTasks(root, after) {
+  root.querySelectorAll('.tk-item').forEach(r => {
+    const mid = r.dataset.mid, tid = r.dataset.tid;
+    r.querySelector('.tk-c').onchange = async e => { await setTasks(mid, a => a.map(t => t.id === tid ? { ...t, done: e.target.checked } : t)); after && after(); };
+    r.querySelector('.tk-del').onclick = async () => { await setTasks(mid, a => a.filter(t => t.id !== tid)); after && after(); };
+  });
+  root.querySelectorAll('[data-open]').forEach(a => a.onclick = () => openDetail(a.dataset.open));
+}
+function renderTaskPanel() {
+  const el = $('taskPanel'); if (!el) return;
+  const list = members.flatMap(m => (m.tasks || []).filter(t => !t.done).map(t => ({ m, t }))).sort((a, b) => (a.t.kind === 'connect' ? 0 : 1) - (b.t.kind === 'connect' ? 0 : 1) || (a.t.createdAt || 0) - (b.t.createdAt || 0));
+  el.classList.toggle('hidden', !list.length);
+  if (!list.length) { el.innerHTML = ''; return; }
+  const shown = list.slice(0, 15);
+  el.innerHTML = `<b>✅ やること（${list.length}件）</b> <span style="color:var(--sub);font-size:12px">1to1の会話から拾った「つなぐ約束」などです</span>` + shown.map(({ m, t }) => taskHtml(t, true, m)).join('') + (list.length > shown.length ? `<div style="color:var(--sub);font-size:12px;margin-top:4px">ほか ${list.length - shown.length}件は各メンバーの画面で見られます</div>` : '');
+  bindTasks(el, () => {});
+}
 function renderUpcoming() {
+  renderTaskPanel();
   const now = today();
   const list = members.flatMap(m => (m.meetings || []).filter(x => x.date && x.date >= now && !x.text && !x.bniDone).map(x => ({ m, x })))
     .sort((a, b) => (a.x.date + (a.x.time || '')).localeCompare(b.x.date + (b.x.time || ''))).slice(0, 10);
@@ -2480,83 +2595,7 @@ function openIntro(id) {
 }
 
 // ===== 1to1の候補日を作る（空き時間から候補を出して、Messenger等に貼る文章にする） =====
-let slotBusy = [];       // 読み込んだ予定ファイル（.ics）の「埋まっている時間」。この画面を閉じるまでの間だけ保持（予定のタイトル等は読みません）
-let slotBusyN = 0;
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
-function icsDate(val, params) {
-  const m = (val || '').match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/);
-  if (!m) return null;
-  const [, y, mo, d, hh, mi, , z] = m;
-  if (hh === undefined) return { allDay: true, date: new Date(+y, +mo - 1, +d) };
-  if (z) return { date: new Date(Date.UTC(+y, +mo - 1, +d, +hh, +mi)) };
-  const tz = (params.match(/TZID=([^;:]+)/) || [])[1];
-  if (tz && tz !== 'Asia/Tokyo' && tz !== 'Tokyo Standard Time') {
-    try {
-      const guess = Date.UTC(+y, +mo - 1, +d, +hh, +mi);
-      const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(new Date(guess)).map(p => [p.type, p.value]));
-      const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
-      return { date: new Date(guess - (asUtc - guess)) };
-    } catch (e) { /* 不明なタイムゾーンは、この端末の時刻として扱う */ }
-  }
-  return { date: new Date(+y, +mo - 1, +d, +hh, +mi) };
-}
-// .ics（Googleカレンダー等の書き出し）から、from〜to の間で埋まっている時間 [{s,e}] を取り出す（終日の予定は除く）
-function parseIcsBusy(text, from, to) {
-  const lines = text.replace(/\r/g, '').replace(/\n[ \t]/g, '').split('\n');
-  const evs = []; let cur = null;
-  for (const l of lines) {
-    if (l === 'BEGIN:VEVENT') cur = { ex: [] };
-    else if (l === 'END:VEVENT') { if (cur) evs.push(cur); cur = null; }
-    else if (cur) {
-      const i = l.indexOf(':'); if (i < 0) continue;
-      const head = l.slice(0, i), val = l.slice(i + 1), name = head.split(';')[0].toUpperCase(), params = head.slice(name.length);
-      if (name === 'DTSTART') cur.s = icsDate(val, params);
-      else if (name === 'DTEND') cur.e = icsDate(val, params);
-      else if (name === 'DURATION') cur.dur = val;
-      else if (name === 'RRULE') cur.rr = Object.fromEntries(val.split(';').map(x => x.split('=')));
-      else if (name === 'EXDATE') val.split(',').forEach(v => { const d = icsDate(v, params); if (d) cur.ex.push(d.date.getTime()); });
-      else if (name === 'RECURRENCE-ID') { const d = icsDate(val, params); if (d) cur.rid = d.date.getTime(); }
-      else if (name === 'UID') cur.uid = val;
-      else if (name === 'STATUS') cur.status = val;
-      else if (name === 'TRANSP') cur.transp = val;
-    }
-  }
-  const skipInst = new Set(evs.filter(e => e.rid && e.uid).map(e => e.uid + '|' + e.rid));
-  const out = [], lo = from.getTime() - 86400000, hi = to.getTime() + 86400000;
-  for (const ev of evs) {
-    if (!ev.s || ev.s.allDay || ev.status === 'CANCELLED' || ev.transp === 'TRANSPARENT') continue;
-    let len = ev.e && !ev.e.allDay ? ev.e.date - ev.s.date : 3600000;
-    if (!ev.e && ev.dur) { const d = ev.dur.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?$/); if (d) len = ((+d[1] || 0) * 1440 + (+d[2] || 0) * 60 + (+d[3] || 0)) * 60000; }
-    if (!(len > 0)) len = 3600000;
-    const add = st => { const t = st.getTime(); if (t + len < lo || t > hi || ev.ex.includes(t) || (ev.uid && !ev.rid && skipInst.has(ev.uid + '|' + t))) return; out.push({ s: new Date(t), e: new Date(t + len) }); };
-    const st = ev.s.date;
-    if (!ev.rr) { add(st); continue; }
-    const r = ev.rr, iv = Math.max(1, +r.INTERVAL || 1), until = r.UNTIL ? (icsDate(r.UNTIL, '') || {}).date : null, maxN = +r.COUNT || Infinity;
-    const wk = r.BYDAY ? r.BYDAY.split(',').map(x => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].indexOf(x.slice(-2))).filter(x => x >= 0) : [st.getDay()];
-    let n = 0;
-    const lim = t => !until || t <= until.getTime() + 86400000;
-    const base = new Date(st.getFullYear(), st.getMonth(), st.getDate()), H = st.getHours(), M = st.getMinutes();
-    const inst = (y, mo, d) => new Date(y, mo, d, H, M);
-    for (let k = 0; k < 4000 && n < maxN; k++) {
-      let cands = [];
-      if (r.FREQ === 'DAILY') cands = [inst(base.getFullYear(), base.getMonth(), base.getDate() + k * iv)];
-      else if (r.FREQ === 'WEEKLY') { const w0 = new Date(base.getFullYear(), base.getMonth(), base.getDate() - base.getDay() + k * 7 * iv); cands = wk.map(w => inst(w0.getFullYear(), w0.getMonth(), w0.getDate() + w)); }
-      else if (r.FREQ === 'MONTHLY') cands = [inst(base.getFullYear(), base.getMonth() + k * iv, base.getDate())];
-      else if (r.FREQ === 'YEARLY') cands = [inst(base.getFullYear() + k * iv, base.getMonth(), base.getDate())];
-      else break;
-      cands.sort((a, b) => a - b);
-      let stop = false;
-      for (const c of cands) {
-        if (c < st) continue;
-        if (!lim(c.getTime())) { stop = true; break; }
-        if (++n > maxN) { stop = true; break; }
-        add(c);
-      }
-      if (stop || (cands.length && cands[0].getTime() > hi)) break;
-    }
-  }
-  return out;
-}
 // 候補日時：条件に合う空き時間を全部出す
 function genSlots(o) {
   const out = [], now = Date.now() + 3 * 3600000;
@@ -2590,7 +2629,7 @@ async function openSlots(mId) {
   const opt = (arr, cur) => arr.map(([v, l]) => `<option value="${v}" ${String(v) === String(cur) ? 'selected' : ''}>${l}</option>`).join('');
   $('overlay').innerHTML = `<div class="detail vok">
     <div class="head"><div class="nm" style="font-size:18px">📅 1to1の候補日を作る</div><button class="btn small close" id="sClose">✕ 閉じる</button></div>
-    <p class="howto" style="margin:10px 0">条件に合う空き時間から候補を出し、Messengerなどに貼る文章にします。自分のGoogleカレンダーの予定ファイル（.ics）を読み込むと、予定が入っている時間は自動で外れます（読み込まなくても使えます）。</p>
+    <p class="howto" style="margin:10px 0">条件に合う日時から候補を出し、Messengerなどに貼る文章にします。Googleカレンダーの空きに合わせたいときは、下の「AIに調べてもらう」を使ってください。このアプリに登録済みの1to1の予定は自動で外れます。</p>
     <div class="fields">
       <div class="f"><label>宛名（会員名。空欄でも可）</label><input id="sName" list="sNames" value="${esc(m0 ? m0.name : '')}"><datalist id="sNames">${members.map(m => `<option value="${esc(m.name || '')}">`).join('')}</datalist></div>
       <div class="f"><label>期間</label><div class="row" style="gap:4px"><input type="date" id="sFrom" value="${ymd(tomorrow)}"> 〜 <input type="date" id="sTo" value="${ymd(end)}"></div></div>
@@ -2601,9 +2640,7 @@ async function openSlots(mId) {
       <div class="f"><label>前後の余裕（移動など）</label><select id="sBuf">${opt([[0, 'なし'], [15, '15分'], [30, '30分'], [60, '60分']], st.buffer)}</select></div>
       <div class="f"><label>候補の数</label><select id="sCnt">${opt([3, 4, 5, 6, 8].map(n => [n, n + '個']), st.count)}</select></div>
       <div class="f"><label>場所</label><select id="sPlace">${opt([['', 'どちらでも'], ['オンライン', 'オンライン'], ['対面', '対面']], st.place)}</select></div>
-      <div class="f wide"><label>自分のカレンダーの予定ファイル（.ics）　<span id="sIcsInfo" style="color:var(--red);font-weight:700"></span></label>
-        <div class="row"><label class="btn small">予定ファイルを選ぶ<input type="file" id="sIcs" accept=".ics,text/calendar" multiple hidden></label><button class="btn small" id="sIcsClr">読み込みを消す</button></div>
-        <div class="howto">Googleカレンダー →「設定」→「インポートとエクスポート」→「エクスポート」で、ZIPの中の.icsファイルが手に入ります。読み込んだ内容は、この画面を閉じるまでの間だけ使い、保存しません（予定のタイトルも読みません）。終日の予定は「空いている」扱いです。この画面で登録済みの1to1の予定は、自動で外します。</div></div>
+
     </div>
     <div class="web-t" style="margin-top:14px">空いている候補（選んだものが文章に入ります）</div>
     <div id="sList" style="margin:6px 0"></div>
@@ -2612,7 +2649,7 @@ async function openSlots(mId) {
     <div class="web" style="margin-top:14px"><div class="web-t">🤖 Googleカレンダーの空きを、普段使っているAIに調べてもらう</div>
       <p class="howto" style="margin:4px 0 8px">上の条件をもとにした指示文をコピーして、普段使っているAI（Claude・ChatGPT・Geminiなど）に貼り付けます。AIがあなたのGoogleカレンダーを見て、空いている日時から候補の文章を作ります。スマホでも使えます。<br>※使うAIで、Googleカレンダーとの連携をオンにしておいてください（連携していないAIは、カレンダーを読めません）。</p>
       <div class="row"><button class="btn small primary" id="sAiCopy">指示文をコピー</button></div></div>
-    <p class="howto">相手から日時の返事が来たら、その方の詳細画面の「1to1の予定」に入れてください（Googleカレンダーにも追加できます）。祝日は自動では外れないので、候補から外してください。</p></div>`;
+    <p class="howto">相手から日時の返事が来たら、その方の詳細画面の「1to1の予定」に入れてください（Googleカレンダーにも追加できます）。祝日と、Googleカレンダーの予定は自動では外れないので、候補から外してください。</p></div>`;
   $('overlay').classList.remove('hidden');
   $('sClose').onclick = closeOverlay;
   let slots = [], chosen = new Set(), msgEdited = false;
@@ -2634,25 +2671,14 @@ async function openSlots(mId) {
     const o = { from: new Date($('sFrom').value + 'T00:00'), to: new Date($('sTo').value + 'T23:59'), days: days(), tStart: toMin($('sTs').value), tEnd: toMin($('sTe').value), dur: +$('sDur').value, step: +$('sStep').value, buffer: +$('sBuf').value, count: +$('sCnt').value, place: $('sPlace').value };
     if (isNaN(o.from) || isNaN(o.to)) return;
     if (!viewerMode) await Store.set('slotSettings', { days: o.days, tStart: $('sTs').value, tEnd: $('sTe').value, dur: o.dur, step: o.step, buffer: o.buffer, count: o.count, place: o.place });
-    o.busy = [...slotBusy.filter(b => b.e >= o.from && b.s <= o.to), ...plannedBusy()];
+    o.busy = plannedBusy();
     slots = genSlots(o); chosen = autoPick(slots, o.count); msgEdited = false; drawList(); drawMsg();
   };
-  $('sIcsInfo').textContent = slotBusyN ? `読み込み済み：予定${slotBusyN}件` : '';
   ['sFrom', 'sTo', 'sTs', 'sTe', 'sDur', 'sStep', 'sBuf', 'sCnt', 'sPlace'].forEach(id => $(id).addEventListener('change', () => recalc()));
   $('sName').addEventListener('input', drawMsg);
   $('sPlace').addEventListener('change', drawMsg);
   $('sDays').querySelectorAll('[data-w]').forEach(b => b.onclick = () => { b.classList.toggle('on'); recalc(); });
   $('sMsg').addEventListener('input', () => { msgEdited = true; });
-  $('sIcs').onchange = async e => {
-    const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return;
-    const from = new Date($('sFrom').value + 'T00:00'), to = new Date($('sTo').value + 'T23:59');
-    try {
-      for (const f of fs) { const b = parseIcsBusy(await f.text(), from, to); slotBusy = slotBusy.concat(b); slotBusyN += b.length; }
-      $('sIcsInfo').textContent = `読み込み済み：予定${slotBusyN}件`; toast(`予定を読み込みました（${slotBusyN}件）`);
-    } catch (err) { alert('予定ファイルを読み込めませんでした。.ics形式のファイルを選んでください。'); }
-    recalc();
-  };
-  $('sIcsClr').onclick = () => { slotBusy = []; slotBusyN = 0; $('sIcsInfo').textContent = ''; recalc(); };
   $('sAiCopy').onclick = async () => {
     const f = new Date($('sFrom').value + 'T00:00'), t = new Date($('sTo').value + 'T00:00');
     if (isNaN(f) || isNaN(t)) { toast('期間を入れてください'); return; }
