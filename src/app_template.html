@@ -236,6 +236,7 @@ body.viewer .detail.vok .row{display:flex}body.viewer .detail.vok .howto{display
 .fclose{position:fixed;right:16px;bottom:16px;z-index:30;box-shadow:0 3px 12px rgba(0,0,0,.3);border-radius:99px!important;padding:10px 18px!important;font-size:14px;background:#1f2328!important;color:#fff!important;border-color:#1f2328!important}
 .overlay .intro-box{border:1px solid var(--line);background:#fff8f0;border-radius:10px;padding:10px 12px;margin:10px 0}.intro-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}.intro-h span{display:flex;gap:6px}.intro-t{white-space:pre-wrap;line-height:1.7;font-size:15px}body.viewer #dIntroMake{display:none!important}
 .detail.has-fclose{padding-bottom:72px}
+.auto-ai{display:none}body.has-ai .auto-ai{display:inline-flex}body.viewer .auto-ai{display:none!important}.btn.auto-ai.big{font-weight:700}
 .manual-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 4px}.manual-row span{font-size:13px;color:var(--sub)}.manual-btn{font-size:16px;font-weight:700;padding:12px 22px;border:2px solid var(--accent,#1b6fd8);color:var(--accent,#1b6fd8);background:#fff;border-radius:10px}.manual-btn:hover{background:#eef4ff}
 .av-wrap{position:relative;cursor:pointer;border-radius:50%;flex:none;line-height:0}.av-hint{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3;opacity:0;transition:opacity .15s}.av-wrap:hover .av-hint,.av-wrap.drag .av-hint{opacity:1}.av-wrap.drag{outline:3px dashed var(--accent,#1b6fd8)}body.viewer .av-wrap{cursor:default;pointer-events:none}body.viewer .av-hint{display:none}
 @media(hover:none){.av-hint{opacity:1;inset:auto 0 0 0;border-radius:0 0 40px 40px;height:24px;font-size:11px}}
@@ -279,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.22.4</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.23.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -375,7 +376,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       </ol>
       <textarea id="nmPaste" placeholder="① 文字起こしを貼り付け" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px"></textarea>
       <textarea id="nmReply" placeholder="② AIの返答を貼り付け" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:6px"></textarea>
-      <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn primary" id="nmOpen">確認画面を開く</button></div>
+      <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn auto-ai big" id="nmAuto">🤖 AIで自動整理（貼り付け不要）</button><button class="btn primary" id="nmOpen">確認画面を開く</button></div>
       <div class="caution"><b>録音・文字起こしは、必ず事前に相手の了承を得てください。</b>Geminiのアクティビティ（学習）をオフにしてから使ってください。</div>
     </div>
     <div class="web" id="tsPanel">
@@ -396,7 +397,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <input type="file" id="tsFile" accept=".txt,.md,.vtt,.srt,.docx,.pdf,.csv,.tsv,.json" multiple hidden>
       <div class="rec-gemini"><b>📝 文字起こしのテキストがある場合</b>：下の枠に貼り付け →「<button class="btn small primary" id="tsTCopy">AIで整理する（コピー）</button>」→ Geminiに貼り付けて送信 → 返答をコピーして、<b>同じ枠に貼り直して</b>保存（元の文字起こしも一緒に保存されます）</div>
       <textarea id="tsPaste" placeholder="ここに、AIの返答や文字起こし・議事録を貼り付けて「保存」" style="width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px"></textarea>
-      <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn primary" id="tsSave">貼り付けた内容を保存</button></div>
+      <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn auto-ai big" id="tsAuto">🤖 AIで自動整理して保存</button><button class="btn primary" id="tsSave">貼り付けた内容を保存</button></div>
       <div class="note">取り込んだ文字起こしは、そのメンバーの「1to1の記録」に保存され、検索の対象になります。記録の「項目をAIで抽出（コピー）」から、Geminiで相手の情報を各項目に反映できます。</div>
       <div class="caution"><b>録音・文字起こしは、必ず事前に相手の了承を得てください。</b><br>Geminiに録音や文字起こしを渡すと、会話の内容がGoogleに送られます。Geminiのアクティビティ（学習）をオフにしてから使ってください。</div>
     </div>
@@ -505,6 +506,16 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
         <button class="btn danger hidden" id="fsForget">自動保存を解除</button>
       </div>
       <p id="fsUnsupported" class="hidden" style="margin-top:10px;color:#8a6200">このブラウザは自動保存に対応していません。Google Chrome か Microsoft Edge で開くと使えます。それまでは下の「書き出し」で定期的に保存してください。</p>
+    </div>
+    <div class="panel" id="aiKeyPanel">
+      <b>🤖 AIの自動整理（任意・お試し機能）</b>
+      <p class="howto" style="display:block;margin:6px 0">GeminiのAPIキーを入れると、文字起こしの整理が「コピー → 貼り付け」なしでボタン1つでできます。使わない方は何もしなくて大丈夫です（今まで通りコピー方式で使えます）。</p>
+      <ol class="steps"><li><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio（APIキーのページ）</a>を開き、Googleアカウントでログイン</li>
+      <li>「APIキーを作成」を押し、出てきた長い英数字をコピー</li>
+      <li>下の欄に貼り付けて「保存してテスト」</li></ol>
+      <div class="row"><input type="password" id="aiKeyInput" placeholder="APIキーを貼り付け" autocomplete="off" style="flex:1;min-width:220px;border:1px solid var(--line);border-radius:8px;padding:8px"><button class="btn primary" id="aiKeySave">保存してテスト</button><button class="btn danger hidden" id="aiKeyDel">キーを削除</button></div>
+      <div class="status" id="aiKeyStatus" style="margin-top:6px"></div>
+      <div class="caution"><b>ご注意：</b>この機能を使うと、文字起こしの内容がGoogleのAIに送信されます。Googleの無料枠では、送った内容がGoogleの改善（学習）に使われる場合があります。相手の個人情報を含むため、使う前に相手の了承と、Googleの利用規約を必ず確認してください。APIキーはこのパソコンのブラウザの中にだけ保存され、バックアップファイルや他の人には渡りません。</div>
     </div>
     <div class="privacy"><h3>個人情報の取り扱いについて（必ずお読みください）</h3>
       <ul>
@@ -758,6 +769,19 @@ $('resumeBtn').onclick = () => AutoSave.resume();
 $('fsCreate').onclick = () => AutoSave.create();
 $('fsOpen').onclick = () => AutoSave.open();
 $('fsForget').onclick = () => AutoSave.forget();
+async function refreshAiKeyUi() {
+  await loadAiKey();
+  const st = $('aiKeyStatus'); st.textContent = aiKey ? '✓ APIキーを設定済みです（取り込み画面・1to1の記録に「AIで自動整理」ボタンが出ます）' : 'APIキーは未設定です'; st.className = 'status ' + (aiKey ? 'ok' : 'warn');
+  $('aiKeyDel').classList.toggle('hidden', !aiKey);
+}
+$('aiKeySave').onclick = async () => {
+  const k = $('aiKeyInput').value.trim(); if (!k) { toast('APIキーを貼り付けてください'); return; }
+  const prev = aiKey; aiKey = k; const b = $('aiKeySave'); b.disabled = true; b.textContent = 'テスト中…';
+  try { await callGemini('「OK」とだけ返してください。'); await Store.set('geminiKey', k); $('aiKeyInput').value = ''; toast('APIキーを保存しました'); }
+  catch (e) { aiKey = prev; alert(e.message || e); }
+  finally { b.disabled = false; b.textContent = '保存してテスト'; await refreshAiKeyUi(); }
+};
+$('aiKeyDel').onclick = async () => { if (!confirm('保存したAPIキーを削除します。よろしいですか？')) return; await Store.set('geminiKey', ''); await refreshAiKeyUi(); toast('削除しました'); };
 
 // ===== 画面切り替え =====
 function show(view) {
@@ -978,7 +1002,7 @@ function openDetail(id) {
         <div class="mtg-add hidden">
           <div class="rec-gemini" style="margin-top:0"><b>🎙 録音がある場合</b>：<button class="btn small primary" data-r="copy">文字起こし用の指示文をコピー</button> <button class="btn small" data-r="open">Geminiを開く</button><br>
             <span style="font-size:13px">Geminiに <kbd>Ctrl</kbd>＋<kbd>V</kbd> →「＋」→「ファイルをアップロード」で録音ファイルを添付して送信 → 返答をコピーして下に貼り付け</span></div>
-          <div class="rec-gemini"><b>📝 文字起こしのテキストがある場合</b>：下の枠に貼り付け →「<button class="btn small primary" data-r="tcopy">AIで整理する（コピー）</button>」→ Geminiに貼り付けて送信 → 返答をコピーして、<b>同じ枠に貼り直して</b>保存<br>
+          <div class="rec-gemini"><b>📝 文字起こしのテキストがある場合</b>：下の枠に貼り付け →「<button class="btn small auto-ai" data-r="tauto">🤖 AIで自動整理して保存</button><button class="btn small primary" data-r="tcopy">AIで整理する（コピー）</button>」→ Geminiに貼り付けて送信 → 返答をコピーして、<b>同じ枠に貼り直して</b>保存<br>
             <span style="font-size:12px;color:var(--sub)">元の文字起こしも一緒に保存されます。</span></div>
           <textarea placeholder="Geminiの返答、または文字起こし・議事録（Notion・Zoom・Google Meet など）を貼り付け"></textarea>
           <div class="row" style="justify-content:space-between;margin-top:6px"><label class="btn small">ファイルから<input type="file" accept=".txt,.md,.vtt,.srt,.docx,.pdf,.csv,.tsv,.json" hidden></label><button class="btn small primary" data-r="save">この1to1に${x.text ? '追記' : '保存'}</button></div>
@@ -1059,6 +1083,11 @@ function openDetail(id) {
       addBox._orig = t;
       await copyText(buildAllPrompt(m.name, rec.date, t, false)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を同じ枠に貼り直してください');
     };
+    addBox.querySelector('[data-r=tauto]').onclick = async e => {
+      const ta = addBox.querySelector('textarea'), t = ta.value.trim(); if (!t) { toast('先に下の枠へ文字起こしを貼り付けてください'); return; }
+      const r = await autoAi(e.currentTarget, buildAllPrompt(m.name, rec.date, t, false)); if (!r) return;
+      addBox._orig = t; ta.value = r; addBox.querySelector('[data-r=save]').click();
+    };
     addBox.querySelector('[data-r=save]').onclick = async () => {
       const raw = addBox.querySelector('textarea').value.trim(); if (!raw) { toast('内容を貼り付けてください'); return; }
       const p = parseAll(raw);
@@ -1119,6 +1148,7 @@ function formHtml(data, highlightBlank, changed) {
 function readForm(root) { const o = {}; root.querySelectorAll('[data-k]').forEach(el => { const v = el.value.trim(); if (v) o[el.dataset.k] = v; }); return o; }
 
 function openEdit(m, opts = {}) {
+  $('overlay').classList.remove('hidden');
   $('overlay').innerHTML = `<div class="detail"><div class="head"><div class="nm" style="font-size:18px">編集：${esc(m.name || '')}</div><button class="btn small close" id="eClose">✕</button></div>
     ${opts.banner ? `<div class="banner">${opts.banner}</div>` : ''}
     <div class="photo-edit"><span id="ePhotoAv"></span><div><button class="btn small" id="ePhotoBtn">顔写真を選ぶ</button> <button class="btn small danger" id="ePhotoDel">写真を消す</button><input type="file" id="ePhotoFile" accept="image/*" hidden><div class="hint">パソコンの写真やスクリーンショットを選ぶと、顔まわりが正方形に切り抜かれます。</div></div></div>
@@ -1440,6 +1470,37 @@ ${SUMMARY_FORMAT}
 【文字起こし】
 話者ごとに「話者名：発言」の形で、省略せずに書き起こしてください。話者名が分からない場合は「自分」「相手」としてください。`;
 }
+// ===== AIの自動整理（Gemini API・任意） =====
+const GEMINI_MODEL = 'gemini-2.5-flash';
+let aiKey = '';
+async function loadAiKey() { aiKey = (!viewerMode && await Store.get('geminiKey')) || ''; document.body.classList.toggle('has-ai', !!aiKey); }
+async function callGemini(prompt) {
+  let res;
+  try {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': aiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.2 } }) });
+  } catch (e) { throw new Error('インターネットに接続できませんでした。接続を確認してください。'); }
+  if (!res.ok) {
+    let msg = ''; try { msg = (await res.json()).error.message; } catch (e) {}
+    if (res.status === 400 && /API key/i.test(msg)) throw new Error('APIキーが正しくないようです。キーを確認してください。');
+    if (res.status === 403) throw new Error('このAPIキーは使えませんでした（権限がありません）。');
+    if (res.status === 429) throw new Error('無料枠の上限に達しました。しばらく待ってからやり直してください。');
+    throw new Error(`AIの呼び出しに失敗しました（${res.status}）${msg ? '：' + msg.slice(0, 100) : ''}`);
+  }
+  const j = await res.json();
+  const t = (((j.candidates || [])[0] || {}).content || {}).parts;
+  const text = (t || []).map(x => x.text || '').join('').trim();
+  if (!text) throw new Error('AIから返答がありませんでした（内容が制限された可能性があります）。');
+  return text;
+}
+// ボタンを「処理中」にして、AIの返答を返す。失敗時はnull
+async function autoAi(btn, prompt) {
+  if (!aiKey) { toast('先に「保存・バックアップ」でAPIキーを設定してください'); return null; }
+  if (!(await ensureAiAck())) return null;
+  const old = btn.textContent; btn.disabled = true; btn.textContent = 'AIが整理中…（20〜60秒）';
+  try { return await callGemini(prompt); }
+  catch (e) { alert(e.message || e); return null; }
+  finally { btn.disabled = false; btn.textContent = old; }
+}
 async function ensureAiAck() {
   if (await Store.get('aiAck')) return true;
   if (!confirm('AIに送る前に確認してください。\n\n・この1to1の録音・文字起こしについて、相手の了承を得ていますか？\n・Geminiのアクティビティ（学習）をオフにしていますか？\n\n両方OKなら「OK」を押してください（次回からは表示しません）。')) return false;
@@ -1505,6 +1566,13 @@ $('tsTCopy').onclick = async () => {
   const m = members.find(x => x.id === id);
   tsOrig = t;
   await copyText(buildAllPrompt(m && m.name, $('tsDate').value, t, false)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を同じ枠に貼り直してください');
+};
+$('tsAuto').onclick = async () => {
+  const id = tsTarget(); if (!id) return;
+  const t = $('tsPaste').value.trim(); if (!t) { toast('先に枠へ文字起こしを貼り付けてください'); return; }
+  const m = members.find(x => x.id === id);
+  const r = await autoAi($('tsAuto'), buildAllPrompt(m && m.name, $('tsDate').value, t, false)); if (!r) return;
+  tsOrig = t; $('tsPaste').value = r; $('tsSave').click();
 };
 $('tsSave').onclick = async () => {
   const id = tsTarget(); if (!id) return;
@@ -1627,6 +1695,11 @@ $('nmCopy').onclick = async () => {
   const t = $('nmPaste').value.trim(); if (!t) { toast('先に枠①へ文字起こしを貼り付けてください'); return; }
   if (!(await ensureAiAck())) return;
   await copyText(buildAllPrompt(null, $('nmDate').value, t, true)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を枠②に貼り付けてください');
+};
+$('nmAuto').onclick = async () => {
+  const t = $('nmPaste').value.trim(); if (!t) { toast('先に枠①へ文字起こしを貼り付けてください'); return; }
+  const r = await autoAi($('nmAuto'), buildAllPrompt(null, $('nmDate').value, t, true)); if (!r) return;
+  $('nmReply').value = r; $('nmOpen').click();
 };
 $('nmOpen').onclick = () => {
   const reply = $('nmReply').value.trim(), t = $('nmPaste').value.trim();
@@ -2344,7 +2417,7 @@ $('guideSetup').onclick = () => Wizard.open(true);
   await reload();
   await AutoSave.init();
   await seedAuthor();
-  updateSaveState();
+  updateSaveState(); refreshAiKeyUi();
   if (isMobileDev) $('viewerIntro').classList.remove('hidden');
   if (!(await Viewer.autoStart())) await Wizard.autoStart();
 })();
