@@ -280,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.23.2</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.24.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -1646,11 +1646,11 @@ function openDetail(id) {
       const t = addBox.querySelector('textarea').value.trim(); if (!t) { toast('先に下の枠へ文字起こしを貼り付けてください'); return; }
       if (!(await ensureAiAck())) return;
       addBox._orig = t;
-      await copyText(buildAllPrompt(m.name, rec.date, t, false)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を同じ枠に貼り直してください');
+      await copyText(buildAllPrompt(m.name, rec.date, t, false, !m.introText)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を同じ枠に貼り直してください');
     };
     addBox.querySelector('[data-r=tauto]').onclick = async e => {
       const ta = addBox.querySelector('textarea'), t = ta.value.trim(); if (!t) { toast('先に下の枠へ文字起こしを貼り付けてください'); return; }
-      const r = await autoAi(e.currentTarget, buildAllPrompt(m.name, rec.date, t, false)); if (!r) return;
+      const r = await autoAi(e.currentTarget, buildAllPrompt(m.name, rec.date, t, false, !m.introText)); if (!r) return;
       addBox._orig = t; ta.value = r; addBox.querySelector('[data-r=save]').click();
     };
     addBox.querySelector('[data-r=save]').onclick = async () => {
@@ -1677,7 +1677,7 @@ function openDetail(id) {
         if (!confirm('AIに送る前に確認してください。\n\n・この1to1の録音・文字起こしについて、相手の了承を得ていますか？\n・Geminiのアクティビティ（学習）をオフにしていますか？\n\n両方OKなら「OK」を押してください（次回からは表示しません）。')) return;
         await Store.set('aiAck', true);
       }
-      await copyText(buildAllPrompt(m.name, rec.date, rec.text, false)); toast('指示文と議事録をコピーしました。AIに貼り付けて送信してください'); });
+      await copyText(buildAllPrompt(m.name, rec.date, rec.text, false, !m.introText)); toast('指示文と議事録をコピーしました。AIに貼り付けて送信してください'); });
     on('ai', () => { const a = box.querySelector('.mtg-ai'); a.classList.toggle('hidden'); a.querySelector('textarea').focus(); });
     on('bni', () => box.querySelector('.mtg-bni').classList.toggle('hidden'));
     on('plan', () => box.querySelector('.mtg-plan').classList.toggle('hidden'));
@@ -2147,13 +2147,13 @@ $('tsTCopy').onclick = async () => {
   if (!(await ensureAiAck())) return;
   const m = members.find(x => x.id === id);
   tsOrig = t;
-  await copyText(buildAllPrompt(m && m.name, $('tsDate').value, t, false)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を同じ枠に貼り直してください');
+  await copyText(buildAllPrompt(m && m.name, $('tsDate').value, t, false, !!(m && !m.introText))); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を同じ枠に貼り直してください');
 };
 $('tsAuto').onclick = async () => {
   const id = tsTarget(); if (!id) return;
   const t = $('tsPaste').value.trim(); if (!t) { toast('先に枠へ文字起こしを貼り付けてください'); return; }
   const m = members.find(x => x.id === id);
-  const r = await autoAi($('tsAuto'), buildAllPrompt(m && m.name, $('tsDate').value, t, false)); if (!r) return;
+  const r = await autoAi($('tsAuto'), buildAllPrompt(m && m.name, $('tsDate').value, t, false, !!(m && !m.introText))); if (!r) return;
   tsOrig = t; $('tsPaste').value = r; $('tsSave').click();
 };
 $('tsSave').onclick = async () => {
@@ -2187,9 +2187,9 @@ async function copyText(s) {
 const TR_EXTRA = [['bniTopic', 'BNIコネクト登録用の会話のトピック'], ['memo', '1to1のメモ', 'area']];
 const trFields = () => AI_SHEET_FIELDS.filter(([k]) => !['name', 'kana', 'romaji', 'joinDate', 'industry', 'otherInfo', 'introText'].includes(k)).concat(TR_EXTRA);
 const SUM_KEYS = [['_sum', '要約', 'area'], ['_biz', '相手の事業・強み', 'area'], ['_ref', '紹介・協業の可能性', 'area'], ['_act', '次のアクション', 'area'], ['_connect', 'つなぐ約束', 'area']];
-const allAiFields = isNew => SUM_KEYS.concat(isNew ? [['name', '名前'], ['kana', 'ふりがな'], ['introText', '紹介文', 'area']] : [], trFields().filter(([k]) => !isNew || !['chapter', 'region', 'bniRole', 'businessEn'].includes(k)));
-function buildAllPrompt(name, date, transcript, isNew) {
-  const lines = allAiFields(isNew).map(([k, l, t = '']) => (t.includes('area') ? `【${l}】` : `${l}：`)).join('\n');
+const allAiFields = (isNew, wantIntro) => SUM_KEYS.concat(isNew ? [['name', '名前'], ['kana', 'ふりがな'], ['introText', '紹介文', 'area']] : wantIntro ? [['introText', '紹介文', 'area']] : [], trFields().filter(([k]) => !isNew || !['chapter', 'region', 'bniRole', 'businessEn'].includes(k)));
+function buildAllPrompt(name, date, transcript, isNew, wantIntro) {
+  const lines = allAiFields(isNew, wantIntro).map(([k, l, t = '']) => (t.includes('area') ? `【${l}】` : `${l}：`)).join('\n');
   return `以下は、BNIの1to1ミーティング（${date ? date + '、' : ''}${isNew ? 'はじめて会った方との打ち合わせ' : '相手：' + (name || '相手の方') + 'さん'}）の議事録・文字起こしです。
 記録した本人ではなく、相手の方について、会話の中で実際に話された情報だけを、下の項目に当てはめて書き出してください。
 
@@ -2203,7 +2203,7 @@ function buildAllPrompt(name, date, transcript, isNew) {
 ・【つなぐ約束】には、会話の中で「誰かと誰かをつなぐ・紹介する」という話や約束が出ていれば、「・Aさんと、Bさんをつなぐ：理由や状況」の形で書いてください（私が誰かを紹介する話も、相手が私に誰かを紹介してくれる話も含みます）。出ていなければ項目ごと省略してください
 ・【次のアクション】には、約束したこと・宿題を「・誰が・何を」の形で書いてください
 ・【1to1のメモ】には、次にやること・約束したこと・紹介できそうな人を書いてください
-${isNew ? '・「名前」には、相手の方のフルネームを書いてください（分からなければ省略）\n・「カテゴリー」には、相手の方の業種・職種を短く書いてください（例：税理士、美容室）\n・【紹介文】は、あなたが書いてください。この方を他のBNIメンバーや知人に紹介するための文章で、3〜5文、「○○さんは…」で始めます。会話に出た事業・強み・人柄だけを使い、家族・生年月日・住所などのプライベートな情報は入れないでください\n' : ''}・前置きやまとめは不要です。下の形式だけを出力してください
+${isNew ? '・「名前」には、相手の方のフルネームを書いてください（分からなければ省略）\n・「カテゴリー」には、相手の方の業種・職種を短く書いてください（例：税理士、美容室）\n\n' : ''}${isNew || wantIntro ? '・【紹介文】は、あなたが書いてください。この方を他のBNIメンバーや知人に紹介するための文章で、3〜5文、「○○さんは…」で始めます。会話に出た事業・強み・人柄だけを使い、家族・生年月日・住所などのプライベートな情報は入れないでください\n' : ''}・前置きやまとめは不要です。下の形式だけを出力してください
 
 ${lines}
 
@@ -2236,7 +2236,8 @@ async function setTasks(id, fn) {
 // 既存メンバーに反映：空欄は埋める／複数行の項目は追記／1行項目で既に値があるものは変えない。確認画面で保存
 function applyAll(m, reply, rec, opts = {}) {
   const p = parseAll(reply), r = p.fields;
-  ['name', 'kana', 'introText'].forEach(k => delete r[k]);
+  ['name', 'kana'].forEach(k => delete r[k]);
+  const gotIntro = !m.introText && !!r.introText; if (m.introText) delete r.introText;
   const date = rec && rec.date;
   const topic = r.bniTopic; delete r.bniTopic;
   const keys = Object.keys(r);
@@ -2262,7 +2263,7 @@ function applyAll(m, reply, rec, opts = {}) {
   }
   openEdit(next, { changed, banner: `AIの返答から <b>${changed.size}項目</b> を反映しました（緑色の欄）。内容を確認して「保存」を押してください。`
     + (topic ? '<br>BNIコネクト登録用の「会話のトピック」も記録に入れました。' : '')
-    + (sumAdded ? '<br>1to1の記録に「要約」を付けました。' : '')
+    + (sumAdded ? '<br>1to1の記録に「要約」を付けました。' : '') + (gotIntro ? '<br>紹介文がなかったので、今回の内容から新しく作りました。' : '')
     + (newTasks ? `<br><b>やること ${newTasks}件</b>（つなぐ約束・次のアクション）を追加しました。` : '')
     + (kept.length ? `<br>既に入力済みのため変えなかった項目：${esc(kept.join('、'))}` : '') });
   return true;
