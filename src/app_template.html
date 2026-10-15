@@ -236,6 +236,8 @@ body.viewer .detail.vok .row{display:flex}body.viewer .detail.vok .howto{display
 .fclose{position:fixed;right:16px;bottom:16px;z-index:30;box-shadow:0 3px 12px rgba(0,0,0,.3);border-radius:99px!important;padding:10px 18px!important;font-size:14px;background:#1f2328!important;color:#fff!important;border-color:#1f2328!important}
 .overlay .intro-box{border:1px solid var(--line);background:#fff8f0;border-radius:10px;padding:10px 12px;margin:10px 0}.intro-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}.intro-h span{display:flex;gap:6px}.intro-t{white-space:pre-wrap;line-height:1.7;font-size:15px}body.viewer #dIntroMake{display:none!important}
 .detail.has-fclose{padding-bottom:72px}
+.av-wrap{position:relative;cursor:pointer;border-radius:50%;flex:none;line-height:0}.av-hint{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3;opacity:0;transition:opacity .15s}.av-wrap:hover .av-hint,.av-wrap.drag .av-hint{opacity:1}.av-wrap.drag{outline:3px dashed var(--accent,#1b6fd8)}body.viewer .av-wrap{cursor:default;pointer-events:none}body.viewer .av-hint{display:none}
+@media(hover:none){.av-hint{opacity:1;inset:auto 0 0 0;border-radius:0 0 40px 40px;height:24px;font-size:11px}}
 .av{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#e9eaed;color:#8a8f96;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex:none;vertical-align:middle;overflow:hidden}
 .av.xs{width:26px;height:26px;font-size:12px;margin-right:7px}.av.lg{width:76px;height:76px;font-size:28px}
 .ctop{display:flex;gap:10px;align-items:center;padding-right:26px}
@@ -276,7 +278,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.22.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.22.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -958,7 +960,7 @@ function openDetail(id) {
     return `<div class="sec"><span class="sec-t">${s.title}</span><dl class="dl">${fs.map(([k, l]) => `<dt>${esc(l)}</dt><dd>${val(k)}</dd>`).join('')}</dl></div>`;
   }).join('');
   $('overlay').innerHTML = `<div class="detail">
-    <div class="head"><div style="display:flex;gap:14px;align-items:center">${av(m, 'lg')}<div><div class="biz">${esc(m.business || '')}</div><div class="nm">${esc(m.name || '(名前未入力)')}</div>${m.kana ? `<div style="color:var(--sub);font-size:13px">${esc(m.kana)}</div>` : ''}</div></div>
+    <div class="head"><div style="display:flex;gap:14px;align-items:center"><div class="av-wrap" id="dAvWrap" title="クリック、または写真をドラッグ＆ドロップで${m.photo ? '変更' : '追加'}">${av(m, 'lg')}<span class="av-hint">📷 ${m.photo ? '変更' : '追加'}</span><input type="file" id="dPhotoFile" accept="image/*" hidden></div><div><div class="biz">${esc(m.business || '')}</div><div class="nm">${esc(m.name || '(名前未入力)')}</div>${m.kana ? `<div style="color:var(--sub);font-size:13px">${esc(m.kana)}</div>` : ''}</div></div>
       <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn small" id="dFav">${m.fav ? '★ お気に入り' : '☆ お気に入りに追加'}</button><button class="btn small" id="dSlot">📅 候補日</button><button class="btn small" id="dPre">📝 事前メモ</button><button class="btn small close" id="dClose">✕ 閉じる</button></div></div>
     <div class="intro-box"><div class="intro-h"><b>紹介文</b><span><button class="btn small" id="dIntroMake">${m.introText ? '作り直す・直す' : '＋ 紹介文を作る'}</button>${m.introText ? '<button class="btn small primary" id="dIntroCopy">コピー</button>' : ''}</span></div>${m.introText ? `<div class="intro-t">${hl(m.introText, terms)}</div>` : '<div class="howto" style="margin:0">まだありません。1to1シートの取り込み時にAIが作るか、ここから作れます。</div>'}</div>
     <div class="intro-box" id="dTasks"><div class="intro-h"><b>やること・つなぐ約束</b><span><button class="btn small tk-add" id="dTaskAdd">＋ 追加</button></span></div><div id="dTaskList"></div></div>
@@ -1003,6 +1005,19 @@ function openDetail(id) {
   $('dClose').onclick = closeOverlay;
   $('dIntroCopy') && ($('dIntroCopy').onclick = async () => { await copyText(m.introText); toast('紹介文をコピーしました'); });
   $('dPre').onclick = () => openPreMemo(m.id);
+  if (!viewerMode) {
+    const w = $('dAvWrap'), setPhoto = async f => {
+      if (!f || !/^image\//.test(f.type)) { toast('画像ファイル（JPEG・PNG）を選んでください'); return; }
+      try { const ph = await resizePhoto(f); const cur = members.find(x => x.id === m.id); await saveMember({ ...cur, photo: ph, updatedAt: Date.now() }); toast('顔写真を保存しました'); openDetail(m.id); }
+      catch (err) { alert('この画像は読み込めませんでした。JPEG・PNGの写真を選んでください。'); }
+    };
+    w.onclick = () => $('dPhotoFile').click();
+    $('dPhotoFile').onclick = e => e.stopPropagation();
+    $('dPhotoFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; setPhoto(f); };
+    ['dragenter', 'dragover'].forEach(ev => w.addEventListener(ev, e => { e.preventDefault(); w.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(ev => w.addEventListener(ev, e => { e.preventDefault(); w.classList.remove('drag'); }));
+    w.addEventListener('drop', e => setPhoto(e.dataTransfer.files[0]));
+  }
   $('dIntroMake').onclick = () => openIntro(m.id);
   const drawTasks = () => {
     const cur = members.find(x => x.id === m.id) || m, ts = cur.tasks || [];
