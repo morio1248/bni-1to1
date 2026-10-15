@@ -280,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.25.4</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.26.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -298,7 +298,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
   <div id="storageWarn" class="notice hidden">このブラウザではデータを保存できない設定になっています（プライベートモード等）。「保存・バックアップ」で保存先ファイルを設定してください。</div>
   <div id="resumeBar" class="notice hidden"><span id="resumeText"></span><button class="btn primary small" id="resumeBtn">自動保存を再開</button></div>
   <div id="bniBar" class="notice hidden"><span id="bniText"></span><button class="btn primary small" id="bniBtn">確認する</button></div>
-  <div id="remindBar" class="notice hidden"><span id="remindText"></span><button class="btn small" id="remindBtn">バックアップを設定</button></div>
+  <div id="remindBar" class="notice hidden"><span id="remindText"></span><button class="btn small primary" id="remindBtn">いますぐバックアップを設定</button><button class="btn small" id="remindHelp">くわしく見る</button></div>
 
   <!-- 一覧 -->
   <section id="view-list">
@@ -763,11 +763,12 @@ async function updateSaveState() {
   $('remindBar').classList.toggle('hidden', !(showRemind || stale));
   if (stale && !showRemind) $('remindText').textContent = `最後のバックアップから ${days}日たっています。「保存・バックアップ」で保存しておくと安心です。`;
   else if (showRemind) $('remindText').textContent = AutoSave.supported
-    ? 'まだバックアップされていない変更があります。保存先ファイルを設定すると、以後は自動で保存されます。'
+    ? '⚠ メンバーのデータは、いまこのブラウザの中にだけ保存されています。ブラウザの設定を消したり、パソコンが壊れたりすると、元に戻せません。保存先ファイルを作ると、以後は自動でバックアップされます（1分ほど）。'
     : 'まだバックアップされていない変更があります。「保存・バックアップ」からJSONを書き出してください。';
 }
 $('saveState').onclick = () => show('backup');
-$('remindBtn').onclick = () => show('backup');
+$('remindBtn').onclick = () => { if (AutoSave.supported && AutoSave.state !== 'ok') AutoSave.create(); else show('backup'); };
+$('remindHelp').onclick = () => show('backup');
 $('resumeBtn').onclick = () => AutoSave.resume();
 $('fsCreate').onclick = () => AutoSave.create();
 $('fsOpen').onclick = () => AutoSave.open();
@@ -987,7 +988,7 @@ function openDetail(id) {
   }).join('');
   $('overlay').innerHTML = `<div class="detail">
     <div class="head"><div style="display:flex;gap:14px;align-items:center"><div class="av-wrap" id="dAvWrap" title="クリック、または写真をドラッグ＆ドロップで${m.photo ? '変更' : '追加'}">${av(m, 'lg')}<span class="av-hint">📷 ${m.photo ? '変更' : '追加'}</span><input type="file" id="dPhotoFile" accept="image/*" hidden></div><div><div class="biz">${esc(m.business || '')}</div><div class="nm">${esc(m.name || '(名前未入力)')}</div>${m.kana ? `<div style="color:var(--sub);font-size:13px">${esc(m.kana)}</div>` : ''}</div></div>
-      <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn small" id="dFav">${m.fav ? '★ お気に入り' : '☆ お気に入りに追加'}</button><button class="btn small" id="dSlot">📅 候補日</button><button class="btn small" id="dPre">📝 事前メモ</button><button class="btn small close" id="dClose">✕ 閉じる</button></div></div>
+      <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn small" id="dFav">${m.fav ? '★ お気に入り' : '☆ お気に入りに追加'}</button><button class="btn small" id="dSlot">📅 候補日</button><button class="btn small" id="dPre">📝 事前メモ</button><button class="btn small" id="dThanks">✉ お礼を作る</button><button class="btn small close" id="dClose">✕ 閉じる</button></div></div>
     <div class="intro-box"><div class="intro-h"><b>紹介文</b><span><button class="btn small" id="dIntroMake">${m.introText ? '作り直す・直す' : '＋ 紹介文を作る'}</button>${m.introText ? '<button class="btn small primary" id="dIntroCopy">コピー</button>' : ''}</span></div>${m.introText ? `<div class="intro-t">${hl(m.introText, terms)}</div>` : '<div class="howto" style="margin:0">まだありません。1to1シートの取り込み時にAIが作るか、ここから作れます。</div>'}</div>
     <div class="intro-box" id="dTasks"><div class="intro-h"><b>やること・つなぐ約束</b><span><button class="btn small tk-add" id="dTaskAdd">＋ 追加</button></span></div><div id="dTaskList"></div></div>
     ${body}
@@ -1031,6 +1032,7 @@ function openDetail(id) {
   $('dClose').onclick = closeOverlay;
   $('dIntroCopy') && ($('dIntroCopy').onclick = async () => { await copyText(m.introText); toast('紹介文をコピーしました'); });
   $('dPre').onclick = () => openPreMemo(m.id);
+  $('dThanks').onclick = () => openDraft(m.id, 'thanks');
   if (!viewerMode) {
     const w = $('dAvWrap'), setPhoto = async f => {
       if (!f || !/^image\//.test(f.type)) { toast('画像ファイル（JPEG・PNG）を選んでください'); return; }
@@ -1781,8 +1783,9 @@ function openPreMemo(id) {
   $('overlay').innerHTML = `<div class="detail vok"><div class="head"><div class="nm" style="font-size:18px">事前メモ</div><button class="btn small close" id="pClose">✕ 閉じる</button></div>
     <p class="howto" style="margin:10px 0;display:block">会う前に見返すための1枚です。</p>
     <div class="intro-t" style="white-space:pre-wrap">${esc(text)}</div>
-    <div class="actions"><button class="btn primary" id="pCopy">コピー</button></div></div>`;
+    <div class="actions"><button class="btn" id="pTalk">💡 話題を提案してもらう</button><button class="btn primary" id="pCopy">コピー</button></div></div>`;
   $('pClose').onclick = () => openDetail(id);
+  $('pTalk').onclick = () => openDraft(id, 'talk', () => openPreMemo(id));
   $('pCopy').onclick = async () => { await copyText(text); toast('コピーしました'); };
 }
 // ===== 重複の検出と統合 =====
@@ -2140,6 +2143,61 @@ function buildIntroPrompt(m, note) {
 ${note ? `・今回の補足：${note}\n` : ''}
 【情報】
 ${connectInfo(m)}`;
+}
+// ===== 話題の提案・お礼メッセージ（共通の下書き画面） =====
+function lastRecord(m) { return (m.meetings || []).filter(x => x.text).sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0]; }
+function recapOf(rec) { if (!rec) return ''; const t = rec.text || ''; const sm = (t.match(/【要約】\n([\s\S]*?)(?=\n【文字起こし】|$)/) || [])[1]; return (sm || t).trim().slice(0, 5000); }
+function buildTalkPrompt(m, note) {
+  const rec = lastRecord(m), open = (m.tasks || []).filter(t => !t.done).map(t => '・' + t.text).join('\n');
+  return `これから、BNIの1to1ミーティングで${m.name || '相手の方'}さんと会います。会話が深まり、お互いの紹介につながるように、私が相手に聞くとよいことを提案してください。
+
+ルール：
+・「聞くとよい質問」を5つ、箇条書き（・）で書いてください。具体的で、答えやすい質問にしてください
+・前回の話や、未完了のやることがあれば、「前回の続きの確認」として別に1〜3個書いてください
+・下の情報に書かれていることだけを根拠にし、推測や決めつけは書かないでください
+・前置きや説明は不要です。見出し（【聞くとよい質問】【前回の続きの確認】）と箇条書きだけを出力してください
+${note ? `・今回の目的：${note}\n` : ''}
+【相手の情報】
+${connectInfo(m)}
+${m.wantReferrals ? `この方が求める紹介：${m.wantReferrals.replace(/\n+/g, ' / ').slice(0, 400)}\n` : ''}${rec ? `\n【前回（${rec.date || ''}）の1to1の要約】\n${recapOf(rec)}\n` : ''}${open ? `\n【未完了のやること】\n${open}\n` : ''}${m.memo ? `\n【自分用メモ】\n${m.memo.slice(0, 500)}\n` : ''}`;
+}
+function buildThanksPrompt(m, note, kind) {
+  const rec = lastRecord(m), open = (m.tasks || []).filter(t => !t.done).map(t => '・' + t.text).join('\n');
+  return `BNIの1to1ミーティングのあとに、${m.name || '相手の方'}さんへ送る「お礼のメッセージ」を書いてください。
+
+ルール：
+・形式：${kind === 'mail' ? 'メール（1行目に「件名：」、空行のあとに本文）。丁寧な文面で、300字程度' : 'LINEやメッセンジャー。丁寧だが堅すぎない文面で、200字程度'}
+・今日の会話で出た話題を、1〜2個、具体的に入れてください
+・約束したこと・次にやることがあれば、触れてください
+・下の情報に書かれていることだけを使い、推測や盛った表現は書かないでください
+・前置きや説明は不要です。メッセージの本文だけを出力してください（太字・記号・見出しは使わない）
+${note ? `・今回の補足：${note}\n` : ''}
+【相手の情報】
+${connectInfo(m)}
+${rec ? `\n【今回の1to1の内容（${rec.date || ''}）】\n${recapOf(rec)}\n` : ''}${open ? `\n【約束・やること】\n${open}\n` : ''}`;
+}
+const DRAFTS = {
+  talk: { title: '話題の提案', desc: '会う前に、相手に聞くとよいことをAIが提案します。前回の記録や、未完了のやることも踏まえます。', note: '今回の目的（任意。例：紹介先を探したい）', make: '🤖 話題を提案してもらう', label: '提案', build: buildTalkPrompt },
+  thanks: { title: 'お礼のメッセージ', desc: '直近の1to1の内容から、お礼のメッセージの下書きをAIが作ります。', note: '補足（任意。例：来週の定例会で会えるのが楽しみ）', make: '🤖 お礼を作る', label: '下書き', build: buildThanksPrompt, kinds: [['line', 'LINE・メッセージ'], ['mail', 'メール']] }
+};
+function openDraft(id, type, back) {
+  const m = members.find(x => x.id === id), c = DRAFTS[type]; if (!m) return;
+  $('overlay').innerHTML = `<div class="detail vok">
+    <div class="head"><div class="nm" style="font-size:18px">${c.title}：${esc(m.name || '')}</div><button class="btn small close" id="drClose">✕ 戻る</button></div>
+    <p class="howto" style="margin:10px 0;display:block">${c.desc}</p>
+    ${c.kinds ? `<div class="kind" style="margin:6px 0">${c.kinds.map(([v, l], i) => `<label><input type="radio" name="drKind" value="${v}" ${i ? '' : 'checked'}> ${l}</label>`).join('')}</div>` : ''}
+    <div class="f wide"><label>${c.note}</label><input id="drNote" type="text"></div>
+    <div class="row" style="margin:10px 0"><button class="btn primary auto-ai big-btn" id="drAuto">${c.make}</button><button class="btn primary manual-ai" id="drCopy">AIに頼む指示文をコピー</button></div>
+    <div class="f wide"><label>${c.label}（直して使えます）</label><textarea id="drText" rows="${type === 'thanks' ? 9 : 10}" style="width:100%;border:1px solid var(--line);border-radius:7px;padding:8px" placeholder="${type === 'thanks' ? 'ここにお礼の文面が出ます' : 'ここに提案が出ます'}"></textarea></div>
+    <div class="actions"><button class="btn primary" id="drCopyText">この内容をコピー</button></div>
+    <p class="howto manual-ai" style="display:block">指示文を普段使っているAIに貼り付けて送り、返答を上の枠に貼り付けてください。</p></div>`;
+  $('overlay').classList.remove('hidden');
+  const kind = () => (document.querySelector('input[name=drKind]:checked') || {}).value;
+  const prompt = () => c.build(members.find(x => x.id === id) || m, $('drNote').value.trim(), kind());
+  $('drClose').onclick = () => (back ? back() : openDetail(id));
+  $('drAuto').onclick = async () => { const r = await autoAi($('drAuto'), prompt()); if (r) $('drText').value = r.replace(/^```\w*\n?|```$/g, '').trim(); };
+  $('drCopy').onclick = async () => { if (!(await ensureAiAck())) return; await copyText(prompt()); toast('指示文をコピーしました。AIに貼り付けて送信し、返答を下の枠に貼り付けてください'); };
+  $('drCopyText').onclick = async () => { const t = $('drText').value.trim(); if (!t) { toast('まだ内容がありません'); return; } await copyText(t); toast('コピーしました'); };
 }
 function openIntro(id) {
   const m = members.find(x => x.id === id); if (!m) return;
