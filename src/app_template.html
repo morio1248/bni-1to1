@@ -278,7 +278,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.22.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.22.2</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -359,12 +359,6 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       </div></div>
       <div class="note">※Geminiはアクティビティ（学習）をオフにしてから使ってください。設定方法は「使い方」または「かんたんセットアップ」で案内しています。</div>
     </div>
-    <div class="web" id="bcPanel">
-      <div class="web-t">BNIコネクトの1to1レポートを取り込む</div>
-      <p class="howto" style="margin:4px 0 8px">BNIコネクトからダウンロードした1to1のレポート（「one-to-one-report」という名前のExcelファイル）を選ぶと、これまでBNIコネクトに登録した1to1を、各メンバーの「1to1の記録」にまとめて入れます（「BNIコネクト登録済み」になります）。同じファイルを何度読み込んでも、二重には登録されません。</p>
-      <div class="row"><label class="btn primary">レポートファイルを選ぶ<input type="file" id="bcFile" accept=".xls,.xml,.xlsx" hidden></label></div>
-      <div id="bcPreview"></div>
-    </div>
     <div class="row" style="margin-top:10px;justify-content:flex-end">
       <button class="btn" id="manualBtn">白紙から手入力する</button>
     </div>
@@ -409,6 +403,12 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <div class="caution"><b>録音・文字起こしは、必ず事前に相手の了承を得てください。</b><br>Geminiに録音や文字起こしを渡すと、会話の内容がGoogleに送られます。Geminiのアクティビティ（学習）をオフにしてから使ってください。</div>
     </div>
     <div class="queue" id="queue"></div>
+    <div class="web" id="bcPanel">
+      <div class="web-t">BNIコネクトの1to1レポートを取り込む</div>
+      <p class="howto" style="margin:4px 0 8px">BNIコネクトからダウンロードした1to1のレポート（「one-to-one-report」という名前のExcelファイル）を選ぶと、これまでBNIコネクトに登録した1to1を、各メンバーの「1to1の記録」にまとめて入れます（「BNIコネクト登録済み」になります）。同じファイルを何度読み込んでも、二重には登録されません。</p>
+      <div class="row"><label class="btn primary">レポートファイルを選ぶ<input type="file" id="bcFile" accept=".xls,.xml,.xlsx" hidden></label></div>
+      <div id="bcPreview"></div>
+    </div>
   </section>
 
   <!-- 使い方 -->
