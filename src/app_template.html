@@ -205,8 +205,8 @@ mark{background:#ffe58a;padding:0 1px}
 .dl dt,.dl dd{padding:7px 0;border-bottom:1px solid #eef0f2}
 .dl dt{color:#8a9099;font-weight:400;font-size:12.5px;padding-top:9px}
 .dl dd{margin:0;white-space:pre-wrap;color:#1f2328;font-weight:500}
-.boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
-.gbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.boxes{display:block;column-width:250px;column-gap:10px}
+.gbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;break-inside:avoid;margin:0 0 10px}.gbox.wide{column-span:all}
 .gbox.hot{border-color:#f0a8af;background:#fffafa}
 .gbox b{color:#8a9099;font-weight:400;display:block;font-size:12.5px;margin-bottom:3px}
 .gbox.hot b{color:#b4505a}
@@ -280,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.25.2</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.25.3</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -981,7 +981,7 @@ function openDetail(id) {
     if (!fs.length) return '';
     if (s.accent || s.title === 'G.A.I.N.S.') {
       return `<div class="sec"><span class="sec-t ${s.accent ? 'accent' : ''}">${s.title}</span><div class="boxes">${fs.map(([k, l]) =>
-        `<div class="gbox ${k === 'wantReferrals' || k === 'contactCircle' ? 'hot' : ''}" ${k === 'wantReferrals' || k === 'introTemplate' ? 'style="grid-column:1/-1"' : ''}><b>${esc(l)}</b><div>${val(k)}</div></div>`).join('')}</div></div>`;
+        `<div class="gbox ${k === 'wantReferrals' || k === 'contactCircle' ? 'hot' : ''} ${['wantReferrals', 'introTemplate', 'closing'].includes(k) ? 'wide' : ''}"><b>${esc(l)}</b><div>${val(k)}</div></div>`).join('')}</div></div>`;
     }
     return `<div class="sec"><span class="sec-t">${s.title}</span><dl class="dl">${fs.map(([k, l]) => `<dt>${esc(l)}</dt><dd>${val(k)}</dd>`).join('')}</dl></div>`;
   }).join('');
