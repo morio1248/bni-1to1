@@ -280,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.25.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.25.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -389,7 +389,6 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
         <input type="text" id="tsTitle" placeholder="タイトル（任意）" style="flex:1;min-width:160px">
       </div>
       <div class="row" style="margin-top:6px"><label style="font-weight:700;font-size:14px;white-space:nowrap">追加先</label><select id="tsTarget" style="flex:1;min-width:200px"><option value="">新しい記録として追加</option></select></div>
-      <div class="auto-block rec-gemini"><b>🎙 録音ファイルがある場合</b>：<label class="btn primary">録音ファイルを選ぶ（自動で文字起こし→整理→保存）<input type="file" id="tsAudio" accept="audio/*,.m4a,.mp3,.wav,.aac,.ogg,.flac" hidden></label><br><span style="font-size:12px;color:var(--sub)">約18MB（30分前後）までの録音に対応。長い録音は分けてください。</span></div>
       <div class="rec-gemini manual-ai">
         <b>🎙 録音がある場合は、Geminiで文字起こし</b>
         <ol class="steps"><li><button class="btn small primary" data-rec="copy">文字起こし用の指示文をコピー</button> <button class="btn small" data-rec="open">Geminiを開く</button></li>
@@ -1568,7 +1567,6 @@ function openDetail(id) {
           <button class="btn small ${!x.text && !isPlanned(x) ? 'primary' : ''}" data-a="add">${x.text ? '議事録を追記' : '議事録・録音を追加'}</button>
           <button class="btn small danger" data-a="del">削除</button></div>
         <div class="mtg-add hidden">
-          <div class="auto-block rec-gemini" style="margin-top:0"><b>🎙 録音ファイルがある場合</b>：<label class="btn small primary">録音ファイルを選ぶ（自動で文字起こし→整理→保存）<input type="file" data-r="audio" accept="audio/*,.m4a,.mp3,.wav,.aac,.ogg,.flac" hidden></label></div>
           <div class="rec-gemini manual-ai" style="margin-top:0"><b>🎙 録音がある場合</b>：<button class="btn small primary" data-r="copy">文字起こし用の指示文をコピー</button> <button class="btn small" data-r="open">Geminiを開く</button><br>
             <span style="font-size:13px">Geminiに <kbd>Ctrl</kbd>＋<kbd>V</kbd> →「＋」→「ファイルをアップロード」で録音ファイルを添付して送信 → 返答をコピーして下に貼り付け</span></div>
           <div class="rec-gemini"><b>📝 文字起こしのテキストがある場合</b><span class="auto-block" style="display:inline">：下の枠に貼り付けて <button class="btn small auto-ai" data-r="tauto">🤖 AIで自動整理して保存</button></span><span class="manual-ai">：下の枠に貼り付け →「<button class="btn small primary" data-r="tcopy">AIで整理する（コピー）</button>」→ Geminiに貼り付けて送信 → 返答をコピーして、<b>同じ枠に貼り直して</b>保存</span><br>
@@ -1651,12 +1649,6 @@ function openDetail(id) {
       if (!(await ensureAiAck())) return;
       addBox._orig = t;
       await copyText(buildAllPrompt(m.name, rec.date, t, false, !m.introText)); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を同じ枠に貼り直してください');
-    };
-    addBox.querySelector('[data-r=audio]').onchange = async e => {
-      const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-      let t; try { t = await transcribeAudio(f, null, m.name, rec.date); } catch (err) { alert(err.message || err); return; }
-      if (!t) return;
-      addBox.querySelector('textarea').value = t; addBox.querySelector('[data-r=tauto]').click();
     };
     addBox.querySelector('[data-r=tauto]').onclick = async e => {
       const ta = addBox.querySelector('textarea'), t = ta.value.trim(); if (!t) { toast('先に下の枠へ文字起こしを貼り付けてください'); return; }
@@ -2122,12 +2114,6 @@ const AI_FILE_LIMIT = 18 * 1024 * 1024;
 const fileToInline = f => new Promise((ok, ng) => {
   const r = new FileReader(); r.onerror = () => ng(new Error('ファイルを読み込めませんでした')); r.onload = () => ok({ mime: f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : /\.m4a$/i.test(f.name) ? 'audio/mp4' : /\.mp3$/i.test(f.name) ? 'audio/mpeg' : /\.wav$/i.test(f.name) ? 'audio/wav' : 'application/octet-stream'), data: String(r.result).split(',')[1] }); r.readAsDataURL(f);
 });
-// 録音ファイル → 話者つきの文字起こし（テキスト）
-async function transcribeAudio(file, btn, name, date) {
-  if (file.size > AI_FILE_LIMIT) { alert('録音ファイルが大きすぎます（約18MBまで）。30分ずつなどに分けるか、録音の文字起こしアプリで文字にしたものを貼り付けてください。'); return null; }
-  const inline = await fileToInline(file);
-  return await autoAi(btn, `添付した録音は、BNIの1to1ミーティング（${date ? date + '、' : ''}相手：${name || '相手の方'}さん）の音声です。話者ごとに「話者名：発言」の形で、省略せずに書き起こしてください。話者名が分からない場合は「自分」「相手」としてください。前置きや説明は不要で、書き起こしだけを出力してください。`, inline, '🎙 録音を文字に起こしています…（録音の長さによって数分かかります）');
-}
 async function ensureAiAck() {
   if (await Store.get('aiAck')) return true;
   if (!confirm('AIに送る前に確認してください。\n\n・この1to1の録音・文字起こしについて、相手の了承を得ていますか？\n・Geminiのアクティビティ（学習）をオフにしていますか？\n\n両方OKなら「OK」を押してください（次回からは表示しません）。')) return false;
@@ -2193,14 +2179,6 @@ $('tsTCopy').onclick = async () => {
   const m = members.find(x => x.id === id);
   tsOrig = t;
   await copyText(buildAllPrompt(m && m.name, $('tsDate').value, t, false, !!(m && !m.introText))); toast('指示文と文字起こしをコピーしました。AIに貼り付けて送信し、返答を同じ枠に貼り直してください');
-};
-$('tsAudio').onchange = async e => {
-  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  const id = tsTarget(); if (!id) return;
-  const m = members.find(x => x.id === id);
-  let t; try { t = await transcribeAudio(f, null, m && m.name, $('tsDate').value); } catch (err) { alert(err.message || err); return; }
-  if (!t) return;
-  $('tsPaste').value = t; $('tsAuto').click();
 };
 $('tsAuto').onclick = async () => {
   const id = tsTarget(); if (!id) return;
