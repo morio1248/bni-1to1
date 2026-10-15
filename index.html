@@ -236,6 +236,7 @@ body.viewer .detail.vok .row{display:flex}body.viewer .detail.vok .howto{display
 .fclose{position:fixed;right:16px;bottom:16px;z-index:30;box-shadow:0 3px 12px rgba(0,0,0,.3);border-radius:99px!important;padding:10px 18px!important;font-size:14px;background:#1f2328!important;color:#fff!important;border-color:#1f2328!important}
 .overlay .intro-box{border:1px solid var(--line);background:#fff8f0;border-radius:10px;padding:10px 12px;margin:10px 0}.intro-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}.intro-h span{display:flex;gap:6px}.intro-t{white-space:pre-wrap;line-height:1.7;font-size:15px}body.viewer #dIntroMake{display:none!important}
 .detail.has-fclose{padding-bottom:72px}
+.manual-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 4px}.manual-row span{font-size:13px;color:var(--sub)}.manual-btn{font-size:16px;font-weight:700;padding:12px 22px;border:2px solid var(--accent,#1b6fd8);color:var(--accent,#1b6fd8);background:#fff;border-radius:10px}.manual-btn:hover{background:#eef4ff}
 .av-wrap{position:relative;cursor:pointer;border-radius:50%;flex:none;line-height:0}.av-hint{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3;opacity:0;transition:opacity .15s}.av-wrap:hover .av-hint,.av-wrap.drag .av-hint{opacity:1}.av-wrap.drag{outline:3px dashed var(--accent,#1b6fd8)}body.viewer .av-wrap{cursor:default;pointer-events:none}body.viewer .av-hint{display:none}
 @media(hover:none){.av-hint{opacity:1;inset:auto 0 0 0;border-radius:0 0 40px 40px;height:24px;font-size:11px}}
 .av{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#e9eaed;color:#8a8f96;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex:none;vertical-align:middle;overflow:hidden}
@@ -278,7 +279,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.22.3</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.22.4</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -359,9 +360,6 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       </div></div>
       <div class="note">※Geminiはアクティビティ（学習）をオフにしてから使ってください。設定方法は「使い方」または「かんたんセットアップ」で案内しています。</div>
     </div>
-    <div class="row" style="margin-top:10px;justify-content:flex-end">
-      <button class="btn" id="manualBtn">白紙から手入力する</button>
-    </div>
     <div class="web" id="nmPanel">
       <div class="web-t">🆕 はじめての方を、打ち合わせの文字起こしから新規登録する</div>
       <p class="howto" style="margin:4px 0 8px">自己紹介のPDFやシートがない方（BNI以外の方など）を、打ち合わせの文字起こしだけで登録します。AIが会話から名前・事業・家族・趣味などを抜き出し、確認画面で直してから登録できます。文字起こしは、その方の「1to1の記録」にも保存されます。</p>
@@ -403,7 +401,8 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <div class="caution"><b>録音・文字起こしは、必ず事前に相手の了承を得てください。</b><br>Geminiに録音や文字起こしを渡すと、会話の内容がGoogleに送られます。Geminiのアクティビティ（学習）をオフにしてから使ってください。</div>
     </div>
     <div class="queue" id="queue"></div>
-    <div class="web" id="bcPanel">
+        <div class="manual-row"><button class="btn manual-btn" id="manualBtn">✏️ 白紙から手入力する</button><span>取り込むデータがない方を、手で1人ずつ登録します</span></div>
+<div class="web" id="bcPanel">
       <div class="web-t">BNIコネクトの1to1レポートを取り込む</div>
       <p class="howto" style="margin:4px 0 8px">BNIコネクトからダウンロードした1to1のレポート（「one-to-one-report」という名前のExcelファイル）を選ぶと、これまでBNIコネクトに登録した1to1を、各メンバーの「1to1の記録」にまとめて入れます（「BNIコネクト登録済み」になります）。同じファイルを何度読み込んでも、二重には登録されません。</p>
       <div class="row"><label class="btn primary">レポートファイルを選ぶ<input type="file" id="bcFile" accept=".xls,.xml,.xlsx" hidden></label></div>
