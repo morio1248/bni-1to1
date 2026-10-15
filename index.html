@@ -280,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.23.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.23.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -511,7 +511,8 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <b>🤖 AIの自動整理（任意・お試し機能）</b>
       <p class="howto" style="display:block;margin:6px 0">GeminiのAPIキーを入れると、文字起こしの整理が「コピー → 貼り付け」なしでボタン1つでできます。使わない方は何もしなくて大丈夫です（今まで通りコピー方式で使えます）。</p>
       <ol class="steps"><li><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio（APIキーのページ）</a>を開き、Googleアカウントでログイン</li>
-      <li>「APIキーを作成」を押し、出てきた長い英数字をコピー</li>
+      <li>「APIキーを作成」を押す。プロジェクトを選ぶ画面が出たら、<b>「Default Gemini Project」</b>を選ぶ（無料枠で使えます。課金設定をした別のプロジェクトを選ぶと、料金がかかる場合があります）</li>
+      <li>出てきた長い英数字（APIキー）をコピー</li>
       <li>下の欄に貼り付けて「保存してテスト」</li></ol>
       <div class="row"><input type="password" id="aiKeyInput" placeholder="APIキーを貼り付け" autocomplete="off" style="flex:1;min-width:220px;border:1px solid var(--line);border-radius:8px;padding:8px"><button class="btn primary" id="aiKeySave">保存してテスト</button><button class="btn danger hidden" id="aiKeyDel">キーを削除</button></div>
       <div class="status" id="aiKeyStatus" style="margin-top:6px"></div>
