@@ -287,7 +287,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.28.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.28.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2279,11 +2279,12 @@ async function callGemini(prompt, inline, maxOut) {
     try { res = await geminiCall(geminiModel, prompt, inline, maxOut); } catch (e) { throw new Error('インターネットに接続できませんでした。接続を確認してください。'); }
   }
   // それでも混み合っているときは、同じキーで使えるほかのFlash系モデルに切り替えてみる
+  const tried = [geminiModel];
   if (!res.ok && [500, 502, 503, 504].includes(res.status)) {
     setBusy('🤖 AIが混み合っているため、別のモデルに切り替えて試しています…');
     try {
       for (const mdl of (await listGeminiCandidates()).filter(n => n !== geminiModel).slice(0, 3)) {
-        const r2 = await geminiCall(mdl, prompt, inline, maxOut);
+        const r2 = await geminiCall(mdl, prompt, inline, maxOut); tried.push(mdl);
         if (r2.ok) { res = r2; break; }
       }
     } catch (e) { /* 切り替えに失敗したら、元のエラーを表示する */ }
@@ -2293,7 +2294,7 @@ async function callGemini(prompt, inline, maxOut) {
     if (res.status === 400 && /API key/i.test(msg)) throw new Error('APIキーが正しくないようです。キーを確認してください。');
     if (res.status === 403) throw new Error('このAPIキーは使えませんでした（権限がありません）。');
     if (res.status === 429) throw new Error('無料枠の上限に達しました。しばらく待ってからやり直してください。');
-    if (res.status === 503) throw new Error('Geminiが混み合っています（一時的なものです）。数分あけてから、やり直してください。');
+    if (res.status === 503) throw new Error(`Geminiが混み合っています（一時的なものです）。数分あけてから、やり直してください。\n〔状況：${tried.join('、')} で ${res.status}${msg ? '／' + msg.slice(0, 80) : ''}〕`);
     throw new Error(`AIの呼び出しに失敗しました（${res.status}）${msg ? '：' + msg.slice(0, 100) : ''}`);
   }
   const j = await res.json();
