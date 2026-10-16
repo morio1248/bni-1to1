@@ -287,7 +287,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.27.2</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.28.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2094,7 +2094,8 @@ ${SUMMARY_FORMAT}
 話者ごとに「話者名：発言」の形で、省略せずに書き起こしてください。話者名が分からない場合は「自分」「相手」としてください。`;
 }
 // ===== 録音して記録（試作） =====
-const REC_BPS = 20000, REC_MAX_BYTES = 14 * 1024 * 1024, REC_MAX_MS = 90 * 60 * 1000;
+// 録音は10分ごとの区間に分けて保存し、区間ごとに文字にする（長い録音を一度に送ると、Geminiが混み合いやすいため）
+const REC_BPS = 20000, REC_MAX_MS = 180 * 60 * 1000, REC_SEG_MS = 10 * 60 * 1000, REC_LEGACY_SEG_CHUNKS = 60;
 const Rec = { active: null };
 const recFmt = ms => { const t = Math.floor(ms / 1000); return `${pad(Math.floor(t / 3600))}:${pad(Math.floor(t / 60) % 60)}:${pad(t % 60)}`.replace(/^00:/, ''); };
 function recBar(html) {
@@ -2103,15 +2104,15 @@ function recBar(html) {
   if (!b) { b = document.createElement('div'); b.id = 'recBar'; document.body.appendChild(b); }
   b.innerHTML = html; return b;
 }
-function buildTranscribePrompt(name) {
-  return `添付した音声は、BNIの1to1ミーティング（相手：${name || '相手の方'}さん）の会話です。
+function buildTranscribePrompt(name, k, n) {
+  return `添付した音声は、BNIの1to1ミーティング（相手：${name || '相手の方'}さん）の会話の一部です${n > 1 ? `（全体を${n}つに分けた、${k}番目）` : ''}。
 
 ルール：
 ・日本語で、要約せずに最初から最後まで書き起こしてください
 ・話者が変わるたびに改行し、「自分：…」「${name || '相手'}：…」の形で書いてください（自分は録音している人です）。判別できないときは「相手：」としてください
 ・聞き取れない部分は「（聞き取れず）」と書き、推測で補わないでください
 ・「えーと」「あのー」などは省いて構いません
-・前置きや説明は書かず、書き起こしだけを出力してください`;
+${k > 1 ? '・音声の最初の約10秒は、前の部分と重なっていることがあります。前の部分で書いたはずの内容と思われる冒頭は、書かなくて構いません\n' : ''}・前置きや説明は書かず、書き起こしだけを出力してください`;
 }
 async function recBegin(mode, memberId, meetingId) {
   if (Rec.active) { toast('すでに録音中です（画面下の「停止して記録」で終了できます）'); return; }
@@ -2132,18 +2133,25 @@ async function recBegin(mode, memberId, meetingId) {
       ctx.createMediaStreamSource(new MediaStream(disp.getAudioTracks())).connect(dest);
     }
     const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
-    const mr = new MediaRecorder(dest.stream, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: REC_BPS });
-    const st = { mr, cleanup, chunks: [], mime: (mr.mimeType || mime || 'audio/webm'), start: Date.now(), bytes: 0, memberId, meetingId, mode };
-    mr.ondataavailable = e => { if (e.data && e.data.size) { st.chunks.push(e.data); st.bytes += e.data.size; } };
-    mr.start(10000);
+    const st = { cleanup, segs: [[]], mime: mime || 'audio/webm', start: Date.now(), segStart: Date.now(), memberId, meetingId, mode };
+    const startMr = () => {
+      const seg = st.segs[st.segs.length - 1];
+      const mr = new MediaRecorder(dest.stream, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: REC_BPS });
+      mr.ondataavailable = e => { if (e.data && e.data.size) seg.push(e.data); };
+      mr.start(10000); st.mr = mr; st.mime = mr.mimeType || st.mime;
+    };
+    startMr();
     try { if (navigator.wakeLock) st.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
     const m0 = members.find(x => x.id === memberId);
-    const backup = () => Store.set('recDraft', { memberId, meetingId, name: m0 ? m0.name : '', mime: st.mime, chunks: st.chunks.slice(), savedAt: Date.now() });
+    const backup = () => Store.set('recDraft', { memberId, meetingId, name: m0 ? m0.name : '', mime: st.mime, segs: st.segs.map(a => a.slice()), savedAt: Date.now() });
     st.backupTimer = setInterval(backup, 30000);
     st.tick = setInterval(() => {
-      const el = $('recTime'); const ms = Date.now() - st.start;
-      if (el) el.textContent = recFmt(ms);
-      if (ms >= REC_MAX_MS || st.bytes >= REC_MAX_BYTES) recStop(true);
+      const el = $('recTime'), now = Date.now(); if (el) el.textContent = recFmt(now - st.start);
+      if (now - st.start >= REC_MAX_MS) { recStop(true); return; }
+      if (now - st.segStart >= REC_SEG_MS) { // 10分ごとに、新しい区間へ（各区間は単独で再生できるファイルになる）
+        const old = st.mr; try { old.stop(); } catch (e) {}
+        st.segs.push([]); st.segStart = now; startMr();
+      }
     }, 500);
     if (disp) disp.getVideoTracks().forEach(t => t.addEventListener('ended', () => { if (Rec.active === st) { toast('画面の共有が止まったので、録音を終了します'); recStop(); } }));
     Rec.active = st; window.onbeforeunload = () => '録音中です。このページを閉じると、録音が失われます。';
@@ -2173,23 +2181,40 @@ async function recCancel() {
 async function recStop(auto) {
   const st = Rec.active; if (!st) return;
   await recFinishStream(st);
-  if (auto) toast('録音が上限（約90分）に達したので、ここで終了して記録します');
-  const blob = new Blob(st.chunks, { type: st.mime });
-  await Store.set('recDraft', { memberId: st.memberId, meetingId: st.meetingId, name: ((members.find(x => x.id === st.memberId) || {}).name) || '', mime: st.mime, chunks: st.chunks, savedAt: Date.now() });
-  if (blob.size < 2000) { toast('録音が短すぎて、記録できませんでした'); await Store.set('recDraft', null); return; }
-  await recTranscribe(blob, st.memberId, st.meetingId);
+  if (auto) toast('録音が上限（約3時間）に達したので、ここで終了して記録します');
+  const segs = st.segs.filter(a => a.length);
+  const total = segs.reduce((n, a) => n + a.reduce((m, b) => m + b.size, 0), 0);
+  if (total < 2000) { toast('録音が短すぎて、記録できませんでした'); await Store.set('recDraft', null); return; }
+  const m0 = members.find(x => x.id === st.memberId);
+  await Store.set('recDraft', { memberId: st.memberId, meetingId: st.meetingId, name: m0 ? m0.name : '', mime: st.mime, segs, parts: [], savedAt: Date.now() });
+  await recTranscribe();
 }
-async function recTranscribe(blob, memberId, meetingId) {
-  const m = members.find(x => x.id === memberId);
+// 保存してある録音（区間ごと）を、順に文字にする。途中で失敗しても、できた区間は残して、続きからやり直せる
+function recDraftBlobs(d) {
+  const type = d.mime || 'audio/webm';
+  if (d.segs) return d.segs.map(a => new Blob(a, { type }));
+  // 旧形式（1つの長い録音）：先頭の部分を付けて、10分ずつに切り分ける
+  const c = d.chunks || [], out = [];
+  for (let i = 0; i < c.length; i += REC_LEGACY_SEG_CHUNKS) out.push(new Blob(i === 0 ? c.slice(0, REC_LEGACY_SEG_CHUNKS) : [c[0], ...c.slice(i, i + REC_LEGACY_SEG_CHUNKS)], { type }));
+  return out;
+}
+async function recTranscribe() {
+  const d = await Store.get('recDraft'); if (!d) return;
+  const m = members.find(x => x.id === d.memberId);
   if (!m) { alert('この録音のメンバーが見つかりません。'); return; }
-  if (blob.size > REC_MAX_BYTES) { alert('録音が長すぎて、一度に文字にできません（約90分まで）。\n録音は残してあります。画面下の「ファイルに保存」から保存してください。'); recDraftBar(); return; }
-  const mime = (blob.type || 'audio/webm').split(';')[0];
-  const inline = await fileToInline(new File([blob], 'rec', { type: mime }));
-  const text = await autoAi(null, buildTranscribePrompt(m.name), inline, '🎙 録音を文字にしています…（長い録音は数分かかります。このまま待ってください）', 60000);
-  if (!text) { toast('文字にできませんでした。録音は残してあります'); recDraftBar(); return; }
+  const blobs = recDraftBlobs(d), n = blobs.length; d.parts = d.parts || [];
+  for (let k = 0; k < n; k++) {
+    if (d.parts[k]) continue;
+    const mime = (blobs[k].type || 'audio/webm').split(';')[0];
+    const inline = await fileToInline(new File([blobs[k]], 'rec', { type: mime }));
+    const t = await autoAi(null, buildTranscribePrompt(m.name, k + 1, n), inline, `🎙 録音を文字にしています（${k + 1}／${n}）…このまま待ってください`, 30000);
+    if (!t) { await Store.set('recDraft', d); toast(`${k}／${n} 区間まで文字にできました。録音は残してあります`); recDraftBar(); return; }
+    d.parts[k] = t.trim(); await Store.set('recDraft', d);
+  }
+  const text = d.parts.join('\n');
   await Store.set('recDraft', null); recBar('');
-  openDetail(memberId);
-  const box = $('overlay').querySelector(`[data-mid="${meetingId}"]`); if (!box) { toast('文字起こしはできましたが、記録先が見つかりませんでした'); return; }
+  openDetail(d.memberId);
+  const box = $('overlay').querySelector(`[data-mid="${d.meetingId}"]`); if (!box) { toast('文字起こしはできましたが、記録先が見つかりませんでした'); return; }
   const add = box.querySelector('.mtg-add'); add.classList.remove('hidden');
   add.querySelector('textarea').value = text;
   add.scrollIntoView({ block: 'center' });
@@ -2198,13 +2223,16 @@ async function recTranscribe(blob, memberId, meetingId) {
 // 前回の録音が文字になっていないときの案内
 async function recDraftBar() {
   if (Rec.active) return;
-  const d = await Store.get('recDraft'); if (!d || !d.chunks || !d.chunks.length) { return; }
+  const d = await Store.get('recDraft'); if (!d || !((d.segs && d.segs.length) || (d.chunks && d.chunks.length))) { return; }
   const when = d.savedAt ? new Date(d.savedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-  recBar(`<span><b>🎙 文字になっていない録音があります</b>（${esc(d.name || '')}さん・${esc(when)}）</span>
-    <button class="btn small primary" id="rdGo">文字にする</button><button class="btn small" id="rdSave">ファイルに保存</button><button class="btn small danger" id="rdDel">破棄</button>`);
-  const blob = () => new Blob(d.chunks, { type: d.mime || 'audio/webm' });
-  $('rdGo').onclick = () => recTranscribe(blob(), d.memberId, d.meetingId);
-  $('rdSave').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob()); a.download = `1to1録音_${(d.name || '').replace(/\s/g, '')}_${new Date(d.savedAt || Date.now()).toISOString().slice(0, 10)}.webm`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); };
+  const n = recDraftBlobs(d).length, done = (d.parts || []).filter(Boolean).length;
+  recBar(`<span><b>🎙 文字になっていない録音があります</b>（${esc(d.name || '')}さん・${esc(when)}${done ? `・${done}／${n}区間は文字にできています` : ''}）</span>
+    <button class="btn small primary" id="rdGo">${done ? '続きを文字にする' : '文字にする'}</button><button class="btn small" id="rdSave">ファイルに保存</button><button class="btn small danger" id="rdDel">破棄</button>`);
+  $('rdGo').onclick = () => recTranscribe();
+  $('rdSave').onclick = () => {
+    const bl = recDraftBlobs(d), ext = /mp4/.test(d.mime || '') ? 'm4a' : 'webm';
+    bl.forEach((b, i) => setTimeout(() => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `1to1録音_${(d.name || '').replace(/\s/g, '')}_${new Date(d.savedAt || Date.now()).toISOString().slice(0, 10)}${bl.length > 1 ? '_' + (i + 1) : ''}.${ext}`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }, i * 400));
+  };
   $('rdDel').onclick = async () => { if (!confirm('この録音を破棄します。よろしいですか？')) return; await Store.set('recDraft', null); recBar(''); };
 }
 // ===== AIの自動整理（Gemini API・任意） =====
