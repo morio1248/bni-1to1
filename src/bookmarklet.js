@@ -72,7 +72,7 @@
       const rows = await waitFor(() => { const r = [...sd.querySelectorAll('.MuiDataGrid-row, [role="row"]')].filter(r => r.querySelector('input[type="checkbox"]') && !r.querySelector('[role="columnheader"]')); return r.length ? r : null; }, 8000);
       const hits = (rows || []).filter(r => nk((r.querySelector('[role="cell"], [role="gridcell"]') || r).innerText.split('\n')[0]) === nk(d.name) || nk(r.innerText).startsWith(nk(d.name)));
       if (hits.length === 1 && !d.dry) {
-        note('「よろしいですか？」と出たら「OK」を押してください', 0);
+        note('「よろしいですか？」と出たら「わかりました」を押してください', 0);
         hits[0].querySelector('input[type="checkbox"]').click(); // ここでBNI側の確認が出る（OKで続行）
         await waitFor(() => !searchDlg(), 60000);
         await sleep(600);
@@ -86,5 +86,5 @@
     const want = t => !/選択|select/i.test(t) && (d.initiator === 'them' ? nk(t) === nk(d.name) : nk(t) !== nk(d.name));
     if (!(cur && want(combos()[1].innerText.trim()))) { if (!await pick(combos()[1], want)) msgs.push('「1to1を提案したメンバー」を手で選んでください。'); }
   }
-  note(msgs.length ? '入力しました（要確認）\n' + msgs.join('\n') : `${d.name}さんとの1to1を入力しました。\n内容を確認して「OK（わかりました）」を押してください。`, msgs.length > 0);
+  note(msgs.length ? '入力しました（要確認）\n' + msgs.join('\n') : `${d.name}さんとの1to1を入力しました。\n内容を確認して「わかりました」を押してください。`, msgs.length > 0);
 })();
