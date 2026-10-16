@@ -287,7 +287,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.27.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.27.2</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -1648,6 +1648,15 @@ let geminiModel = 'gemini-flash-latest';
 let aiKey = '';
 async function loadAiKey() { aiKey = (!viewerMode && await Store.get('geminiKey')) || ''; geminiModel = (!viewerMode && await Store.get('geminiModel')) || 'gemini-flash-latest'; document.body.classList.toggle('has-ai', !!aiKey); }
 // このキーで使えるFlash系モデルを探す（モデルが終了・変更されても自動で追従）
+async function listGeminiCandidates() {
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': aiKey } });
+  if (!res.ok) return [];
+  const list = ((await res.json()).models || []).filter(m => (m.supportedGenerationMethods || []).includes('generateContent')).map(m => m.name.replace(/^models\//, ''));
+  const ver = n => { const m = n.match(/(\d+)(?:[.-](\d+))?/); return m ? (+m[1]) * 100 + (+(m[2] || 0)) : 0; };
+  const base = list.filter(n => /flash/.test(n) && !/image|live|tts|audio|thinking|exp|preview|8b/.test(n));
+  const full = base.filter(n => !/lite/.test(n)).sort((a, b) => ver(b) - ver(a)), lite = base.filter(n => /lite/.test(n)).sort((a, b) => ver(b) - ver(a));
+  return [...full, ...lite];
+}
 async function pickGeminiModel() {
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': aiKey } });
   if (!res.ok) return null;
@@ -1676,6 +1685,16 @@ async function callGemini(prompt, inline, maxOut) {
     setBusy(`🤖 AIが混み合っています。${Math.round(GEMINI_RETRY_WAITS[i] / 1000)}秒後に、自動でやり直します（${i + 1}／${GEMINI_RETRY_WAITS.length}回目）`);
     await new Promise(r => setTimeout(r, GEMINI_RETRY_WAITS[i]));
     try { res = await geminiCall(geminiModel, prompt, inline, maxOut); } catch (e) { throw new Error('インターネットに接続できませんでした。接続を確認してください。'); }
+  }
+  // それでも混み合っているときは、同じキーで使えるほかのFlash系モデルに切り替えてみる
+  if (!res.ok && [500, 502, 503, 504].includes(res.status)) {
+    setBusy('🤖 AIが混み合っているため、別のモデルに切り替えて試しています…');
+    try {
+      for (const mdl of (await listGeminiCandidates()).filter(n => n !== geminiModel).slice(0, 3)) {
+        const r2 = await geminiCall(mdl, prompt, inline, maxOut);
+        if (r2.ok) { res = r2; break; }
+      }
+    } catch (e) { /* 切り替えに失敗したら、元のエラーを表示する */ }
   }
   if (!res.ok) {
     let msg = ''; try { msg = (await res.json()).error.message; } catch (e) {}
