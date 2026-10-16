@@ -196,9 +196,12 @@ mark{background:#ffe58a;padding:0 1px}
 .dup{font-size:13px;color:var(--red);margin-right:auto}
 /* 詳細 */
 .overlay{position:fixed;inset:0;background:rgba(20,20,25,.45);z-index:20;display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:30px 12px}
-.detail{background:#fff;border-radius:14px;max-width:860px;width:100%;padding:22px 24px;position:relative}
+.detail{background:#fff;border-radius:14px;max-width:1080px;width:100%;padding:22px 24px;position:relative}
 .detail .head{display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px}
 .detail .head .nm{font-size:22px;font-weight:700}
+.detail .head .btn{white-space:nowrap;flex-shrink:0}
+.detail .head>div:first-child{flex:1 1 auto;min-width:0}
+.detail .head>div:last-child{flex-shrink:0}
 .detail .head .biz{color:var(--red);font-weight:700}
 .detail .close{margin-left:auto}
 .dl{display:grid;grid-template-columns:150px 1fr;gap:0 14px;font-size:15px}
@@ -280,7 +283,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.26.11</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.26.12</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
