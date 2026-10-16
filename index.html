@@ -280,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.26.2</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.26.3</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -456,8 +456,8 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <li><b>★お気に入り</b>：☆を押すと、その人が常に一番上に表示されます。</li>
     </ul></div>
     <div class="card-g"><ol>
-      <li>メンバー一覧でその人を開き、「＋ 1to1を予定する」で日時を入れると、Googleカレンダーにも登録できます。</li>
-      <li>1to1が終わったら、その記録の「<b>議事録・録音を追加</b>」を押し、議事録や文字起こしを貼り付けて保存します。あとから入れる分も同じ記録に追記されます（まだ記録がなければ「＋ 1to1を記録」で作ります）。</li>
+      <li>メンバー一覧でその人を開き、「＋ 1to1を追加」で日付と時刻を入れると、Googleカレンダーにも登録できます（終わった1to1は、過去の日付で追加します）。</li>
+      <li>1to1が終わったら、その記録の「<b>議事録・録音を追加</b>」を押し、議事録や文字起こしを貼り付けて保存します。あとから入れる分も同じ記録に追記されます（まだ記録がなければ「＋ 1to1を追加」で作ります）。</li>
       <li><b>文字起こしのテキストがある場合</b>は、枠に貼り付けて「AIで整理する（コピー）」→ Geminiに貼り付けて送信 → 返答を同じ枠に貼り直して保存します（要約・相手の事業・紹介の可能性・次のアクションに整理され、元の文字起こしも一緒に残ります）。</li>
       <li><b>録音がある場合</b>は、同じ画面の「文字起こし用の指示文をコピー」→「Geminiを開く」→ 貼り付けて録音ファイルを添付して送信 → 返答をコピーして貼り付けます。要約と文字起こしが入ります。</li>
       <li>記録の「項目をAIで抽出（コピー）」→ Geminiに貼り付け → 返答を「AIの返答を項目に反映」に貼ると、話の中で分かった相手の情報が各項目に反映されます。</li>
@@ -1580,7 +1580,7 @@ function openDetail(id) {
         <div class="mtg-body hidden">${hl(x.text || '', terms)}</div>
         <div class="mtg-ai hidden"><textarea placeholder="AIの返答をここに貼り付け（Ctrl＋V）→ 自動で反映画面が開きます"></textarea></div>
       </div>`).join('') || '<div class="howto">まだ記録はありません。</div>'}
-      <div class="row" style="margin-top:8px"><button class="btn small primary" id="dAddPlan">＋ 1to1を予定する</button><button class="btn small" id="dAddMtg">＋ 1to1を記録（BNIコネクト登録用）</button></div>
+      <div class="row" style="margin-top:8px"><button class="btn small primary" id="dAddPlan">＋ 1to1を追加</button><span class="howto" style="display:inline;margin-left:8px">日付を入れて追加します（これからの予定も、終わった1to1も同じ）</span></div>
       ${(m.meetings || []).some(x => x.text) ? '<p class="howto">議事録から相手の情報を各項目に反映：①「AIで整理（コピー）」→ ② AIに貼り付けて送信 → ③ 返答をコピーして「AIの返答を反映」に貼り付け（要約・項目・やること・会話のトピックがまとめて入ります）<br>※AIに送る前に：録音・文字起こしは相手の了承を得ていること、AIの学習への利用をオフにしていることを確認してください。</p>' : ''}
     </div>
     <div class="actions">
@@ -1626,12 +1626,6 @@ function openDetail(id) {
   $('dFav').onclick = async () => { await toggleFav(m.id); openDetail(m.id); };
   $('dDel').onclick = async () => { if (!confirm(`${m.name || 'このメンバー'} を削除しますか？`)) return; await deleteMember(m.id); closeOverlay(); toast('削除しました'); };
   $('dEdit').onclick = () => openEdit(m);
-  $('dAddMtg').onclick = async () => {
-    const rec = { id: uid(), createdAt: Date.now(), date: today(), title: '1to1', source: '手入力', text: '' };
-    await saveMember({ ...m, meetings: [rec, ...(m.meetings || [])], date1to1: (!m.date1to1 || today() > m.date1to1) ? today() : m.date1to1, updatedAt: Date.now() });
-    openDetail(m.id);
-    const box = $('overlay').querySelector(`[data-mid="${rec.id}"]`); if (box) { box.querySelector('.mtg-bni').classList.remove('hidden'); box.scrollIntoView({ block: 'center' }); }
-  };
   $('dAddPlan').onclick = async () => {
     const rec = { id: uid(), createdAt: Date.now(), date: '', time: '', duration: 60, title: '1to1', source: '予定', text: '' };
     await saveMember({ ...m, meetings: [rec, ...(m.meetings || [])], updatedAt: Date.now() });
