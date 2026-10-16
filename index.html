@@ -280,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.26.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.26.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -340,7 +340,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
           <div id="webPasteInfo" class="howto"></div>
           <div class="auto-block"><button class="btn primary big-btn" id="aiSheetWebAuto">🤖 貼り付けた内容を、自動で読み取る</button></div>
         </div>
-        <div id="aiFileBox"><div class="auto-block" style="margin-top:8px"><label class="btn primary big-btn">🤖 シートのファイルを選んで、自動で読み取る<input type="file" id="aiSheetFile" accept=".pdf,image/*" hidden></label><p class="howto" style="margin:6px 0 0">PDF・画像（JPEG／PNG）に対応しています。Word・PowerPointの場合は、PDFにして選んでください。</p></div><p class="howto manual-ai" style="margin:8px 0 0">シートのファイルは、手順2でGeminiに添付します。先にパソコン（スマホ）に保存しておいてください。</p></div>
+        <div id="aiFileBox"><div class="auto-block" style="margin-top:8px"><label class="btn primary big-btn">🤖 シートのファイルを選んで、自動で読み取る<input type="file" id="aiSheetFile" accept=".pdf,image/*,.docx,.pptx" hidden></label><p class="howto" style="margin:6px 0 0">PDF・画像（JPEG／PNG）・Word・PowerPointに対応しています。</p></div><p class="howto manual-ai" style="margin:8px 0 0">シートのファイルは、手順2でGeminiに添付します。先にパソコン（スマホ）に保存しておいてください。</p></div>
       </div></div>
       <div class="ai-step manual-ai"><span class="ai-no">2</span><div style="flex:1">
         <b>Geminiに読み取ってもらう</b>
@@ -1850,6 +1850,18 @@ async function openZip(file) {
   if (!window.JSZip) throw new Error('Word/PowerPoint読み取り部品を読み込めませんでした。インターネットに接続してから開き直してください。');
   return JSZip.loadAsync(await file.arrayBuffer());
 }
+async function officeToText(file) {
+  const zip = await openZip(file);
+  if (/\.docx$/i.test(file.name)) { const d = zip.file('word/document.xml'); if (!d) throw new Error('Wordファイルを読めませんでした'); return docxXmlToText(await d.async('string')); }
+  const names = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => parseInt(a.match(/(\d+)\.xml/)[1]) - parseInt(b.match(/(\d+)\.xml/)[1]));
+  if (!names.length) throw new Error('PowerPointファイルを読めませんでした');
+  const out = [];
+  for (const n of names) {
+    const doc = new DOMParser().parseFromString(await zip.file(n).async('string'), 'application/xml');
+    [...doc.getElementsByTagNameNS('*', 'p')].forEach(par => { const t = [...par.getElementsByTagNameNS('*', 't')].map(x => x.textContent).join(''); if (t.trim()) out.push(t.trim()); });
+  }
+  return out.join('\n');
+}
 document.addEventListener('dragover', e => e.preventDefault());
 document.addEventListener('drop', e => {
   e.preventDefault(); const fs = [...e.dataTransfer.files]; if (!fs.length) return;
@@ -1898,9 +1910,15 @@ $('aiSheetCopy').onclick = async () => {
 };
 $('aiSheetFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  if (!/pdf|image\//i.test(f.type) && !/\.pdf$/i.test(f.name)) { alert('PDFか画像（JPEG・PNG）を選んでください。Word・PowerPointは、PDFで保存し直してから選んでください。'); return; }
+  const isOffice = /\.(docx|pptx)$/i.test(f.name);
+  if (!isOffice && !/pdf|image\//i.test(f.type) && !/\.pdf$/i.test(f.name)) { alert('PDF・画像（JPEG・PNG）・Word（.docx）・PowerPoint（.pptx）のいずれかを選んでください。'); return; }
   if (f.size > AI_FILE_LIMIT) { alert('ファイルが大きすぎます（約18MBまで）。'); return; }
-  const r = await autoAi(null, buildSheetPrompt(AI_SHEET_FIELDS), await fileToInline(f)); if (!r) return;
+  let r;
+  if (isOffice) {
+    let t; try { t = await officeToText(f); } catch (err) { alert(err.message); return; }
+    if (!t || t.length < 20) { alert('文字を読み取れませんでした。シートが画像で貼り付けられている場合は、PDFか画像で保存し直してから選んでください。'); return; }
+    r = await autoAi(null, buildSheetPrompt(AI_SHEET_FIELDS, t.slice(0, 30000)));
+  } else r = await autoAi(null, buildSheetPrompt(AI_SHEET_FIELDS), await fileToInline(f)); if (!r) return;
   $('aiSheetPaste').value = r; $('aiSheetPaste').dispatchEvent(new Event('paste'));
 };
 $('aiSheetWebAuto').onclick = async () => {
