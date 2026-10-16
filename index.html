@@ -284,7 +284,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.29.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.30.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -302,6 +302,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
   <div id="storageWarn" class="notice hidden">このブラウザではデータを保存できない設定になっています（プライベートモード等）。「保存・バックアップ」で保存先ファイルを設定してください。</div>
   <div id="resumeBar" class="notice hidden"><span id="resumeText"></span><button class="btn primary small" id="resumeBtn">自動保存を再開</button></div>
   <div id="bniBar" class="notice hidden"><span id="bniText"></span><button class="btn primary small" id="bniBtn">確認する</button></div>
+  <div id="nextBar" class="notice hidden" style="background:#f2faf4;border-color:#b7dfc0"><span>👋 <b>まず1人、登録してみましょう。</b>BNIの名簿ページや、もらった1to1シートを取り込むと、1人分のカードができます。</span><button class="btn small primary" id="nextBtn">1人目を取り込む</button></div>
   <div id="remindBar" class="notice hidden"><span id="remindText"></span><button class="btn small primary" id="remindBtn">いますぐバックアップを設定</button><button class="btn small" id="remindHelp">くわしく見る</button></div>
 
   <!-- 一覧 -->
@@ -421,8 +422,11 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
   <section id="view-guide" class="hidden guide">
     <h2>1to1 Navi の使い方</h2>
     <p>はじめての方は、まず<button class="btn small primary" id="guideSetup">かんたんセットアップ</button>を行ってください（10分ほど）。データが消えないための設定と、AIの準備を1画面ずつ案内します。</p>
+    <div class="card-g" style="background:#f2faf4;border-color:#b7dfc0"><b>最初の5分でやること（これだけで使い始められます）</b>
+      <ol><li>パソコンの Google Chrome（または Edge）で開く。</li><li>上の「取り込み」を押し、BNIの名簿ページか1to1シートから<b>1人</b>登録する。</li><li>メンバー一覧でその人を開き、「＋ 1to1を追加」で日付を入れる。</li></ol>
+      <span style="font-size:13px;color:var(--sub)">データを守る設定（Googleドライブへの自動保存）と、AIの自動整理は、慣れてからで大丈夫です。ただし、設定するまでは、データはこのブラウザの中にだけあります。</span></div>
     <div class="toc">
-      <a href="#g1">① 最初にやること</a>　<a href="#g2">② 1to1シートを取り込む</a>　<a href="#g3">③ 1to1を記録する</a>　<a href="#g4">④ BNIコネクトに登録する</a>　<a href="#g5">⑤ 別のパソコンで使う</a>　<a href="#g7">スマホで見る</a>　<a href="#g6">⑥ 困ったとき</a>
+      <a href="#g1">① 最初にやること</a>　<a href="#g2">② 1to1シートを取り込む</a>　<a href="#g3">③ 1to1を記録する</a>　<a href="#g4">④ BNIコネクトに登録する</a>　<a href="#g5">⑤ 別のパソコンで使う</a>　<a href="#g7">スマホで見る</a>　<a href="#g8">AIの自動整理（キー）</a>　<a href="#g6">⑥ 困ったとき</a>
     </div>
 
     <h3 id="g1">① 最初にやること（1回だけ）</h3>
@@ -486,6 +490,13 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <li>最初に「このスマホにコピーを保存しますか？」と聞かれます。保存すると、次からは開くだけで表示されます（ファイルを選び直す必要はありません）。</li>
       <li>パソコンで更新したあとは、「最新にする」でもう一度ファイルを選ぶと最新になります。</li>
     </ol><p>コピーを保存しない場合、ページを閉じるとデータは消えます。保存した場合は「データを消して終了」でいつでも消せます。どちらもスマホの画面ロックをかけ、ファイルは他の人に共有しないでください。</p></div>
+
+    <h3 id="g8">AIの自動整理を使う（APIキー・任意）</h3>
+    <div class="card-g"><ol>
+      <li>「保存・バックアップ」画面の「🤖 AIの自動整理」で、<b>GeminiのAPIキー</b>を入れます（Google AI Studioで、無料で作れます。手順は同じ場所に出ています）。</li>
+      <li>キーを入れると、「コピーして貼る」手順が、ボタン1つの自動整理になります（シートの読み取り・議事録の整理・話題の提案・お礼の下書きなど）。</li>
+      <li>無料枠には1日の上限があり、混み合うと止まることがあります。その場合は、時間をおくか、ふだん使っているAIにコピーして貼る方式で続けられます。</li>
+      <li>キーはこのブラウザの中にだけ保存され、他の人には見えません。</li></ol></div>
 
     <h3 id="g6">⑥ 困ったとき</h3>
     <div class="card-g"><ul>
@@ -1318,7 +1329,14 @@ async function mergeData(obj) {
   return { add, upd, del };
 }
 
+function updateNextBar() {
+  const b = $('nextBar'); if (!b) return;
+  const others = members.filter(x => x.id !== AUTHOR.id);
+  b.classList.toggle('hidden', others.length > 0 || viewerMode);
+}
+$('nextBtn').onclick = () => show('import');
 async function updateSaveState() {
+  updateNextBar();
   const b = $('saveState');
   const last = await Store.get('lastBackupAt'), change = await Store.get('lastChangeAt');
   const unsaved = members.length && (!last || (change && change > last));
@@ -3095,6 +3113,7 @@ const Wizard = (() => {
       ${body()}
       <div class="wz-nav">
         ${step > 0 && step < STEPS.length - 1 ? '<button class="btn" data-w="back">戻る</button>' : ''}
+        ${step === 0 ? '<button class="btn" data-w="trial">まず試してみる（設定はあとで）</button>' : ''}
         ${step < STEPS.length - 1 ? '<button class="btn" data-w="later" style="font-weight:400">あとで</button>' : ''}
         ${step === 4 ? '<button class="btn" data-w="skipai">Geminiは使わない</button>' : ''}
         <button class="btn primary" data-w="next" ${canNext() ? '' : 'disabled'}>${step === STEPS.length - 1 ? '取り込みを始める' : '次へ'}</button>
@@ -3112,6 +3131,7 @@ const Wizard = (() => {
     if (a === 'gemini') { window.open('https://gemini.google.com/', '_blank', 'noopener'); return; }
     if (a === 'fscreate') { await AutoSave.create(); render(); return; }
     if (a === 'fsopen') { await AutoSave.open(); render(); return; }
+    if (a === 'trial') { await save(); close(); toast('まずは自由に試せます。データを守る設定は、あとで「使い方」から始められます'); return; }
     if (a === 'later') { await save(); close(); toast('「使い方」または「保存・バックアップ」から、いつでも再開できます'); return; }
     if (a === 'back') { step--; await save(); render(); return; }
     if (a === 'skipai') { step = 5; await save(); render(); return; }
