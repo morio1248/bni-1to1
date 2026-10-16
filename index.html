@@ -280,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.26.7</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.26.8</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -1551,7 +1551,7 @@ function openDetail(id) {
     return `<div class="sec"><span class="sec-t">${s.title}</span><dl class="dl">${fs.map(([k, l]) => `<dt>${esc(l)}</dt><dd>${val(k)}</dd>`).join('')}</dl></div>`;
   }).join('');
   $('overlay').innerHTML = `<div class="detail">
-    <div class="head"><div style="display:flex;gap:14px;align-items:center"><div class="av-wrap" id="dAvWrap" title="クリック、または写真をドラッグ＆ドロップで${m.photo ? '変更' : '追加'}">${av(m, 'lg')}<span class="av-hint">📷 ${m.photo ? '変更' : '追加'}</span><input type="file" id="dPhotoFile" accept="image/*" hidden></div><div><div class="biz">${esc(m.business || '')}</div><div class="nm">${esc(m.name || '(名前未入力)')}</div>${m.kana ? `<div style="color:var(--sub);font-size:13px">${esc(m.kana)}</div>` : ''}</div></div>
+    <div class="head"><div style="display:flex;gap:14px;align-items:center"><div class="av-wrap" id="dAvWrap" title="クリック、写真をドラッグ＆ドロップ、またはコピーした画像をCtrl＋Vで${m.photo ? '変更' : '追加'}">${av(m, 'lg')}<span class="av-hint">📷 ${m.photo ? '変更' : '追加'}</span><input type="file" id="dPhotoFile" accept="image/*" hidden></div><div><div class="biz">${esc(m.business || '')}</div><div class="nm">${esc(m.name || '(名前未入力)')}</div>${m.kana ? `<div style="color:var(--sub);font-size:13px">${esc(m.kana)}</div>` : ''}</div></div>
       <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn small" id="dFav">${m.fav ? '★ お気に入り' : '☆ お気に入りに追加'}</button><button class="btn small" id="dSlot">📅 候補日</button><button class="btn small" id="dPre">📝 事前メモ</button><button class="btn small" id="dThanks">✉ お礼を作る</button><button class="btn small close" id="dClose">✕ 閉じる</button></div></div>
     <div class="intro-box"><div class="intro-h"><b>紹介文</b><span><button class="btn small" id="dIntroMake">${m.introText ? '作り直す・直す' : '＋ 紹介文を作る'}</button>${m.introText ? '<button class="btn small primary" id="dIntroCopy">コピー</button>' : ''}</span></div>${m.introText ? `<div class="intro-t">${hl(m.introText, terms)}</div>` : '<div class="howto" style="margin:0">まだありません。1to1シートの取り込み時にAIが作るか、ここから作れます。</div>'}</div>
     <div class="intro-box" id="dTasks"><div class="intro-h"><b>やること・つなぐ約束</b><span><button class="btn small tk-add" id="dTaskAdd">＋ 追加</button></span></div><div id="dTaskList"></div></div>
@@ -1609,6 +1609,13 @@ function openDetail(id) {
     ['dragenter', 'dragover'].forEach(ev => w.addEventListener(ev, e => { e.preventDefault(); w.classList.add('drag'); }));
     ['dragleave', 'drop'].forEach(ev => w.addEventListener(ev, e => { e.preventDefault(); w.classList.remove('drag'); }));
     w.addEventListener('drop', e => setPhoto(e.dataTransfer.files[0]));
+    if (window._photoPaste) document.removeEventListener('paste', window._photoPaste);
+    window._photoPaste = e => {
+      if (!document.querySelector('#dAvWrap')) return;
+      const it = [...(e.clipboardData ? e.clipboardData.items : [])].find(i => i.kind === 'file' && /^image\//.test(i.type)); if (!it) return;
+      e.preventDefault(); setPhoto(it.getAsFile());
+    };
+    document.addEventListener('paste', window._photoPaste);
   }
   $('dIntroMake').onclick = () => openIntro(m.id);
   const drawTasks = () => {
