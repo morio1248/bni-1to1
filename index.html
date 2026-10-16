@@ -183,14 +183,14 @@ mark{background:#ffe58a;padding:0 1px}
 .up-item .when{font-weight:700;min-width:120px;color:#1a5fd0}
 .review .plan-box{margin-top:14px;background:#f5f9ff;border:1px solid #c9dafb;border-radius:10px;padding:12px}
 .mtg-bni{padding:12px;border-top:1px solid var(--line);background:#f8fbff}
-.bni-row{display:grid;grid-template-columns:130px 1fr auto;gap:8px;align-items:start;margin-bottom:6px}
+.bni-row{display:grid;grid-template-columns:130px 1fr;gap:8px;align-items:start;margin-bottom:6px}
 .bni-row label{font-size:12px;font-weight:700;color:var(--sub);padding-top:7px}
 .bni-row input,.bni-row select,.bni-row textarea{border:1px solid var(--line);border-radius:7px;padding:6px 9px;background:#fff;width:100%}
 .bni-row .val{padding:6px 0;font-weight:700}
 .hint{font-size:12px;background:var(--warn);border-radius:6px;padding:4px 8px;margin:0 0 8px}
 .bmk{display:inline-block;background:var(--red);color:#fff!important;font-weight:700;text-decoration:none;border-radius:8px;padding:6px 14px;margin:4px 0;cursor:grab}
 .bmk-setup{background:#fff;border:1px dashed var(--line);border-radius:8px;padding:4px 12px;margin-bottom:8px}
-@media (max-width:640px){.bni-row{grid-template-columns:1fr auto}.bni-row label{grid-column:1/-1;padding:0}}
+@media (max-width:640px){.bni-row{grid-template-columns:1fr}.bni-row label{grid-column:1/-1;padding:0}}
 .banner{background:var(--ok-soft);color:var(--ok);border-radius:8px;padding:8px 12px;font-size:13px;margin-top:10px}
 .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap;align-items:center}
 .dup{font-size:13px;color:var(--red);margin-right:auto}
@@ -280,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.26.3</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.26.4</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2517,14 +2517,14 @@ const BOOKMARKLET = "javascript:%28async%20%28%29%20%3D%3E%20%7B%20const%20sleep
 const fmtDate = d => (d || '').replace(/-/g, '/');
 function bniPanel(m, x) {
   return `<div class="hint"><b>自動入力：</b>①「BNI自動入力用にコピー」→ ② BNI Connectを開く → ③ ブックマークの「BNI 1to1自動入力」を押す → ④ 内容を確認して「わかりました」→ ⑤ ここで「BNIコネクトに登録済みにする」<br>
-      <span style="font-weight:400">ブックマークをまだ作っていない方は <a href="#" data-b="setup">こちら（最初の1回だけ）</a>。手で入力する場合は、各項目の「コピー」を使ってください。</span></div>
+      <span style="font-weight:400">ブックマークをまだ作っていない方は <a href="#" data-b="setup">こちら（最初の1回だけ）</a>。</span></div>
     <div class="bmk-setup hidden">${bookmarkletSetup()}</div>
 
-    <div class="bni-row"><label>会った相手</label><div class="val">${esc(m.name || '')}${m.chapter ? `<span style="font-weight:400;color:var(--sub)">（${esc(m.chapter)}）</span>` : ''}</div><button class="btn small" data-c="name">コピー</button></div>
-    <div class="bni-row"><label>1to1を提案したメンバー</label><select data-f="initiator"><option value="">選択してください</option>${INITIATORS.map(([v, l]) => `<option value="${v}" ${x.initiator === v ? 'selected' : ''}>${l}</option>`).join('')}</select><span></span></div>
-    <div class="bni-row"><label>場所</label>${placeSelect('data-f="place"', x.place)}<button class="btn small" data-c="place">コピー</button></div>
-    <div class="bni-row"><label>日付</label><input type="date" data-f="date" value="${esc(x.date || '')}"><button class="btn small" data-c="date">コピー</button></div>
-    <div class="bni-row"><label>会話のトピック</label><input data-f="bniTopic" value="${esc(x.bniTopic || defaultTopic())}"><button class="btn small" data-c="bniTopic">コピー</button></div>
+    <div class="bni-row"><label>会った相手</label><div class="val">${esc(m.name || '')}${m.chapter ? `<span style="font-weight:400;color:var(--sub)">（${esc(m.chapter)}）</span>` : ''}</div></div>
+    <div class="bni-row"><label>1to1を提案したメンバー</label><select data-f="initiator">${INITIATORS.map(([v, l]) => `<option value="${v}" ${(x.initiator || 'me') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="bni-row"><label>場所</label>${placeSelect('data-f="place"', x.place)}</div>
+    <div class="bni-row"><label>日付</label><input type="date" data-f="date" value="${esc(x.date || '')}"></div>
+    <div class="bni-row"><label>会話のトピック</label><input data-f="bniTopic" value="${esc(x.bniTopic || defaultTopic())}"></div>
     <div class="actions" style="margin-top:6px">
       <span style="margin-right:auto;font-size:12px;color:var(--sub)">${x.bniDone ? '登録日：' + esc(fmtDate(x.bniDoneAt)) : '1to1はどちらか1人が登録すれば、2人ともに記録されます'}</span>
       <button class="btn small primary" data-b="auto">BNI自動入力用にコピー</button>
@@ -2536,12 +2536,6 @@ function bniPanel(m, x) {
 function bindBniPanel(box, m, rec) {
   const p = box.querySelector('.mtg-bni'); if (!p) return;
   const read = () => { const o = {}; p.querySelectorAll('[data-f]').forEach(el => o[el.dataset.f] = el.value.trim()); return o; };
-  p.querySelectorAll('[data-c]').forEach(b => b.onclick = async () => {
-    const f = read(), k = b.dataset.c;
-    const v = k === 'name' ? (m.name || '') : k === 'date' ? fmtDate(f.date) : f[k];
-    if (!v) { toast('空欄です'); return; }
-    await copyText(v); toast(`「${v.slice(0, 20)}${v.length > 20 ? '…' : ''}」をコピーしました`);
-  });
   const persist = async extra => {
     const cur = members.find(y => y.id === m.id);
     const meetings = (cur.meetings || []).map(y => y.id === rec.id ? { ...y, ...read(), ...extra } : y).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
