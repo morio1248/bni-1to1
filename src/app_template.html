@@ -287,7 +287,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.27.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.27.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -1661,6 +1661,7 @@ async function geminiCall(model, prompt, inline, maxOut) {
   const parts = inline ? [{ inline_data: { mime_type: inline.mime, data: inline.data } }, { text: prompt }] : [{ text: prompt }];
   return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': aiKey }, body: JSON.stringify({ contents: [{ parts }], generationConfig: maxOut ? { temperature: 0.2, maxOutputTokens: maxOut } : { temperature: 0.2 } }) });
 }
+const GEMINI_RETRY_WAITS = [5000, 15000, 30000];
 async function callGemini(prompt, inline, maxOut) {
   let res;
   try {
@@ -1670,11 +1671,18 @@ async function callGemini(prompt, inline, maxOut) {
       if (alt && alt !== geminiModel) { res = await geminiCall(alt, prompt, inline, maxOut); if (res.ok) { geminiModel = alt; if (!viewerMode) await Store.set('geminiModel', alt); } }
     }
   } catch (e) { throw new Error('インターネットに接続できませんでした。接続を確認してください。'); }
+  // 混み合い（500/502/503/504）は、少し待って自動でやり直す
+  for (let i = 0; !res.ok && [500, 502, 503, 504].includes(res.status) && i < GEMINI_RETRY_WAITS.length; i++) {
+    setBusy(`🤖 AIが混み合っています。${Math.round(GEMINI_RETRY_WAITS[i] / 1000)}秒後に、自動でやり直します（${i + 1}／${GEMINI_RETRY_WAITS.length}回目）`);
+    await new Promise(r => setTimeout(r, GEMINI_RETRY_WAITS[i]));
+    try { res = await geminiCall(geminiModel, prompt, inline, maxOut); } catch (e) { throw new Error('インターネットに接続できませんでした。接続を確認してください。'); }
+  }
   if (!res.ok) {
     let msg = ''; try { msg = (await res.json()).error.message; } catch (e) {}
     if (res.status === 400 && /API key/i.test(msg)) throw new Error('APIキーが正しくないようです。キーを確認してください。');
     if (res.status === 403) throw new Error('このAPIキーは使えませんでした（権限がありません）。');
     if (res.status === 429) throw new Error('無料枠の上限に達しました。しばらく待ってからやり直してください。');
+    if (res.status === 503) throw new Error('Geminiが混み合っています（一時的なものです）。数分あけてから、やり直してください。');
     throw new Error(`AIの呼び出しに失敗しました（${res.status}）${msg ? '：' + msg.slice(0, 100) : ''}`);
   }
   const j = await res.json();
