@@ -242,6 +242,9 @@ body.viewer .detail.vok .row{display:flex}body.viewer .detail.vok .howto{display
 .detail.has-fclose{padding-bottom:72px}
 .auto-ai,.auto-block{display:none}body.has-ai .auto-ai{display:inline-flex}body.has-ai .auto-block{display:block}body.has-ai .manual-ai{display:none!important}body.viewer .auto-block{display:none!important}#aiBusy{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:#1b3a6b;color:#fff;padding:10px 20px;border-radius:999px;font-weight:700;font-size:15px;box-shadow:0 4px 16px rgba(0,0,0,.3)}.big-btn{font-size:16px!important;padding:12px 20px!important;font-weight:700}body.viewer .auto-ai{display:none!important}.btn.auto-ai.big{font-weight:700}
 .manual-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 4px}.manual-row span{font-size:13px;color:var(--sub)}.manual-btn{font-size:16px;font-weight:700;padding:12px 22px;border:2px solid var(--accent,#1b6fd8);color:var(--accent,#1b6fd8);background:#fff;border-radius:10px}.manual-btn:hover{background:#eef4ff}
+.rec-live{margin:8px 0}.rec-live .btn{margin:2px 4px 2px 0}
+#recBar{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:60;background:#fff;border:2px solid var(--red);border-radius:12px;padding:10px 14px;box-shadow:0 6px 24px rgba(0,0,0,.25);display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:calc(100vw - 24px)}
+#recBar .rec-dot{color:var(--red);font-weight:700;animation:recblink 1.2s infinite}@keyframes recblink{50%{opacity:.35}}
 .av-wrap{position:relative;cursor:pointer;border-radius:50%;flex:none;line-height:0}.av-hint{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3;opacity:0;transition:opacity .15s}.av-wrap:hover .av-hint,.av-wrap.drag .av-hint{opacity:1}.av-wrap.drag{outline:3px dashed var(--accent,#1b6fd8)}body.viewer .av-wrap{cursor:default;pointer-events:none}body.viewer .av-hint{display:none}
 @media(hover:none){.av-hint{opacity:1;inset:auto 0 0 0;border-radius:0 0 40px 40px;height:24px;font-size:11px}}
 .av{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#e9eaed;color:#8a8f96;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex:none;vertical-align:middle;overflow:hidden}
@@ -284,7 +287,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.26.13</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.27.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -780,6 +783,7 @@ $('fsOpen').onclick = () => AutoSave.open();
 $('fsForget').onclick = () => AutoSave.forget();
 async function refreshAiKeyUi() {
   await loadAiKey();
+  if (!viewerMode) setTimeout(recDraftBar, 1500);
   const st = $('aiKeyStatus'); st.textContent = aiKey ? '✓ APIキーを設定済みです（取り込み画面・1to1の記録に「AIで自動整理」ボタンが出ます）' : 'APIキーは未設定です'; st.className = 'status ' + (aiKey ? 'ok' : 'warn');
   $('aiKeyDel').classList.toggle('hidden', !aiKey);
 }
@@ -1012,6 +1016,9 @@ function openDetail(id) {
         <div class="mtg-add hidden">
           <div class="rec-gemini manual-ai" style="margin-top:0"><b>🎙 録音がある場合</b>：<button class="btn small primary" data-r="copy">文字起こし用の指示文をコピー</button> <button class="btn small" data-r="open">Geminiを開く</button><br>
             <span style="font-size:13px">Geminiに <kbd>Ctrl</kbd>＋<kbd>V</kbd> →「＋」→「ファイルをアップロード」で録音ファイルを添付して送信 → 返答をコピーして下に貼り付け</span></div>
+          <div class="rec-gemini auto-block rec-live"><b>🎙 録音して、そのまま記録（試作）</b><br>
+            <button class="btn small primary" data-rec2="mic">🎤 対面（マイクで録音）</button><button class="btn small primary" data-rec2="online">🖥 オンライン会議（相手の声も録音）</button>
+            <span style="font-size:12px;color:var(--sub);display:block;margin-top:2px">録音は必ず相手の了承を得てから。録音の音声は保存せず、文字にしたら破棄します。画面下の「停止して記録」で終了します。</span></div>
           <div class="rec-gemini"><b>📝 文字起こしのテキストがある場合</b><span class="auto-block" style="display:inline">：下の枠に貼り付けて <button class="btn small auto-ai" data-r="tauto">🤖 AIで自動整理して保存</button></span><span class="manual-ai">：下の枠に貼り付け →「<button class="btn small primary" data-r="tcopy">AIで整理する（コピー）</button>」→ Geminiに貼り付けて送信 → 返答をコピーして、<b>同じ枠に貼り直して</b>保存</span><br>
             <span style="font-size:12px;color:var(--sub)">元の文字起こしも一緒に保存されます。</span></div>
           <textarea placeholder="Geminiの返答、または文字起こし・議事録（Notion・Zoom・Google Meet など）を貼り付け"></textarea>
@@ -1092,6 +1099,7 @@ function openDetail(id) {
     on('toggle', () => box.querySelector('.mtg-body').classList.toggle('hidden'));
     on('add', () => { const a = box.querySelector('.mtg-add'); a.classList.toggle('hidden'); if (!a.classList.contains('hidden')) a.querySelector('textarea').focus(); });
     const addBox = box.querySelector('.mtg-add');
+    addBox.querySelectorAll('[data-rec2]').forEach(b => b.onclick = () => recBegin(b.dataset.rec2, m.id, rec.id));
     addBox.querySelector('[data-r=open]').onclick = () => window.open('https://gemini.google.com/', '_blank', 'noopener');
     addBox.querySelector('[data-r=copy]').onclick = async () => { await copyText(buildRecordingPrompt(m.name, rec.date)); toast('指示文をコピーしました。Geminiに貼り付けて、録音ファイルを添付して送信してください'); };
     addBox.querySelector('[data-r=tcopy]').onclick = async () => {
@@ -1521,6 +1529,120 @@ ${SUMMARY_FORMAT}
 【文字起こし】
 話者ごとに「話者名：発言」の形で、省略せずに書き起こしてください。話者名が分からない場合は「自分」「相手」としてください。`;
 }
+// ===== 録音して記録（試作） =====
+const REC_BPS = 20000, REC_MAX_BYTES = 14 * 1024 * 1024, REC_MAX_MS = 90 * 60 * 1000;
+const Rec = { active: null };
+const recFmt = ms => { const t = Math.floor(ms / 1000); return `${pad(Math.floor(t / 3600))}:${pad(Math.floor(t / 60) % 60)}:${pad(t % 60)}`.replace(/^00:/, ''); };
+function recBar(html) {
+  let b = $('recBar');
+  if (!html) { if (b) b.remove(); return null; }
+  if (!b) { b = document.createElement('div'); b.id = 'recBar'; document.body.appendChild(b); }
+  b.innerHTML = html; return b;
+}
+function buildTranscribePrompt(name) {
+  return `添付した音声は、BNIの1to1ミーティング（相手：${name || '相手の方'}さん）の会話です。
+
+ルール：
+・日本語で、要約せずに最初から最後まで書き起こしてください
+・話者が変わるたびに改行し、「自分：…」「${name || '相手'}：…」の形で書いてください（自分は録音している人です）。判別できないときは「相手：」としてください
+・聞き取れない部分は「（聞き取れず）」と書き、推測で補わないでください
+・「えーと」「あのー」などは省いて構いません
+・前置きや説明は書かず、書き起こしだけを出力してください`;
+}
+async function recBegin(mode, memberId, meetingId) {
+  if (Rec.active) { toast('すでに録音中です（画面下の「停止して記録」で終了できます）'); return; }
+  if (!aiKey) { toast('先に「保存・バックアップ」でAPIキーを設定してください'); return; }
+  if (!navigator.mediaDevices || !window.MediaRecorder) { alert('このブラウザは録音に対応していません。パソコンの Google Chrome か Microsoft Edge をお使いください。'); return; }
+  if (!(await ensureAiAck())) return;
+  if (mode === 'online' && !confirm('オンライン会議の音声も録音します。\n\nこのあと表示される画面で、\n・Zoomなどの会議の画面（または、ブラウザのタブ）を選ぶ\n・左下の「システム音声も共有」（タブの場合は「タブの音声も共有」）にチェックを入れる\nの2つをしてから「共有」を押してください。\n\n相手には、録音することを伝えて、了承を得てください。')) return;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)(), dest = ctx.createMediaStreamDestination(), streams = [];
+  const cleanup = () => { streams.forEach(s => s.getTracks().forEach(t => t.stop())); try { ctx.close(); } catch (e) {} };
+  try {
+    const mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    streams.push(mic); ctx.createMediaStreamSource(mic).connect(dest);
+    let disp = null;
+    if (mode === 'online') {
+      disp = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      streams.push(disp);
+      if (!disp.getAudioTracks().length) throw new Error('NOAUDIO');
+      ctx.createMediaStreamSource(new MediaStream(disp.getAudioTracks())).connect(dest);
+    }
+    const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+    const mr = new MediaRecorder(dest.stream, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: REC_BPS });
+    const st = { mr, cleanup, chunks: [], mime: (mr.mimeType || mime || 'audio/webm'), start: Date.now(), bytes: 0, memberId, meetingId, mode };
+    mr.ondataavailable = e => { if (e.data && e.data.size) { st.chunks.push(e.data); st.bytes += e.data.size; } };
+    mr.start(10000);
+    try { if (navigator.wakeLock) st.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
+    const m0 = members.find(x => x.id === memberId);
+    const backup = () => Store.set('recDraft', { memberId, meetingId, name: m0 ? m0.name : '', mime: st.mime, chunks: st.chunks.slice(), savedAt: Date.now() });
+    st.backupTimer = setInterval(backup, 30000);
+    st.tick = setInterval(() => {
+      const el = $('recTime'); const ms = Date.now() - st.start;
+      if (el) el.textContent = recFmt(ms);
+      if (ms >= REC_MAX_MS || st.bytes >= REC_MAX_BYTES) recStop(true);
+    }, 500);
+    if (disp) disp.getVideoTracks().forEach(t => t.addEventListener('ended', () => { if (Rec.active === st) { toast('画面の共有が止まったので、録音を終了します'); recStop(); } }));
+    Rec.active = st; window.onbeforeunload = () => '録音中です。このページを閉じると、録音が失われます。';
+    recBar(`<span class="rec-dot">● 録音中</span> <b id="recTime">00:00</b> <span style="font-size:12px;color:var(--sub)">${esc((m0 && m0.name) || '')}さん${mode === 'online' ? '（会議の音声も録音）' : ''}</span>
+      <button class="btn small primary" id="recStop">■ 停止して記録</button><button class="btn small" id="recCancel">破棄</button>`);
+    $('recStop').onclick = () => recStop(); $('recCancel').onclick = () => recCancel();
+    toast('録音を始めました');
+  } catch (e) {
+    cleanup();
+    if (e && e.message === 'NOAUDIO') alert('会議の音声が共有されていません。\nもう一度やり直し、共有の画面で「システム音声も共有」（タブの場合は「タブの音声も共有」）にチェックを入れてください。\n※ Macでは、Zoomアプリの音声は録音できません。ブラウザ版のZoomを使うか、マイクで録音してください。');
+    else if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) toast('録音が許可されませんでした。ブラウザの許可（マイク・画面共有）を確認してください');
+    else if (e && e.name === 'NotFoundError') alert('マイクが見つかりませんでした。マイクをつないでから、もう一度お試しください。');
+    else alert('録音を始められませんでした。' + (e && e.message ? '\n' + e.message : ''));
+  }
+}
+async function recFinishStream(st) {
+  clearInterval(st.tick); clearInterval(st.backupTimer);
+  await new Promise(r => { st.mr.onstop = r; try { st.mr.state !== 'inactive' ? st.mr.stop() : r(); } catch (e) { r(); } });
+  st.cleanup(); try { st.wake && st.wake.release(); } catch (e) {}
+  Rec.active = null; window.onbeforeunload = null; recBar('');
+}
+async function recCancel() {
+  const st = Rec.active; if (!st) return;
+  if (!confirm('録音を破棄します。ここまでの録音は消えます。よろしいですか？')) return;
+  await recFinishStream(st); await Store.set('recDraft', null); toast('録音を破棄しました');
+}
+async function recStop(auto) {
+  const st = Rec.active; if (!st) return;
+  await recFinishStream(st);
+  if (auto) toast('録音が上限（約90分）に達したので、ここで終了して記録します');
+  const blob = new Blob(st.chunks, { type: st.mime });
+  await Store.set('recDraft', { memberId: st.memberId, meetingId: st.meetingId, name: ((members.find(x => x.id === st.memberId) || {}).name) || '', mime: st.mime, chunks: st.chunks, savedAt: Date.now() });
+  if (blob.size < 2000) { toast('録音が短すぎて、記録できませんでした'); await Store.set('recDraft', null); return; }
+  await recTranscribe(blob, st.memberId, st.meetingId);
+}
+async function recTranscribe(blob, memberId, meetingId) {
+  const m = members.find(x => x.id === memberId);
+  if (!m) { alert('この録音のメンバーが見つかりません。'); return; }
+  if (blob.size > REC_MAX_BYTES) { alert('録音が長すぎて、一度に文字にできません（約90分まで）。\n録音は残してあります。画面下の「ファイルに保存」から保存してください。'); recDraftBar(); return; }
+  const mime = (blob.type || 'audio/webm').split(';')[0];
+  const inline = await fileToInline(new File([blob], 'rec', { type: mime }));
+  const text = await autoAi(null, buildTranscribePrompt(m.name), inline, '🎙 録音を文字にしています…（長い録音は数分かかります。このまま待ってください）', 60000);
+  if (!text) { toast('文字にできませんでした。録音は残してあります'); recDraftBar(); return; }
+  await Store.set('recDraft', null); recBar('');
+  openDetail(memberId);
+  const box = $('overlay').querySelector(`[data-mid="${meetingId}"]`); if (!box) { toast('文字起こしはできましたが、記録先が見つかりませんでした'); return; }
+  const add = box.querySelector('.mtg-add'); add.classList.remove('hidden');
+  add.querySelector('textarea').value = text;
+  add.scrollIntoView({ block: 'center' });
+  add.querySelector('[data-r=tauto]').click();
+}
+// 前回の録音が文字になっていないときの案内
+async function recDraftBar() {
+  if (Rec.active) return;
+  const d = await Store.get('recDraft'); if (!d || !d.chunks || !d.chunks.length) { return; }
+  const when = d.savedAt ? new Date(d.savedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  recBar(`<span><b>🎙 文字になっていない録音があります</b>（${esc(d.name || '')}さん・${esc(when)}）</span>
+    <button class="btn small primary" id="rdGo">文字にする</button><button class="btn small" id="rdSave">ファイルに保存</button><button class="btn small danger" id="rdDel">破棄</button>`);
+  const blob = () => new Blob(d.chunks, { type: d.mime || 'audio/webm' });
+  $('rdGo').onclick = () => recTranscribe(blob(), d.memberId, d.meetingId);
+  $('rdSave').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob()); a.download = `1to1録音_${(d.name || '').replace(/\s/g, '')}_${new Date(d.savedAt || Date.now()).toISOString().slice(0, 10)}.webm`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); };
+  $('rdDel').onclick = async () => { if (!confirm('この録音を破棄します。よろしいですか？')) return; await Store.set('recDraft', null); recBar(''); };
+}
 // ===== AIの自動整理（Gemini API・任意） =====
 let geminiModel = 'gemini-flash-latest';
 let aiKey = '';
@@ -1535,17 +1657,17 @@ async function pickGeminiModel() {
   ok.sort((a, b) => ver(b) - ver(a));
   return ok[0] || list.find(n => /flash/.test(n)) || null;
 }
-async function geminiCall(model, prompt, inline) {
+async function geminiCall(model, prompt, inline, maxOut) {
   const parts = inline ? [{ inline_data: { mime_type: inline.mime, data: inline.data } }, { text: prompt }] : [{ text: prompt }];
-  return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': aiKey }, body: JSON.stringify({ contents: [{ parts }], generationConfig: { temperature: 0.2 } }) });
+  return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': aiKey }, body: JSON.stringify({ contents: [{ parts }], generationConfig: maxOut ? { temperature: 0.2, maxOutputTokens: maxOut } : { temperature: 0.2 } }) });
 }
-async function callGemini(prompt, inline) {
+async function callGemini(prompt, inline, maxOut) {
   let res;
   try {
-    res = await geminiCall(geminiModel, prompt, inline);
+    res = await geminiCall(geminiModel, prompt, inline, maxOut);
     if (res.status === 404) {
       const alt = await pickGeminiModel();
-      if (alt && alt !== geminiModel) { res = await geminiCall(alt, prompt, inline); if (res.ok) { geminiModel = alt; if (!viewerMode) await Store.set('geminiModel', alt); } }
+      if (alt && alt !== geminiModel) { res = await geminiCall(alt, prompt, inline, maxOut); if (res.ok) { geminiModel = alt; if (!viewerMode) await Store.set('geminiModel', alt); } }
     }
   } catch (e) { throw new Error('インターネットに接続できませんでした。接続を確認してください。'); }
   if (!res.ok) {
@@ -1568,13 +1690,13 @@ function setBusy(msg) {
   if (!b) { b = document.createElement('div'); b.id = 'aiBusy'; document.body.appendChild(b); }
   b.textContent = msg;
 }
-async function autoAi(btn, prompt, inline, msg) {
+async function autoAi(btn, prompt, inline, msg, maxOut) {
   if (!aiKey) { toast('先に「保存・バックアップ」でAPIキーを設定してください'); return null; }
   if (!(await ensureAiAck())) return null;
   const isBtn = btn && btn.tagName === 'BUTTON', old = isBtn ? btn.textContent : '';
   if (isBtn) { btn.disabled = true; btn.textContent = 'AIが整理中…'; }
   setBusy(msg || '🤖 AIが読み取り中です…（20秒〜2分ほどかかります）');
-  try { return await callGemini(prompt, inline); }
+  try { return await callGemini(prompt, inline, maxOut); }
   catch (e) { alert(e.message || e); return null; }
   finally { setBusy(''); if (isBtn) { btn.disabled = false; btn.textContent = old; } }
 }
