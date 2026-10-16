@@ -280,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.26.8</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.26.9</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -1048,8 +1048,13 @@ function openDetail(id) {
     if (window._photoPaste) document.removeEventListener('paste', window._photoPaste);
     window._photoPaste = e => {
       if (!document.querySelector('#dAvWrap')) return;
-      const it = [...(e.clipboardData ? e.clipboardData.items : [])].find(i => i.kind === 'file' && /^image\//.test(i.type)); if (!it) return;
-      e.preventDefault(); setPhoto(it.getAsFile());
+      const cd = e.clipboardData, tag = (e.target && e.target.tagName) || '';
+      const it = [...(cd ? cd.items : [])].find(i => i.kind === 'file' && /^image\//.test(i.type));
+      if (it) { e.preventDefault(); setPhoto(it.getAsFile()); return; }
+      if (/INPUT|TEXTAREA|SELECT/.test(tag)) return; // 文字の貼り付けは邪魔しない
+      const html = cd ? cd.getData('text/html') : '', mm = html.match(/<img[^>]+src="(data:image\/[^"]+)"/i);
+      if (mm) { e.preventDefault(); fetch(mm[1]).then(r => r.blob()).then(setPhoto); return; }
+      toast('貼り付ける画像が見つかりませんでした。画像を右クリック→「画像をコピー」するか、Win＋Shift＋Sで画面を切り取ってから、もう一度 Ctrl＋V を押してください');
     };
     document.addEventListener('paste', window._photoPaste);
   }
