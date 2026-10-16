@@ -280,7 +280,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.26.4</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.26.5</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -2529,7 +2529,6 @@ function bniPanel(m, x) {
       <span style="margin-right:auto;font-size:12px;color:var(--sub)">${x.bniDone ? '登録日：' + esc(fmtDate(x.bniDoneAt)) : '1to1はどちらか1人が登録すれば、2人ともに記録されます'}</span>
       <button class="btn small primary" data-b="auto">BNI自動入力用にコピー</button>
       <a class="btn small" href="${BNI_URL}" target="_blank" rel="noopener">BNI Connectを開く</a>
-      <button class="btn small" data-b="save">入力内容を保存</button>
       <button class="btn small ${x.bniDone ? '' : 'primary'}" data-b="done">${x.bniDone ? '未登録に戻す' : 'BNIコネクトに登録済みにする'}</button>
     </div>`;
 }
@@ -2541,7 +2540,7 @@ function bindBniPanel(box, m, rec) {
     const meetings = (cur.meetings || []).map(y => y.id === rec.id ? { ...y, ...read(), ...extra } : y).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     await saveMember({ ...cur, meetings, updatedAt: Date.now() });
   };
-  p.querySelector('[data-b=save]').onclick = async () => { await persist({}); toast('保存しました'); openDetail(m.id); };
+  p.querySelectorAll('[data-f]').forEach(el => el.addEventListener('change', () => persist({})));
   p.querySelector('[data-b=setup]').onclick = e => { e.preventDefault(); p.querySelector('.bmk-setup').classList.toggle('hidden'); };
   p.querySelector('[data-b=auto]').onclick = async () => {
     const f = read();
