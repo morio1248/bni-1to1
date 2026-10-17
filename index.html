@@ -286,7 +286,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.32.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.32.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -434,7 +434,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <ol><li>パソコンの Google Chrome（または Edge）で開く。</li><li>上の「取り込み」を押し、BNIの名簿ページか1to1シートから<b>1人</b>登録する。</li><li>メンバー一覧でその人を開き、「＋ 1to1を追加」で日付を入れる。</li></ol>
       <span style="font-size:13px;color:var(--sub)">データを守る設定（Googleドライブへの自動保存）と、AIの自動整理は、慣れてからで大丈夫です。ただし、設定するまでは、データはこのブラウザの中にだけあります。</span></div>
     <div class="toc">
-      <a href="#g1">① 最初にやること</a>　<a href="#g2">② 1to1シートを取り込む</a>　<a href="#g3">③ 1to1を記録する</a>　<a href="#g4">④ BNIコネクトに登録する</a>　<a href="#g5">⑤ 別のパソコンで使う</a>　<a href="#g7">スマホで見る</a>　<a href="#g8">AIの自動整理（キー）</a>　<a href="#g9">紹介の記録</a>　<a href="#g10">メンバーにすすめる</a>　<a href="#g6">⑥ 困ったとき</a>
+      <a href="#g1">① 最初にやること</a>　<a href="#g2">② 1to1シートを取り込む</a>　<a href="#g3">③ 1to1を記録する</a>　<a href="#g4">④ BNIコネクトに登録する</a>　<a href="#g5">⑤ 別のパソコンで使う</a>　<a href="#g7">スマホで見る</a>　<a href="#g8">AIの自動整理（キー）</a>　<a href="#g9">紹介の記録</a>　<a href="#g6">⑥ 困ったとき</a>
     </div>
 
     <h3 id="g1">① 最初にやること（1回だけ）</h3>
@@ -515,11 +515,6 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <li>メンバーの詳細画面の「🤝 紹介の記録」で、「＋ 記録する」を押します。</li>
       <li>「この方が、紹介した」または「この方が、紹介された」を選び、相手の名前・日付・状態（進行中／成約／見送り）・メモを入れます。</li>
       <li>メンバー一覧の「🤝 紹介の記録」で、全員分の一覧と件数（紹介した／された・成約）が見られます。</li></ol></div>
-
-    <h3 id="g10">このツールをメンバーにすすめる</h3>
-    <div class="card-g"><p>BNIのメンバーに送る案内文です。コピーしてお使いください。</p>
-      <textarea id="shareText" readonly rows="9" style="width:100%;font-size:14px;line-height:1.6"></textarea>
-      <div class="row" style="margin-top:6px"><button class="btn small primary" id="shareCopy">案内文をコピー</button></div></div>
 
     <h3 id="g6">⑥ 困ったとき</h3>
     <div class="card-g"><ul>
@@ -3271,21 +3266,6 @@ $('viewerStart').onclick = () => Viewer.open();
 $('viewerFile').onchange = e => Viewer.load(e.target.files[0]);
 $('viewerExit').onclick = () => Viewer.exit();
 $('viewerRefresh').onclick = () => Viewer.open();
-
-// ===== すすめる文（使い方） =====
-const SHARE_TEXT = `【1to1 Navi】BNIの1to1を、ラクに記録できる無料ツールです
-
-・1to1シートを読み取って、メンバーのカード（事業・家族・趣味・紹介してほしい人）にできます
-・1to1の予定・議事録・お礼の下書き・次にやることまで、ひとつにまとまります
-・紹介した／された記録も残せます
-・データはご自分のパソコンの中（とGoogleドライブ）だけに保存されます。サーバーには送られません
-・パソコンの Google Chrome か Edge で使います（スマホは閲覧専用）
-
-▼ ここから使えます（インストール不要・無料）
-https://morio1248.github.io/bni-1to1/
-
-最初に「かんたんセットアップ」（10分ほど）の案内が出ます。わからないところは、お気軽にお声がけください。`;
-if ($('shareText')) { $('shareText').value = SHARE_TEXT; $('shareCopy').onclick = async () => { await copyText(SHARE_TEXT); toast('案内文をコピーしました'); }; }
 
 // ===== かんたんセットアップ（初回ウィザード） =====
 const Wizard = (() => {
