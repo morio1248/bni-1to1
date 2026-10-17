@@ -284,7 +284,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.30.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.30.1</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -742,7 +742,7 @@ document.addEventListener('visibilitychange', async () => {
 const catOf = m => m.category || 'BNI';
 
 // 他の保存データ（JSON）と合流：新しい方を採用、削除記録も反映
-async function mergeData(obj) {
+async function mergeData(obj, restore) {
   const list = Array.isArray(obj) ? obj : obj.members;
   if (!Array.isArray(list)) throw new Error('形式が違います');
   const ts = (obj && obj.tombstones) || {};
@@ -755,7 +755,9 @@ async function mergeData(obj) {
   for (const m of list) {
     if (!m || !m.id) continue;
     migrateLegacy(m);
-    if (tombstones[m.id] && tombstones[m.id] >= (m.updatedAt || 0)) continue;
+    // 手動の読み込み（復元）では、このPCで削除した記録より、読み込むファイルを優先する（ファイル自身の削除記録は守る）
+    if (restore) { if (ts[m.id] && ts[m.id] >= (m.updatedAt || 0)) continue; delete tombstones[m.id]; }
+    else if (tombstones[m.id] && tombstones[m.id] >= (m.updatedAt || 0)) continue;
     const cur = members.find(x => x.id === m.id);
     if (cur && (cur.updatedAt || 0) >= (m.updatedAt || 0)) continue;
     await Store.put(m); cur ? upd++ : add++;
@@ -2110,7 +2112,7 @@ $('exportCsv').onclick = () => {
 $('importJsonBtn').onclick = () => $('importJson').click();
 $('importJson').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  try { const r = await mergeData(JSON.parse(await f.text())); await changed(); toast(`追加 ${r.add} 件・更新 ${r.upd} 件`); }
+  try { const r = await mergeData(JSON.parse(await f.text()), true); await changed(); toast(`追加 ${r.add} 件・更新 ${r.upd} 件`); }
   catch (err) { alert('読み込めませんでした：' + err.message); }
 };
 $('wipe').onclick = async () => {
