@@ -161,6 +161,7 @@ mark{background:#ffe58a;padding:0 1px}
 .mtg-h .len{font-size:12px;color:var(--sub)}
 .mtg-body{padding:10px 12px;white-space:pre-wrap;font-size:13px;max-height:360px;overflow:auto;border-top:1px solid var(--line)}
 .csvmap{border-collapse:collapse;font-size:13px;width:100%}.csvmap th,.csvmap td{border:1px solid var(--line,#ddd);padding:4px 8px;text-align:left}.csvmap select{max-width:240px}.csvmap .ex{color:var(--sub);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ref-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;border-top:1px solid #f1e3d3;font-size:14px}.ref-row .dir{font-weight:700;white-space:nowrap}.ref-row .dir.out{color:#1a6b3a}.ref-row .dir.in{color:#a2192a}.ref-row .rn{flex:1;min-width:120px;line-height:1.5}.ref-row .rn small{color:var(--sub)}.ref-form{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0;padding:8px;background:#fff;border:1px solid var(--line);border-radius:8px}.ref-form input,.ref-form select{padding:6px 8px;font-size:14px}.ref-sum{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}.ref-sum div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px}.ref-sum b{font-size:18px;display:block}
 .rec-gemini{background:#f6f8ff;border:1px solid #d7e0f5;border-radius:10px;padding:10px 14px;margin:10px 0;font-size:14px}
 .rec-gemini .steps{margin:6px 0 0;color:var(--ink)}
 .mtg-add{padding:10px 12px;border-top:1px solid var(--line);background:#fafbff}
@@ -285,7 +286,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.31.0</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.32.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -323,7 +324,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     <div class="quick" id="quick"></div>
     <div class="upcoming hidden" id="upcoming"></div>
     <div class="upcoming hidden" id="taskPanel"></div>
-    <div class="row" style="margin:-4px 0 10px"><button class="btn small" id="dupBtn" style="margin-left:6px">重複を探す</button><button class="btn small" id="slotBtn" style="margin-left:6px" title="空いている日時から、1to1の候補日の文章を作ります">📅 候補日を作る</button><span class="count" id="count" style="margin:0 0 0 8px"></span></div>
+    <div class="row" style="margin:-4px 0 10px"><button class="btn small" id="dupBtn" style="margin-left:6px">重複を探す</button><button class="btn small" id="refBtn" style="margin-left:6px" title="誰に誰を紹介したか、誰から紹介されたかの記録と一覧">🤝 紹介の記録</button><button class="btn small" id="slotBtn" style="margin-left:6px" title="空いている日時から、1to1の候補日の文章を作ります">📅 候補日を作る</button><span class="count" id="count" style="margin:0 0 0 8px"></span></div>
     <div class="grid" id="grid"></div>
   </section>
 
@@ -412,9 +413,9 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     <div class="queue" id="queue"></div>
         <div class="manual-row"><button class="btn manual-btn" id="manualBtn">✏️ 白紙から手入力する</button><span>取り込むデータがない方を、手で1人ずつ登録します</span></div>
 <div class="web" id="csvPanel">
-      <div class="web-t">CSVの名簿を取り込む（他のソフトで作った一覧）</div>
-      <p class="howto" style="margin:4px 0 8px">名刺管理・顧客管理・Excelなどで書き出したCSVを選ぶと、1行目の列名を見て、自動で項目に振り分けます。取り込む前に確認画面が出るので、違うところは選び直せます。Excelの場合は、「名前を付けて保存」→「CSV UTF-8」にしてから選んでください。</p>
-      <div class="row"><label class="btn primary">CSVファイルを選ぶ<input type="file" id="csvFile" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden></label></div>
+      <div class="web-t">CSV・Excelの名簿を取り込む（他のソフトで作った一覧）</div>
+      <p class="howto" style="margin:4px 0 8px">名刺管理・顧客管理・Excelなどで書き出したCSVを選ぶと、1行目の列名を見て、自動で項目に振り分けます。取り込む前に確認画面が出るので、違うところは選び直せます。Excel（.xlsx）もそのまま選べます（先頭のシートを読みます）。</p>
+      <div class="row"><label class="btn primary">CSV・Excelファイルを選ぶ<input type="file" id="csvFile" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden></label></div>
       <div id="csvPreview"></div>
     </div>
 <div class="web" id="bcPanel">
@@ -433,7 +434,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <ol><li>パソコンの Google Chrome（または Edge）で開く。</li><li>上の「取り込み」を押し、BNIの名簿ページか1to1シートから<b>1人</b>登録する。</li><li>メンバー一覧でその人を開き、「＋ 1to1を追加」で日付を入れる。</li></ol>
       <span style="font-size:13px;color:var(--sub)">データを守る設定（Googleドライブへの自動保存）と、AIの自動整理は、慣れてからで大丈夫です。ただし、設定するまでは、データはこのブラウザの中にだけあります。</span></div>
     <div class="toc">
-      <a href="#g1">① 最初にやること</a>　<a href="#g2">② 1to1シートを取り込む</a>　<a href="#g3">③ 1to1を記録する</a>　<a href="#g4">④ BNIコネクトに登録する</a>　<a href="#g5">⑤ 別のパソコンで使う</a>　<a href="#g7">スマホで見る</a>　<a href="#g8">AIの自動整理（キー）</a>　<a href="#g6">⑥ 困ったとき</a>
+      <a href="#g1">① 最初にやること</a>　<a href="#g2">② 1to1シートを取り込む</a>　<a href="#g3">③ 1to1を記録する</a>　<a href="#g4">④ BNIコネクトに登録する</a>　<a href="#g5">⑤ 別のパソコンで使う</a>　<a href="#g7">スマホで見る</a>　<a href="#g8">AIの自動整理（キー）</a>　<a href="#g9">紹介の記録</a>　<a href="#g10">メンバーにすすめる</a>　<a href="#g6">⑥ 困ったとき</a>
     </div>
 
     <h3 id="g1">① 最初にやること（1回だけ）</h3>
@@ -462,7 +463,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <ol><li>BNIコネクトから、1to1のレポート（「one-to-one-report」という名前のExcelファイル）をダウンロードします。</li>
       <li>「取り込み」画面の「BNIコネクトの1to1レポートを取り込む」で、そのファイルを選びます。</li>
       <li>件数を確認して「取り込む」を押すと、各メンバーの「1to1の記録」に日付・場所・会話のトピックが入り、「BNIコネクト登録済み」になります。何度読み込んでも二重にはなりません。</li></ol>      <h4 style="margin:14px 0 4px">CSVの名簿（他のソフトで作った一覧）があるとき</h4>
-      <ol><li>「取り込み」画面の「CSVの名簿を取り込む」で、CSVファイルを選びます（Excelは「CSV UTF-8」で保存してから）。</li>
+      <ol><li>「取り込み」画面の「CSVの名簿を取り込む」で、CSVファイルを選びます（Excel .xlsx もそのまま選べます）。</li>
       <li>1行目の列名を見て、自動で項目に振り分けた結果が出ます。違う列は、プルダウンで選び直します。</li>
       <li>「同じ名前の方がすでにいるとき」の扱いを選んで「取り込む」を押します。当てはまらない列は「メモに追加」にすると、列名つきでメモに残ります。</li></ol>
 </div>
@@ -508,6 +509,17 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
       <li>キーを入れると、「コピーして貼る」手順が、ボタン1つの自動整理になります（シートの読み取り・議事録の整理・話題の提案・お礼の下書きなど）。</li>
       <li>無料枠には1日の上限があり、混み合うと止まることがあります。その場合は、時間をおくか、ふだん使っているAIにコピーして貼る方式で続けられます。</li>
       <li>キーはこのブラウザの中にだけ保存され、他の人には見えません。</li></ol></div>
+
+    <h3 id="g9">紹介の記録をつける</h3>
+    <div class="card-g"><ol>
+      <li>メンバーの詳細画面の「🤝 紹介の記録」で、「＋ 記録する」を押します。</li>
+      <li>「この方が、紹介した」または「この方が、紹介された」を選び、相手の名前・日付・状態（進行中／成約／見送り）・メモを入れます。</li>
+      <li>メンバー一覧の「🤝 紹介の記録」で、全員分の一覧と件数（紹介した／された・成約）が見られます。</li></ol></div>
+
+    <h3 id="g10">このツールをメンバーにすすめる</h3>
+    <div class="card-g"><p>BNIのメンバーに送る案内文です。コピーしてお使いください。</p>
+      <textarea id="shareText" readonly rows="9" style="width:100%;font-size:14px;line-height:1.6"></textarea>
+      <div class="row" style="margin-top:6px"><button class="btn small primary" id="shareCopy">案内文をコピー</button></div></div>
 
     <h3 id="g6">⑥ 困ったとき</h3>
     <div class="card-g"><ul>
@@ -1591,6 +1603,7 @@ function openDetail(id) {
       <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn small" id="dFav">${m.fav ? '★ お気に入り' : '☆ お気に入りに追加'}</button><button class="btn small" id="dSlot">📅 候補日</button><button class="btn small" id="dPre">📝 事前メモ</button><button class="btn small" id="dThanks">✉ お礼を作る</button><button class="btn small close" id="dClose">✕ 閉じる</button></div></div>
     ${m.photo ? '' : '<div class="vwhide" style="color:var(--sub);font-size:12px;margin:0 0 10px;line-height:1.6">📷 顔写真：左の丸をクリックして選ぶか、コピーした画像を Ctrl＋V で貼り付け。Facebookは、顔写真をクリックして大きく開き、右クリック →「画像をコピー」</div>'}
     <div class="intro-box"><div class="intro-h"><b>紹介文</b><span><button class="btn small" id="dIntroMake">${m.introText ? '作り直す・直す' : '＋ 紹介文を作る'}</button>${m.introText ? '<button class="btn small primary" id="dIntroCopy">コピー</button>' : ''}</span></div>${m.introText ? `<div class="intro-t">${hl(m.introText, terms)}</div>` : '<div class="howto" style="margin:0">まだありません。1to1シートの取り込み時にAIが作るか、ここから作れます。</div>'}</div>
+    <div class="intro-box" id="dRef"></div>
     <div class="intro-box" id="dTasks"><div class="intro-h"><b>やること・つなぐ約束</b><span><button class="btn small tk-add" id="dTaskAdd">＋ 追加</button></span></div><div id="dTaskList"></div></div>
     ${body}
     ${m.memo ? `<div class="sec"><span class="sec-t">自分用メモ</span><div style="white-space:pre-wrap">${hl(m.memo, terms)}</div></div>` : ''}
@@ -1660,6 +1673,7 @@ function openDetail(id) {
     document.addEventListener('paste', window._photoPaste);
   }
   $('dIntroMake').onclick = () => openIntro(m.id);
+  drawRefs(m.id);
   const drawTasks = () => {
     const cur = members.find(x => x.id === m.id) || m, ts = cur.tasks || [];
     $('dTaskList').innerHTML = ts.length ? ts.map(t => taskHtml(t, false, cur)).join('') : '<div class="howto" style="margin:0;display:block">まだありません。文字起こしをAIで整理すると、「つなぐ約束」や次のアクションが自動で入ります。</div>';
@@ -2080,8 +2094,37 @@ function parseCsv(text) {
   if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
   return rows.filter(r => r.some(x => String(x).trim() !== ''));
 }
+async function parseXlsx(file) {
+  const zip = await openZip(file);
+  const rd = async n => { const f = zip.file(n); return f ? new DOMParser().parseFromString(await f.async('string'), 'application/xml') : null; };
+  const ss = []; const sx = await rd('xl/sharedStrings.xml');
+  if (sx) sx.querySelectorAll('si').forEach(si => ss.push([...si.querySelectorAll('t')].map(t => t.textContent).join('')));
+  let path = 'xl/worksheets/sheet1.xml';
+  const wb = await rd('xl/workbook.xml'), rel = await rd('xl/_rels/workbook.xml.rels');
+  if (wb && rel) {
+    const sh = wb.querySelector('sheet'), rid = sh && (sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id'));
+    const t = rid && [...rel.querySelectorAll('Relationship')].find(r => r.getAttribute('Id') === rid);
+    if (t) path = 'xl/' + t.getAttribute('Target').replace(/^\/?(xl\/)?/, '');
+  }
+  const sd = await rd(path); if (!sd) throw new Error('シートが見つかりませんでした。');
+  const colNo = ref => ref.replace(/\d+/g, '').split('').reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
+  const rows = [];
+  sd.querySelectorAll('sheetData > row').forEach(r => {
+    const arr = [];
+    r.querySelectorAll('c').forEach(c => {
+      const t = c.getAttribute('t'), v = c.querySelector('v'); let val = '';
+      if (t === 's') val = ss[+(v && v.textContent)] || '';
+      else if (t === 'inlineStr') val = [...c.querySelectorAll('t')].map(x => x.textContent).join('');
+      else if (v) val = v.textContent;
+      arr[colNo(c.getAttribute('r') || 'A1')] = val;
+    });
+    rows.push(Array.from(arr, x => x ?? ''));
+  });
+  return rows.filter(r => r.some(x => String(x).trim() !== ''));
+}
 function csvToIso(v) {
   const s = String(v || '').normalize('NFKC').trim();
+  if (/^\d{5}(\.\d+)?$/.test(s) && +s > 10000 && +s < 80000) { const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(+s) * 86400000); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; }
   const m = s.match(/^(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);
   return m ? `${m[1]}-${pad(+m[2])}-${pad(+m[3])}` : s;
 }
@@ -2162,8 +2205,8 @@ async function csvImport() {
 $('csvFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   try {
-    if (/\.xlsx?$/i.test(f.name)) throw new Error('Excelファイルは、Excelで「名前を付けて保存」→「CSV UTF-8」にしてから選んでください。');
-    const rows = parseCsv(await readTextFile(f));
+    if (/\.xls$/i.test(f.name)) throw new Error('古い形式のExcel（.xls）は読み取れません。Excelで「名前を付けて保存」→「Excelブック（.xlsx）」または「CSV UTF-8」にしてから選んでください。');
+    const rows = /\.xlsx$/i.test(f.name) ? await parseXlsx(f) : parseCsv(await readTextFile(f));
     if (rows.length < 2) throw new Error('データの行が見つかりませんでした（1行目は列名、2行目以降が人のデータです）。');
     const head = rows[0].map(x => String(x).trim());
     csvState = { head, rows: rows.slice(1), keys: head.map(csvAutoKey), cat: 'BNI以外', mode: 'fill' };
@@ -2606,6 +2649,54 @@ function openDups() {
   $('overlay').classList.remove('hidden');
 }
 $('dupBtn').onclick = openDups;
+// ===== 紹介の記録（誰に誰を紹介したか・誰から紹介されたか） =====
+const REF_ST = ['進行中', '成約', '見送り'];
+const refDir = r => r.dir === 'in' ? '<span class="dir in">← 紹介された</span>' : '<span class="dir out">→ 紹介した</span>';
+function refRowHtml(r, withDel, who) {
+  return `<div class="ref-row" data-rid="${r.id}">${refDir(r)}<span class="rn">${esc(who || r.who || '（相手未入力）')}${r.dir === 'in' ? '　<small>から</small>' : '　<small>さんへ</small>'}${r.note ? `<br><small>${esc(r.note)}</small>` : ''}</span><small style="color:var(--sub)">${esc(r.date || '')}</small>
+    <select data-rst class="vwhide">${REF_ST.map(x => `<option ${r.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select>${withDel ? '<button class="btn small vwhide" data-rdel>削除</button>' : ''}</div>`;
+}
+function drawRefs(id) {
+  const m = members.find(x => x.id === id), box = $('dRef'); if (!m || !box) return;
+  const rs = [...(m.referrals || [])].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  box.innerHTML = `<div class="intro-h"><b>🤝 紹介の記録</b><span><button class="btn small vwhide" id="dRefAdd">＋ 記録する</button></span></div>
+    <div id="dRefForm" class="ref-form hidden">
+      <select id="rfDir"><option value="out">→ この方が、紹介した</option><option value="in">← この方が、紹介された</option></select>
+      <input id="rfWho" list="rfNames" placeholder="紹介した相手・紹介元の名前" style="flex:1;min-width:150px"><datalist id="rfNames">${members.filter(x => x.id !== id).map(x => `<option value="${esc(x.name)}">`).join('')}</datalist>
+      <input id="rfDate" type="date" value="${today()}"><select id="rfSt">${REF_ST.map(x => `<option>${x}</option>`).join('')}</select>
+      <input id="rfNote" placeholder="メモ（どんな案件か等）" style="flex:1;min-width:150px"><button class="btn small primary" id="rfSave">記録する</button></div>
+    ${rs.length ? rs.map(r => refRowHtml(r, true)).join('') : '<div class="howto" style="margin:0;display:block">まだありません。「この方を紹介した」「この方から紹介された」ときに記録します。</div>'}`;
+  const upd = async fn => { const cur = members.find(x => x.id === id); await saveMember({ ...cur, referrals: fn([...(cur.referrals || [])]), updatedAt: Date.now() }); drawRefs(id); };
+  $('dRefAdd').onclick = () => { $('dRefForm').classList.toggle('hidden'); $('rfWho').focus(); };
+  $('rfSave').onclick = async () => {
+    const who = $('rfWho').value.trim(); if (!who) { toast('相手の名前を入れてください'); return; }
+    await upd(a => [...a, { id: uid(), dir: $('rfDir').value, who, date: $('rfDate').value || today(), status: $('rfSt').value, note: $('rfNote').value.trim() }]);
+  };
+  box.querySelectorAll('[data-rid]').forEach(row => {
+    const rid = row.dataset.rid;
+    row.querySelector('[data-rst]').onchange = e => upd(a => a.map(r => r.id === rid ? { ...r, status: e.target.value } : r));
+    row.querySelector('[data-rdel]').onclick = () => { if (confirm('この紹介の記録を削除します。よろしいですか？')) upd(a => a.filter(r => r.id !== rid)); };
+  });
+}
+function openReferrals(filter = 'all') {
+  const all = members.flatMap(m => (m.referrals || []).map(r => ({ ...r, mid: m.id, mname: m.name }))).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const out = all.filter(r => r.dir !== 'in'), inn = all.filter(r => r.dir === 'in');
+  const won = a => a.filter(r => r.status === '成約').length;
+  const list = all.filter(r => filter === 'all' || (filter === 'out' && r.dir !== 'in') || (filter === 'in' && r.dir === 'in') || (filter === 'open' && (r.status || '進行中') === '進行中'));
+  const chip = (k, t) => `<button type="button" class="qchip ${filter === k ? 'on' : ''}" data-rf="${k}">${t}</button>`;
+  $('overlay').innerHTML = `<div class="detail vok"><div class="head"><div class="nm" style="font-size:18px">🤝 紹介の記録（一覧）</div><button class="btn small close" id="rClose">✕ 閉じる</button></div>
+    <div class="ref-sum"><div>紹介した<b>${out.length}件</b>成約 ${won(out)}件</div><div>紹介された<b>${inn.length}件</b>成約 ${won(inn)}件</div></div>
+    <p class="howto" style="display:block;margin:6px 0">記録は、各メンバーの詳細画面の「🤝 紹介の記録」から追加します（紹介した・された、どちらの場合も、その相手のメンバーを開いて記録します）。</p>
+    <div class="row" style="gap:6px;margin:8px 0">${chip('all', 'すべて')}${chip('out', '紹介した')}${chip('in', '紹介された')}${chip('open', '進行中')}</div>
+    ${list.length ? list.map(r => `<div style="border-top:1px solid var(--line);padding:2px 0">${refRowHtml(r, false, '')}<div style="font-size:13px;margin:-2px 0 4px"><a href="#" data-open="${r.mid}">${esc(r.mname)}</a> ${r.dir === 'in' ? 'が' + esc(r.who) + 'さんから紹介された' : 'が' + esc(r.who) + 'さんを紹介した'}　<span style="color:var(--sub)">${esc(r.status || '進行中')}</span></div></div>`).join('') : '<div class="howto" style="display:block">まだ記録がありません。</div>'}</div>`;
+  $('rClose').onclick = closeOverlay;
+  $('overlay').querySelectorAll('[data-rf]').forEach(b => b.onclick = () => openReferrals(b.dataset.rf));
+  $('overlay').querySelectorAll('[data-open]').forEach(a => a.onclick = e => { e.preventDefault(); openDetail(a.dataset.open); });
+  $('overlay').querySelectorAll('[data-rst]').forEach(x => x.disabled = true);
+  $('overlay').classList.remove('hidden');
+}
+$('refBtn').onclick = () => openReferrals();
+
 
 // ===== 1to1の予定とカレンダー連携 =====
 const PLACES = ['オンライン', '対面'];
@@ -3180,6 +3271,21 @@ $('viewerStart').onclick = () => Viewer.open();
 $('viewerFile').onchange = e => Viewer.load(e.target.files[0]);
 $('viewerExit').onclick = () => Viewer.exit();
 $('viewerRefresh').onclick = () => Viewer.open();
+
+// ===== すすめる文（使い方） =====
+const SHARE_TEXT = `【1to1 Navi】BNIの1to1を、ラクに記録できる無料ツールです
+
+・1to1シートを読み取って、メンバーのカード（事業・家族・趣味・紹介してほしい人）にできます
+・1to1の予定・議事録・お礼の下書き・次にやることまで、ひとつにまとまります
+・紹介した／された記録も残せます
+・データはご自分のパソコンの中（とGoogleドライブ）だけに保存されます。サーバーには送られません
+・パソコンの Google Chrome か Edge で使います（スマホは閲覧専用）
+
+▼ ここから使えます（インストール不要・無料）
+https://morio1248.github.io/bni-1to1/
+
+最初に「かんたんセットアップ」（10分ほど）の案内が出ます。わからないところは、お気軽にお声がけください。`;
+if ($('shareText')) { $('shareText').value = SHARE_TEXT; $('shareCopy').onclick = async () => { await copyText(SHARE_TEXT); toast('案内文をコピーしました'); }; }
 
 // ===== かんたんセットアップ（初回ウィザード） =====
 const Wizard = (() => {
