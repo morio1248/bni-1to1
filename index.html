@@ -160,6 +160,7 @@ mark{background:#ffe58a;padding:0 1px}
 .mtg-h .ttl{font-weight:700;margin-right:auto}
 .mtg-h .len{font-size:12px;color:var(--sub)}
 .mtg-body{padding:10px 12px;white-space:pre-wrap;font-size:13px;max-height:360px;overflow:auto;border-top:1px solid var(--line)}
+.csvmap{border-collapse:collapse;font-size:13px;width:100%}.csvmap th,.csvmap td{border:1px solid var(--line,#ddd);padding:4px 8px;text-align:left}.csvmap select{max-width:240px}.csvmap .ex{color:var(--sub);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rec-gemini{background:#f6f8ff;border:1px solid #d7e0f5;border-radius:10px;padding:10px 14px;margin:10px 0;font-size:14px}
 .rec-gemini .steps{margin:6px 0 0;color:var(--ink)}
 .mtg-add{padding:10px 12px;border-top:1px solid var(--line);background:#fafbff}
@@ -284,7 +285,7 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
 </head>
 <body>
 <header><div class="bar">
-  <div class="logo">1to1 Navi<span class="ver">v1.30.1</span></div>
+  <div class="logo">1to1 Navi<span class="ver">v1.31.0</span></div>
   <button class="save-state warn" id="saveState" title="保存先の設定">バックアップ未設定</button>
   <nav>
     <button data-view="list" class="on">メンバー一覧</button>
@@ -410,6 +411,12 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     </div>
     <div class="queue" id="queue"></div>
         <div class="manual-row"><button class="btn manual-btn" id="manualBtn">✏️ 白紙から手入力する</button><span>取り込むデータがない方を、手で1人ずつ登録します</span></div>
+<div class="web" id="csvPanel">
+      <div class="web-t">CSVの名簿を取り込む（他のソフトで作った一覧）</div>
+      <p class="howto" style="margin:4px 0 8px">名刺管理・顧客管理・Excelなどで書き出したCSVを選ぶと、1行目の列名を見て、自動で項目に振り分けます。取り込む前に確認画面が出るので、違うところは選び直せます。Excelの場合は、「名前を付けて保存」→「CSV UTF-8」にしてから選んでください。</p>
+      <div class="row"><label class="btn primary">CSVファイルを選ぶ<input type="file" id="csvFile" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden></label></div>
+      <div id="csvPreview"></div>
+    </div>
 <div class="web" id="bcPanel">
       <div class="web-t">BNIコネクトの1to1レポートを取り込む</div>
       <p class="howto" style="margin:4px 0 8px">BNIコネクトからダウンロードした1to1のレポート（「one-to-one-report」という名前のExcelファイル）を選ぶと、これまでBNIコネクトに登録した1to1を、各メンバーの「1to1の記録」にまとめて入れます（「BNIコネクト登録済み」になります）。同じファイルを何度読み込んでも、二重には登録されません。</p>
@@ -454,7 +461,11 @@ footer.copyright{max-width:1100px;margin:28px auto 36px;padding:14px 16px 0;bord
     <div class="card-g"><b>BNIコネクトに登録済みの1to1をまとめて取り込む</b>
       <ol><li>BNIコネクトから、1to1のレポート（「one-to-one-report」という名前のExcelファイル）をダウンロードします。</li>
       <li>「取り込み」画面の「BNIコネクトの1to1レポートを取り込む」で、そのファイルを選びます。</li>
-      <li>件数を確認して「取り込む」を押すと、各メンバーの「1to1の記録」に日付・場所・会話のトピックが入り、「BNIコネクト登録済み」になります。何度読み込んでも二重にはなりません。</li></ol></div>
+      <li>件数を確認して「取り込む」を押すと、各メンバーの「1to1の記録」に日付・場所・会話のトピックが入り、「BNIコネクト登録済み」になります。何度読み込んでも二重にはなりません。</li></ol>      <h4 style="margin:14px 0 4px">CSVの名簿（他のソフトで作った一覧）があるとき</h4>
+      <ol><li>「取り込み」画面の「CSVの名簿を取り込む」で、CSVファイルを選びます（Excelは「CSV UTF-8」で保存してから）。</li>
+      <li>1行目の列名を見て、自動で項目に振り分けた結果が出ます。違う列は、プルダウンで選び直します。</li>
+      <li>「同じ名前の方がすでにいるとき」の扱いを選んで「取り込む」を押します。当てはまらない列は「メモに追加」にすると、列名つきでメモに残ります。</li></ol>
+</div>
 
     <h3 id="g3">③ 1to1を記録する</h3>
     <div class="card-g"><b>メンバー一覧の見方</b><ul>
@@ -2025,6 +2036,140 @@ async function importBniConnect(list, createNew) {
   await changed();
   return { n, created };
 }
+// ===== CSVの名簿を取り込む（列名を見て自動で項目に振り分け） =====
+const CSV_NZ = s => String(s || '').normalize('NFKC').toLowerCase().replace(/[\s・_\-‐－／\/()（）\[\]【】:：.]/g, '');
+const CSV_RULES = [ // 先に当たったものを採用（順番が大事）
+  ['kana', /(ふりがな|フリガナ|ヨミガナ|よみがな|読み|かな|kana|furigana)/],
+  ['__sei', /^(姓|苗字|名字|lastname|familyname|surname|sei)$/],
+  ['__mei', /^(名|firstname|givenname|mei)$/],
+  ['name', /^(氏名|お名前|おなまえ|名前|姓名|フルネーム|fullname|name|担当者名?|相手の氏名|会員名|メンバー名|顧客名|取引先担当者)$/],
+  ['companyName', /(会社|法人|企業|勤務先|屋号|company|organi[sz]ation|corp|社名)/],
+  ['title', /(肩書|役職|部署|職位|職名|position|jobtitle|title|department)/],
+  ['facebook', /(facebook|フェイスブック|^fb$)/],
+  ['email', /(メール|mail)/],
+  ['phone', /(電話|tel|phone|携帯|mobile)/],
+  ['location', /(郵便|住所|address|zip|postal|所在地)/],
+  ['homepage', /(ホームページ|homepage|website|web|サイト|url|^hp$)/],
+  ['birthday', /(生年月日|誕生日|birth|dob)/],
+  ['hobbies', /(趣味|hobb)/],
+  ['chapter', /(チャプター|chapter)/],
+  ['date1to1', /(1to1|面談|商談日|実施日|会った日)/],
+  ['business', /(業種|業界|カテゴリ|category|職業|事業内容|industry)/],
+  ['memo', /(メモ|備考|note|コメント|remarks|memo)/],
+];
+function csvAutoKey(h) {
+  const n = CSV_NZ(h); if (!n) return '__skip';
+  const byLabel = ALL_FIELDS.find(([k, l]) => CSV_NZ(l) === n || k.toLowerCase() === n); if (byLabel) return byLabel[0];
+  for (const [k, re] of CSV_RULES) if (re.test(n)) return k;
+  return '__memo';
+}
+function parseCsv(text) {
+  text = text.replace(/^﻿/, '');
+  const first = text.split(/\r?\n/, 1)[0] || '';
+  const cnt = c => first.split(c).length - 1;
+  const d = cnt('\t') > cnt(',') && cnt('\t') >= cnt(';') ? '\t' : cnt(';') > cnt(',') ? ';' : ',';
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === d) { row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += c;
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(x => String(x).trim() !== ''));
+}
+function csvToIso(v) {
+  const s = String(v || '').normalize('NFKC').trim();
+  const m = s.match(/^(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);
+  return m ? `${m[1]}-${pad(+m[2])}-${pad(+m[3])}` : s;
+}
+const CSV_OPTS = () => `<option value="__skip">取り込まない</option><option value="__memo">メモに追加（列名つき）</option><option value="__sei">姓（名前の前半）</option><option value="__mei">名（名前の後半）</option>`
+  + SECTIONS.map(s => `<optgroup label="${esc(s.title)}">${s.fields.filter(f => !['date1to1'].includes(f[0]) || true).map(f => `<option value="${f[0]}">${esc(f[1])}</option>`).join('')}</optgroup>`).join('');
+let csvState = null;
+function csvBuildPeople(st) {
+  const out = []; let noName = 0;
+  for (const r of st.rows) {
+    const d = {}; const memo = [];
+    let sei = '', mei = '';
+    st.keys.forEach((k, i) => {
+      const v = String(r[i] ?? '').trim(); if (!v || k === '__skip') return;
+      if (k === '__memo') memo.push(`${st.head[i]}：${v}`);
+      else if (k === '__sei') sei = v; else if (k === '__mei') mei = v;
+      else d[k] = (k === 'birthday' || k === 'date1to1') ? csvToIso(v) : (d[k] ? d[k] + '\n' + v : v);
+    });
+    if (!d.name && (sei || mei)) d.name = `${sei} ${mei}`.trim();
+    if (memo.length) d.memo = (d.memo ? d.memo + '\n' : '') + memo.join('\n');
+    if (!d.name) { noName++; continue; }
+    out.push(d);
+  }
+  return { out, noName };
+}
+function csvRender() {
+  const st = csvState; if (!st) { $('csvPreview').innerHTML = ''; return; }
+  const { out, noName } = csvBuildPeople(st);
+  const exist = out.filter(d => members.some(m => nameKey(m.name) === nameKey(d.name))).length;
+  const unmapped = st.keys.filter(k => k === '__memo').length;
+  $('csvPreview').innerHTML = `<div class="ok-box" style="font-weight:400;color:var(--ink);background:#f6f8ff;border-color:#d7e0f5">
+    <b>${st.rows.length}行</b>が見つかりました。列ごとに、取り込み先の項目を確認してください（自動で判定した結果です。違うところは選び直せます）。
+    <div style="overflow-x:auto;margin:8px 0"><table class="csvmap"><thead><tr><th>CSVの列</th><th>取り込み先の項目</th><th>中身の例</th></tr></thead><tbody>
+    ${st.head.map((h, i) => `<tr><td>${esc(h || '（列名なし）')}</td><td><select data-ci="${i}">${CSV_OPTS()}</select></td><td class="ex">${esc(st.rows.slice(0, 2).map(r => String(r[i] ?? '').trim()).filter(Boolean).join(' ／ ').slice(0, 50))}</td></tr>`).join('')}</tbody></table></div>
+    ${unmapped && aiKey ? `<div class="row" style="margin-bottom:8px"><button class="btn small" id="csvAi">🤖 「メモに追加」になっている列を、AIで判別する（列名だけをAIに送ります）</button></div>` : ''}
+    <div class="row" style="gap:14px;margin:6px 0">
+      <label>登録する区分　<select id="csvCat"><option value="BNI以外" ${st.cat === 'BNI以外' ? 'selected' : ''}>BNI以外の方</option><option value="BNI" ${st.cat === 'BNI' ? 'selected' : ''}>BNIメンバー</option></select></label>
+      <label>同じ名前の方がすでにいるとき　<select id="csvMode"><option value="fill" ${st.mode === 'fill' ? 'selected' : ''}>空欄だけ埋める</option><option value="over" ${st.mode === 'over' ? 'selected' : ''}>CSVの内容で上書きする</option><option value="add" ${st.mode === 'add' ? 'selected' : ''}>別の人として追加する</option></select></label></div>
+    <div>取り込む人：<b>${out.length}人</b>（新規 ${out.length - exist}人／すでにいる名前 ${exist}人）${noName ? `<span style="color:#8a6200">　名前がなく、取り込めない行：${noName}行</span>` : ''}</div>
+    ${out.length ? `<div class="howto" style="margin:6px 0">最初の3人：${out.slice(0, 3).map(d => esc(d.name + (d.companyName ? `（${d.companyName}）` : ''))).join('、')}</div>` : '<div class="howto" style="margin:6px 0;color:#8a6200">「名前」の列が見つかりません。どれか1列を「名前」にしてください。</div>'}
+    <div class="row" style="margin-top:8px"><button class="btn primary" id="csvGo" ${out.length ? '' : 'disabled'}>取り込む</button><button class="btn" id="csvCancel">やめる</button></div></div>`;
+  $('csvPreview').querySelectorAll('select[data-ci]').forEach(s => { s.value = st.keys[+s.dataset.ci]; s.onchange = () => { st.keys[+s.dataset.ci] = s.value; csvRender(); }; });
+  $('csvCat').onchange = e => { st.cat = e.target.value; };
+  $('csvMode').onchange = e => { st.mode = e.target.value; csvRender(); };
+  $('csvCancel').onclick = () => { csvState = null; csvRender(); };
+  $('csvGo').onclick = csvImport;
+  if ($('csvAi')) $('csvAi').onclick = csvAskAi;
+}
+async function csvAskAi() {
+  const st = csvState, idx = st.keys.map((k, i) => k === '__memo' ? i : -1).filter(i => i >= 0); if (!idx.length) return;
+  const prompt = `次はCSVの列名です。それぞれを、下の「項目」のどれに当たるか判定してください。\n\n【列名】\n${idx.map(i => `${i}: ${st.head[i]}`).join('\n')}\n\n【項目】（キー: 意味）\n${ALL_FIELDS.filter(f => !USER_ONLY.has(f[0]) || ['memo', 'chapter', 'date1to1'].includes(f[0])).map(f => `${f[0]}: ${f[1]}`).join('\n')}\n__sei: 姓\n__mei: 名\n__memo: どれにも当たらない（メモ）\n__skip: 取り込まない\n\nルール：\n・当てはまりが明らかなものだけ項目のキーを答え、迷うものは __memo としてください\n・出力はJSONだけ。形は {"0":"name","3":"phone"} のように、列の番号をキー、項目のキーを値にしてください`;
+  const btn = $('csvAi'); const t = await autoAi(btn, prompt, null, '🤖 列名を判別しています…', 2000);
+  if (!t) return;
+  let obj; try { obj = JSON.parse(t.replace(/^```(?:json)?\s*|\s*```$/g, '').trim()); } catch (e) { alert('AIの答えを読み取れませんでした。手で選んでください。'); return; }
+  const valid = new Set([...ALL_FIELDS.map(f => f[0]), '__sei', '__mei', '__memo', '__skip']); let n = 0;
+  for (const [i, k] of Object.entries(obj)) if (idx.includes(+i) && valid.has(k) && k !== '__memo') { st.keys[+i] = k; n++; }
+  toast(n ? `AIが${n}列を判別しました。内容を確認してください` : 'AIでも判別できませんでした。手で選んでください');
+  csvRender();
+}
+async function csvImport() {
+  const st = csvState, { out } = csvBuildPeople(st); if (!out.length) return;
+  let add = 0, upd = 0; const now = Date.now();
+  for (const d of out) {
+    const cur = st.mode === 'add' ? null : members.find(m => nameKey(m.name) === nameKey(d.name));
+    const src = { name: 'CSV', at: today() };
+    if (!cur) { await Store.put({ id: uid(), createdAt: now, updatedAt: now, category: st.cat, meetings: [], source: 'CSV', sources: [src], ...d }); add++; continue; }
+    const next = { ...cur };
+    for (const [k, v] of Object.entries(d)) {
+      if (k === 'name') continue;
+      if (st.mode === 'over' || !next[k]) next[k] = v;
+      else if (k === 'memo' && !next.memo.includes(v)) next.memo = next.memo + '\n' + v;
+    }
+    next.sources = [...(cur.sources || []), src]; next.updatedAt = now;
+    await Store.put(next); upd++;
+  }
+  csvState = null; csvRender(); await changed();
+  toast(`追加 ${add}人・更新 ${upd}人`);
+}
+$('csvFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    if (/\.xlsx?$/i.test(f.name)) throw new Error('Excelファイルは、Excelで「名前を付けて保存」→「CSV UTF-8」にしてから選んでください。');
+    const rows = parseCsv(await readTextFile(f));
+    if (rows.length < 2) throw new Error('データの行が見つかりませんでした（1行目は列名、2行目以降が人のデータです）。');
+    const head = rows[0].map(x => String(x).trim());
+    csvState = { head, rows: rows.slice(1), keys: head.map(csvAutoKey), cat: 'BNI以外', mode: 'fill' };
+    csvRender();
+  } catch (err) { alert('読み込めませんでした：' + err.message); }
+};
 $('bcFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   try {
